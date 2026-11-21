@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P59-02 권한 검사 적용 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P59-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P59 구현 2: 인증과 권한</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p59-01.html" style="flex:20" data-type="실습" title="인증 모듈 적용 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s17-p59-02.html" style="flex:20" data-type="실습" title="권한 검사 적용 (20분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s17-p59-03.html" style="flex:5" data-type="실습" title="중간 코드 자기 점검 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s17-p59-04.html" style="flex:5" data-type="정리" title="정리: 진행 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S17-P59-02</span></div>
+<h1>권한 검사 적용</h1>
+
+<p class="lead">명세의 권한 표를 코드로 옮깁니다. 표의 칸마다 어떤 코드가 대응하는지 정해 두면, 빠뜨린 곳 없이 옮길 수 있습니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>권한 표에 따라 보호 API와 소유자 검사를 적용하고, 다른 사용자로 요청해 막히는지 확인할 수 있습니다.</p></div>
+
+<h2>권한 표의 칸과 코드</h2>
+<div class="table-wrap"><table><thead><tr><th>권한 표의 값</th><th>코드</th><th>막히면</th></tr></thead><tbody><tr><td>없음(누구나)</td><td>의존성을 붙이지 않음</td><td>-</td></tr><tr><td>로그인 사용자</td><td>경로 함수 인자에 <code>user: CurrentUserDep</code></td><td>401</td></tr><tr><td>소유자 본인(또는 관리자)</td><td>서비스에서 자원을 찾은 뒤 <code>check_can_modify(자원, user)</code></td><td>403 또는 404</td></tr><tr><td>관리자만</td><td>경로 함수 인자에 <code>user: Annotated[User, Depends(require_admin)]</code></td><td>403</td></tr></tbody></table></div>
+<ol class="steps"><li><h3>소유자 검사 함수</h3><p><code>app/services/studies.py</code>에 추가합니다. 도서 API의 <code>check_can_modify</code>(S5-P17-03)와 같은 모양입니다.</p><div class="codeblock"><span class="file">app/services/studies.py에 추가</span><pre><code>def check_can_modify(study: Study, user: User) -&gt; None:
+    """개설자나 관리자만 모임을 수정, 삭제하고 명단을 볼 수 있습니다."""
+    if user.role == "admin" or study.owner_id == user.id:
+        return
+    raise AppError(403, "FORBIDDEN", "모임을 개설한 사람만 할 수 있습니다.")</code></pre></div>
+</li><li><h3>필요한 곳에서 부르기</h3>
+<p>P58에서 주석으로 표시해 둔 자리를 검사 호출로 바꿉니다. 자원을 <strong>먼저 찾고</strong>(없으면 404), 그다음 권한을 검사합니다(남의 것이면 403).</p>
+<div class="codeblock"><span class="file">app/services/studies.py</span><pre><code>def update_study(db: Session, user: User, study_id: int, study_in: StudyUpdate) -&gt; Study:
+    study = find_study(db, study_id)
+    check_can_modify(study, user)
+    ...
+
+
+def delete_study(db: Session, user: User, study_id: int) -&gt; None:
+    study = find_study(db, study_id)
+    check_can_modify(study, user)
+    ...</code></pre></div>
+
+<p>검사를 라우터가 아니라 서비스에 두는 이유는, 같은 서비스 함수를 다른 경로(예: 관리자 화면)에서 불러도 검사가 빠지지 않게 하려는 것입니다.</p>
+</li><li><h3>다른 사용자로 확인</h3><div class="codeblock term"><pre><code># user1이 모임을 만들고, user2로 수정과 삭제를 시도합니다.
+curl -s -X PATCH $B/studies/1 -H "Authorization: Bearer $TOKEN2" -H "Content-Type: application/json" -d '{"title":"x"}'
+{"code":"FORBIDDEN","message":"모임을 개설한 사람만 할 수 있습니다."}
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE $B/studies/1 -H "Authorization: Bearer $TOKEN2"
+403
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE $B/studies/999 -H "Authorization: Bearer $TOKEN2"
+404
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE $B/studies/1 -H "Authorization: Bearer $ADMIN"
+204</code></pre></div>
+</li><li><h3>권한 표 대조</h3>
+<p>명세의 권한 표를 한 줄씩 보며, 칸의 값과 실제 응답이 같은지 표시합니다. 다른 칸이 있으면 명세와 코드 가운데 하나를 고칩니다.</p>
+<div class="table-wrap"><table><thead><tr><th>기능</th><th>로그인 안 함</th><th>로그인 사용자</th><th>소유자 본인</th><th>관리자</th></tr></thead><tbody><tr><td><input data-save="pm_f1" aria-label="내 결과"></td><td><input data-save="pm_a1" aria-label="내 결과"></td><td><input data-save="pm_b1" aria-label="내 결과"></td><td><input data-save="pm_c1" aria-label="내 결과"></td><td><input data-save="pm_d1" aria-label="내 결과"></td></tr><tr><td><input data-save="pm_f2" aria-label="내 결과"></td><td><input data-save="pm_a2" aria-label="내 결과"></td><td><input data-save="pm_b2" aria-label="내 결과"></td><td><input data-save="pm_c2" aria-label="내 결과"></td><td><input data-save="pm_d2" aria-label="내 결과"></td></tr><tr><td><input data-save="pm_f3" aria-label="내 결과"></td><td><input data-save="pm_a3" aria-label="내 결과"></td><td><input data-save="pm_b3" aria-label="내 결과"></td><td><input data-save="pm_c3" aria-label="내 결과"></td><td><input data-save="pm_d3" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>커밋</h3><div class="codeblock term"><pre><code>git add . &amp;&amp; git commit -m "모임 수정, 삭제에 개설자 검사"</code></pre></div>
+</li></ol>
+<div class="callout note"><p class="callout-title">목록 API에도 권한이 있을 수 있습니다</p><p>"내 할 일 목록"처럼 본인 것만 보여야 하는 목록은, 검사 함수 대신 질의 조건(<code>where(Todo.owner_id == user.id)</code>)으로 막습니다. 목록을 먼저 다 가져온 뒤 파이썬에서 거르면 페이지 개수와 전체 개수가 틀어지고, 거르는 코드를 빠뜨리기 쉽습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s17/p59/s17-p59-01.html"><span class="dir">이전</span>S17-P59-01 인증 모듈 적용</a>
+  <a class="next" href="../../s17/p59/s17-p59-03.html"><span class="dir">다음</span>S17-P59-03 중간 코드 자기 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P9-01 설정과 비밀정보 분리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P9-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P9 설정 관리와 미들웨어</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p9-01.html" style="flex:10" data-type="주요 개념" title="설정과 비밀정보 분리 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p9-02.html" style="flex:15" data-type="실습" title="Settings 클래스 적용 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s3-p9-03.html" style="flex:5" data-type="주요 개념" title="미들웨어와 CORS (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s3-p9-04.html" style="flex:15" data-type="실습" title="CORS와 요청 로깅 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s3-p9-05.html" style="flex:5" data-type="정리" title="정리: 설정과 미들웨어 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S3-P9-01</span></div>
+<h1>설정과 비밀정보 분리</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>환경 변수로 설정을 분리하고 CORS와 미들웨어를 적용할 수 있습니다.</p></div>
+
+<p class="lead">곧 데이터베이스 주소와 비밀 키 같은 값이 필요해집니다. 이런 값을 코드에 바로 적으면 생기는 문제와, 코드 밖에서 관리하는 방법을 배웁니다.</p>
+
+<h2>코드에 적으면 생기는 문제</h2>
+<div class="codeblock"><pre><code>DATABASE_URL = "postgresql://admin:MyPassw0rd@db.example.com/books"
+SECRET_KEY = "a9f3c1..."</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>문제</th><th>설명</th></tr></thead><tbody><tr><td>비밀이 새어 나갑니다</td><td>코드를 Git에 올리는 순간 비밀번호와 비밀 키가 저장소에 남습니다. 나중에 지워도 이력에서 찾을 수 있습니다.</td></tr><tr><td>환경마다 코드를 고쳐야 합니다</td><td>내 PC에서는 SQLite, 7일차 AWS에서는 RDS를 씁니다. 실행하는 곳마다 코드를 바꾸면 실수하기 쉽습니다.</td></tr></tbody></table></div>
+
+<p>비밀정보를 코드에 직접 적는 것은 5일차에 배울 KISA 보안약점 중 "하드코딩된 중요정보"에 해당합니다. 처음부터 습관을 들여 둡니다.</p>
+
+<h2>환경 변수와 .env 파일</h2>
+<p><strong>환경 변수</strong>는 운영체제가 실행 중인 프로그램에 넘겨주는 이름과 값의 쌍입니다. 코드는 값 대신 "<code>DATABASE_URL</code>이라는 환경 변수를 읽는다"는 사실만 압니다. 개발할 때 환경 변수를 매번 입력하기는 번거로우므로, 프로젝트 폴더의 <code>.env</code> 파일에 적어 두고 읽게 합니다.</p>
+<div class="codeblock"><span class="file">.env</span><pre><code>DATABASE_URL=sqlite:///./books.db
+SECRET_KEY=a9f3c1...</code></pre></div>
+
+<p><code>.env</code>는 <code>.gitignore</code>에 넣어 Git에 올리지 않습니다. 대신 어떤 값이 필요한지 알려 주는 <code>.env.example</code>을 함께 올리고, 비밀 값 자리는 <code>change-me</code>처럼 비워 둡니다.</p>
+
+<h2>pydantic-settings</h2>
+<div class="codeblock"><span class="file">app/config.py</span><pre><code>from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    """환경 변수와 .env 파일에서 설정값을 읽습니다. 이름은 대소문자를 가리지 않습니다."""
+
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+
+    app_name: str = "도서 관리 API"
+    database_url: str = "sqlite:///./books.db"
+    secret_key: str  # 기본값이 없으므로 반드시 설정해야 합니다.
+    cors_origins: list[str] = ["http://localhost:5173"]
+
+
+settings = Settings()</code></pre></div>
+
+<p>요청 본문을 모델로 검사했던 것처럼, 설정도 모델로 정의하고 검사합니다. 값을 찾는 순서는 <strong>환경 변수, .env 파일, 기본값</strong> 순입니다. 이름은 대소문자를 가리지 않아서 <code>.env</code>의 <code>SECRET_KEY</code>가 <code>secret_key</code> 필드로 들어갑니다.</p>
+<div class="table-wrap"><table><thead><tr><th>필드</th><th>특징</th></tr></thead><tbody><tr><td><code>secret_key: str</code></td><td>기본값이 없어 반드시 설정해야 합니다. 없으면 서버가 시작하지 않고 오류를 냅니다. 비밀 값을 빠뜨린 채 실행되는 일을 막아 줍니다.</td></tr><tr><td><code>cors_origins: list[str]</code></td><td>목록 값은 <code>.env</code>에 <code>["http://localhost:5173"]</code>처럼 JSON 형식으로 적습니다.</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p8/s3-p8-05.html"><span class="dir">이전</span>S3-P8-05 정리: 의존성 주입</a>
+  <a class="next" href="../../s3/p9/s3-p9-02.html"><span class="dir">다음</span>S3-P9-02 Settings 클래스 적용</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

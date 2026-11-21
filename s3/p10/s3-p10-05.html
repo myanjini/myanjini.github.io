@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P10-05 정리: ORM 기초 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P10-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P10 SQLAlchemy ORM 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p10-01.html" style="flex:10" data-type="주요 개념" title="관계형 데이터베이스와 ORM (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p10-02.html" style="flex:10" data-type="주요 개념" title="SQLAlchemy 2.0 핵심 구성 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s3-p10-03.html" style="flex:10" data-type="주요 개념" title="모델 정의와 테이블 생성 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p10-04.html" style="flex:15" data-type="실습" title="Book 모델 만들기 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s3-p10-05.html" style="flex:5" data-type="정리" title="정리: ORM 기초 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S3-P10-05</span></div>
+<h1>정리: ORM 기초</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>관계형 데이터베이스는 데이터를 테이블에 저장하고, 기본키로 행을 구분하며, 고유 제약으로 중복을 막습니다.</li>
+  <li>ORM은 테이블을 클래스로, 행을 객체로 다루게 해 주고, SQLAlchemy가 Python 코드를 SQL로 바꿔 실행합니다.</li>
+  <li>Engine은 앱에 하나, Session은 작업마다 하나씩 쓰고, 모델은 <code>DeclarativeBase</code>를 상속해 <code>Mapped</code>로 열을 정의합니다.</li>
+  <li><code>create_all</code>은 등록된 모델 중 없는 테이블만 만듭니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">도서 한 권의 정보는 테이블에서 무엇에 해당하나요?</p><label><input type="radio" name="p10q1" value="1"> <span>1. 기본키</span></label><label><input type="radio" name="p10q1" value="2"> <span>2. 테이블</span></label><label><input type="radio" name="p10q1" value="3"> <span>3. 열</span></label><label><input type="radio" name="p10q1" value="4"> <span>4. 행</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>데이터 하나가 한 행입니다. 열은 제목, 가격 같은 항목입니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q"><code>isbn: Mapped[str | None] = mapped_column(String(13), unique=True)</code>의 뜻으로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p10q2" value="1"> <span>1. ISBN은 반드시 있어야 하고 중복될 수 있다.</span></label><label><input type="radio" name="p10q2" value="2"> <span>2. ISBN은 없어도 되지만, 있다면 다른 행과 겹칠 수 없다.</span></label><label><input type="radio" name="p10q2" value="3"> <span>3. ISBN이 기본키다.</span></label><label><input type="radio" name="p10q2" value="4"> <span>4. ISBN은 숫자만 저장된다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden><code>str | None</code>이라 값이 없어도 되고, <code>unique=True</code>라 중복을 막습니다. 숫자만 받는 검사는 Pydantic 모델의 pattern이 맡습니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q"><code>Base.metadata.create_all</code>을 실행했는데 테이블이 만들어지지 않았습니다. 가장 먼저 의심할 원인은 무엇인가요?</p><label><input type="radio" name="p10q3" value="1"> <span>1. 포트가 사용 중이다.</span></label><label><input type="radio" name="p10q3" value="2"> <span>2. CORS 설정이 틀렸다.</span></label><label><input type="radio" name="p10q3" value="3"> <span>3. SQLite가 설치되지 않았다.</span></label><label><input type="radio" name="p10q3" value="4"> <span>4. 모델 파일(<code>app.models</code>)을 불러오지 않았다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>모델 클래스를 불러와야 <code>Base.metadata</code>에 등록되어 테이블이 만들어집니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>S3-P11에서는 메모리 목록 대신 데이터베이스에 도서를 저장하고 조회하도록 API를 바꿉니다. 이제 서버를 다시 시작해도 데이터가 남습니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p10/s3-p10-04.html"><span class="dir">이전</span>S3-P10-04 Book 모델 만들기</a>
+  <a class="next" href="../../s3/p11/s3-p11-01.html"><span class="dir">다음</span>S3-P11-01 DB 세션 의존성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P30-03 검색 API 보안 조치 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P30-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P30 입력데이터 검증 1: SQL 삽입과 경로 조작</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p30-01.html" style="flex:10" data-type="주요 개념" title="입력데이터 검증 및 표현 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s9-p30-02.html" style="flex:10" data-type="주요 개념" title="SQL 삽입 재현과 방어 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p30-03.html" style="flex:15" data-type="실습" title="검색 API 보안 조치 (15분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s9-p30-04.html" style="flex:10" data-type="실습" title="경로 조작과 자원 삽입 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s9-p30-05.html" style="flex:5" data-type="정리" title="정리: SQL 삽입과 경로 조작 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S9-P30-03</span></div>
+<h1>검색 API 보안 조치</h1>
+
+<p class="lead">재고 보고서 API를 위험한 코드로 먼저 만들어 SQL 삽입을 직접 재현하고, 안전한 코드로 고친 뒤 회귀 테스트를 남깁니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>문자열로 조립한 SQL의 삽입 공격을 재현하고, 값 바인딩과 허용 목록으로 고칠 수 있습니다.</p></div>
+<div class="callout warn"><p class="callout-title">실습용 취약 코드입니다</p><p>이 페이지의 "위험한 코드"는 공격을 직접 확인하려고 일부러 만든 것입니다. 내 PC에서만 실행하고, 확인이 끝나면 바로 안전한 코드로 바꿉니다. Git에 올리거나 서버에 배포하지 않습니다. 공격 실습은 내가 만든 서비스에서만 합니다. 허락받지 않은 남의 서비스에 시도하면 법에 따라 처벌받습니다.</p></div>
+<ol class="steps"><li><h3>스키마와 위험한 보고서 API 만들기</h3>
+<p><code>app/schemas.py</code> 맨 아래에 응답 모델을 추가하고, 앞 페이지의 위험한 저장소 코드와 아래 라우터를 만듭니다.</p>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code>class StockReportRow(BaseModel):
+    """재고 보고서의 한 줄"""
+    title: str
+    author: str
+    stock: int</code></pre></div>
+<div class="codeblock"><span class="file">app/routers/reports.py</span><pre><code>from fastapi import APIRouter
+
+from app.dependencies import CurrentUserDep, SessionDep
+from app.repositories import reports as report_repo
+from app.schemas import StockReportRow
+
+router = APIRouter(prefix="/reports", tags=["보고서"])
+
+
+@router.get("/stock", response_model=list[StockReportRow], summary="재고 현황 보고서")
+def stock_report(db: SessionDep, user: CurrentUserDep, keyword: str = "", order_by: str = "stock"):
+    return report_repo.stock_report(db, keyword, order_by)</code></pre></div>
+
+<p><code>app/main.py</code>에서 <code>reports</code>를 가져와 <code>app.include_router(reports.router)</code>를 추가합니다. 개발용 SQLite로 서버를 실행합니다(<code>uvicorn app.main:app --reload</code>).</p>
+</li><li><h3>정상 사용 확인</h3>
+<p>Swagger UI에서 user1으로 로그인하고 <code>GET /reports/stock</code>을 호출합니다. <code>keyword</code>를 비우면 모든 도서가, <code>파이썬</code>을 넣으면 제목에 파이썬이 든 도서만 나옵니다.</p>
+</li><li><h3>SQL 삽입 재현</h3>
+<p><code>keyword</code>에 앞 페이지의 공격 값을 그대로 넣고 실행합니다.</p>
+<div class="codeblock"><pre><code>zz%' UNION SELECT email, hashed_password, 0 FROM users --</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>응답 상태</td><td>200</td><td><input data-save="s1" aria-label="내 결과"></td></tr><tr><td>응답 내용</td><td><code>title</code>에 사용자 이메일, <code>author</code>에 <code>$argon2id$</code>로 시작하는 해시</td><td><input data-save="s2" aria-label="내 결과"></td></tr><tr><td><code>order_by</code>에 <code>stock; DROP TABLE books</code></td><td>500. 서버 로그에 <code>You can only execute one statement at a time.</code></td><td><input data-save="s3" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>일반 사용자 한 명이 모든 사용자의 계정 정보를 가져갔습니다. 서버 터미널의 ERROR 로그에서 실행된 SQL 문장을 찾아 공격 값이 어떻게 섞였는지도 확인합니다.</p>
+</li><li><h3>안전한 코드로 고치기</h3>
+<p>저장소는 앞 페이지의 안전한 코드로 바꿉니다. 라우터에서도 입력을 좁혀, 저장소까지 가기 전에 한 번 더 막습니다.</p>
+<div class="codeblock"><span class="file">app/routers/reports.py</span><pre><code>from typing import Literal
+
+from fastapi import APIRouter, Query
+
+from app.dependencies import CurrentUserDep, SessionDep
+from app.repositories import reports as report_repo
+from app.schemas import StockReportRow
+
+router = APIRouter(prefix="/reports", tags=["보고서"])
+
+
+@router.get("/stock", response_model=list[StockReportRow], summary="재고 현황 보고서")
+def stock_report(
+    db: SessionDep,
+    user: CurrentUserDep,
+    keyword: str = Query(default="", max_length=100, description="제목에 들어간 글자"),
+    order_by: Literal["title", "stock"] = Query(default="stock", description="정렬 기준"),
+):
+    return report_repo.stock_report(db, keyword, order_by)</code></pre></div>
+
+<p>값 바인딩(저장소)과 허용 목록(라우터와 저장소 모두)을 겹쳐 쓰는 것을 <strong>다중 방어</strong>라고 합니다. 한쪽을 누가 실수로 지워도 다른 쪽이 막아 줍니다.</p>
+</li><li><h3>같은 공격 다시 하기</h3>
+<div class="table-wrap"><table><thead><tr><th>요청</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td><code>keyword</code>에 공격 값</td><td>200, <code>[]</code>. 그런 제목의 도서가 없을 뿐입니다.</td><td><input data-save="s4" aria-label="내 결과"></td></tr><tr><td><code>keyword</code>에 <code>파이썬</code></td><td>정상 결과</td><td><input data-save="s5" aria-label="내 결과"></td></tr><tr><td><code>order_by</code>에 <code>stock; DROP TABLE books</code></td><td>422, <code>Input should be 'title' or 'stock'</code></td><td><input data-save="s6" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>회귀 테스트 남기기</h3>
+<p><code>tests/test_attacks.py</code>를 새로 만듭니다. 이 파일에 오늘 고친 약점을 하나씩 테스트로 쌓아 갑니다. 4일차에 만든 CI가 있으므로, 나중에 누가 보고서 코드를 다시 문자열 조립으로 바꾸면 푸시하는 순간 실패로 알려 줍니다.</p>
+<div class="codeblock"><span class="file">tests/test_attacks.py</span><pre><code>"""보안약점을 고친 뒤 다시 생기지 않는지 확인하는 테스트"""
+import pytest
+
+from tests.helpers import create_book
+
+SQLI = "zz%' UNION SELECT email, hashed_password, 0 FROM users --"
+
+
+def test_report_sql_injection_does_not_leak_users(client, auth_headers, author_id):
+    create_book(client, auth_headers, author_id, title="파이썬 첫걸음", stock=3)
+    response = client.get("/reports/stock", params={"keyword": SQLI}, headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json() == []  # 그런 제목의 도서가 없을 뿐, 사용자 정보는 나오지 않습니다.
+
+
+def test_report_rejects_unknown_order_by(client, auth_headers):
+    response = client.get("/reports/stock", params={"order_by": "stock; DROP TABLE books"}, headers=auth_headers)
+    assert response.status_code == 422</code></pre></div>
+<div class="codeblock term"><pre><code>pytest tests/test_attacks.py</code></pre></div>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>문자열을 이어 붙인 SQL로 사용자 정보가 새는 것을 재현했다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>값은 :이름 자리표시와 바인딩으로, 정렬 기준은 허용 목록으로 고쳤다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>같은 공격이 빈 결과와 422로 막히는 것을 확인했다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>SQL 삽입 회귀 테스트가 통과한다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p30-done</code> 브랜치에 있습니다. 위험한 코드는 <code>security-lab</code> 브랜치에만 남겨 둡니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p30/s9-p30-02.html"><span class="dir">이전</span>S9-P30-02 SQL 삽입 재현과 방어</a>
+  <a class="next" href="../../s9/p30/s9-p30-04.html"><span class="dir">다음</span>S9-P30-04 경로 조작과 자원 삽입</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

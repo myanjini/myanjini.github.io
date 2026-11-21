@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P55-02 장애 시나리오 안내 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P55-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. 운영 보안 점검과 장애 대응</a><span class="sep">/</span><span>S16-P55 장애 대응과 롤백</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p55-01.html" style="flex:10" data-type="주요 개념" title="장애 대응 절차 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p55-02.html" style="flex:5" data-type="주요 개념" title="장애 시나리오 안내 (5분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s16-p55-03.html" style="flex:25" data-type="실습" title="장애 대응 실습 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s16-p55-04.html" style="flex:5" data-type="실습" title="대응 과정 돌아보기 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s16-p55-05.html" style="flex:5" data-type="정리" title="정리: 장애 대응 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S16-P55-02</span></div>
+<h1>장애 시나리오 안내</h1>
+
+<p class="lead">이번 실습에서는 두 가지 장애를 직접 일으키고 대응합니다. 둘 다 실제 운영에서 자주 일어나는 유형입니다. 실습 전에 시나리오를 확인합니다.</p>
+
+<h2>시나리오 A: 잘못된 이미지 배포</h2>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>내용</th></tr></thead><tbody><tr><td>상황</td><td>누군가 Dockerfile을 고치다 실수로 uvicorn의 포트를 8000에서 8080으로 바꿨습니다. 테스트는 Dockerfile을 실행하지 않으므로 모두 통과하고, 배포 워크플로가 운영에 배포합니다.</td></tr><tr><td>증상</td><td>컨테이너는 실행 중이지만 healthcheck가 실패해 <code>unhealthy</code>, ALB 대상도 unhealthy, 사용자는 502. 배포 워크플로의 확인 단계가 실패합니다.</td></tr><tr><td>복구 목표</td><td>직전 정상 이미지로 2분 안에 되돌리기</td></tr><tr><td>배울 점</td><td>테스트를 통과해도 운영에서 실패할 수 있다. 배포 직후 확인과 빠른 롤백이 안전망이다.</td></tr></tbody></table></div>
+<div class="codeblock"><span class="file">실습용으로 잘못 바꾸는 Dockerfile의 마지막 줄</span><pre><code>CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--no-server-header"]</code></pre></div>
+
+<h2>시나리오 B: DB 연결 오류</h2>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>내용</th></tr></thead><tbody><tr><td>상황</td><td>DB 암호를 교체하다가 Parameter Store의 <code>DATABASE_URL</code>에 틀린 암호를 넣고 앱을 다시 시작했습니다.</td></tr><tr><td>증상</td><td>앱은 뜨지만 <code>/health</code>가 503(<code>"database": "unreachable"</code>), DB를 쓰는 API는 모두 실패합니다. 로그에 ERROR가 쌓입니다.</td></tr><tr><td>복구 목표</td><td>로그에서 원인을 찾고, Parameter Store의 이전 버전 값으로 되돌리기</td></tr><tr><td>배울 점</td><td>로그의 오류 메시지와 요청 ID로 원인을 좁히고, 설정 값도 버전 기록이 있으면 되돌릴 수 있다.</td></tr></tbody></table></div>
+<div class="callout warn"><p class="callout-title">실습 수칙</p><p>장애는 내 자원에만 일으킵니다(<a href="../../appendix/appendix-e.html">부록 E</a>의 수칙 5). 시작하기 전에 지금 정상인 이미지 태그와 Parameter Store의 현재 버전 번호를 적어 둡니다. 실습이 끝나면 반드시 정상 상태로 되돌리고 확인합니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s16/p55/s16-p55-01.html"><span class="dir">이전</span>S16-P55-01 장애 대응 절차</a>
+  <a class="next" href="../../s16/p55/s16-p55-03.html"><span class="dir">다음</span>S16-P55-03 장애 대응 실습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

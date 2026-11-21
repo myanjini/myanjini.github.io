@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P9-03 미들웨어와 CORS | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P9-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P9 설정 관리와 미들웨어</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p9-01.html" style="flex:10" data-type="주요 개념" title="설정과 비밀정보 분리 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p9-02.html" style="flex:15" data-type="실습" title="Settings 클래스 적용 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s3-p9-03.html" style="flex:5" data-type="주요 개념" title="미들웨어와 CORS (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s3-p9-04.html" style="flex:15" data-type="실습" title="CORS와 요청 로깅 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s3-p9-05.html" style="flex:5" data-type="정리" title="정리: 설정과 미들웨어 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S3-P9-03</span></div>
+<h1>미들웨어와 CORS</h1>
+
+<p class="lead">모든 요청에 공통으로 적용하고 싶은 일은 미들웨어로 처리합니다. 미들웨어로 해결하는 대표 문제인 CORS도 함께 알아봅니다.</p>
+
+<h2>미들웨어</h2>
+<p><strong>미들웨어</strong>는 모든 요청이 경로 함수에 닿기 전과, 응답이 클라이언트로 나가기 전에 한 번씩 거치는 관문입니다. 의존성이 "필요한 API에만" 붙는다면, 미들웨어는 "모든 요청"에 적용됩니다. 처리 시간 기록, 공통 헤더 추가처럼 예외 없이 해야 하는 일에 씁니다.</p>
+<figure><svg viewBox="0 0 640 180" role="img" aria-label="요청은 미들웨어를 지나 경로 함수에 닿고, 응답도 미들웨어를 지나 나갑니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="10" width="130" height="60" rx="8" class="svg-box"/><text x="75.0" y="45.0" text-anchor="middle" class="svg-text">요청</text><rect x="210" y="10" width="170" height="60" rx="8" class="svg-box-accent"/><text x="295.0" y="36.0" text-anchor="middle" class="svg-text">미들웨어</text><text x="295.0" y="56.0" text-anchor="middle" class="svg-small">들어갈 때</text><rect x="450" y="10" width="180" height="60" rx="8" class="svg-box"/><text x="540.0" y="36.0" text-anchor="middle" class="svg-text">경로 함수</text><text x="540.0" y="56.0" text-anchor="middle" class="svg-small">응답을 만듦</text><rect x="10" y="110" width="130" height="60" rx="8" class="svg-box"/><text x="75.0" y="145.0" text-anchor="middle" class="svg-text">응답</text><rect x="210" y="110" width="170" height="60" rx="8" class="svg-box-accent"/><text x="295.0" y="136.0" text-anchor="middle" class="svg-text">미들웨어</text><text x="295.0" y="156.0" text-anchor="middle" class="svg-small">나올 때</text><line x1="145" y1="40" x2="205" y2="40" class="svg-line" marker-end="url(#arr)"/><line x1="385" y1="40" x2="445" y2="40" class="svg-line" marker-end="url(#arr)"/><line x1="540" y1="75" x2="385" y2="135" class="svg-line" marker-end="url(#arr)"/><line x1="205" y1="140" x2="145" y2="140" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>요청은 미들웨어를 지나 경로 함수에 닿고, 응답도 미들웨어를 지나 나갑니다.</figcaption></figure>
+
+<h2>CORS</h2>
+<p>웹 화면을 만드는 개발자가 <code>http://localhost:5173</code>에서 실행되는 웹 화면으로 우리 API(<code>http://127.0.0.1:8000</code>)를 호출한다고 해 봅시다. 브라우저는 보안을 위해, 화면이 열린 곳과 <strong>출처(Origin)</strong>가 다른 서버의 응답을 기본적으로 읽지 못하게 막습니다. 출처는 프로토콜, 주소, 포트 세 가지가 모두 같아야 같은 출처입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>화면 주소</th><th>API 주소</th><th>같은 출처인가요</th></tr></thead><tbody><tr><td><code>http://localhost:5173</code></td><td><code>http://127.0.0.1:8000</code></td><td>아니요(주소와 포트가 다름)</td></tr><tr><td><code>http://127.0.0.1:8000/docs</code></td><td><code>http://127.0.0.1:8000</code></td><td>예</td></tr></tbody></table></div>
+
+<p>다른 출처의 화면이 API를 쓰려면, 서버가 응답 헤더로 "이 출처는 허용한다"고 알려 줘야 합니다. 이 규칙을 <strong>CORS</strong>(Cross-Origin Resource Sharing)라고 하고, FastAPI에서는 <code>CORSMiddleware</code>로 설정합니다.</p>
+<div class="callout note"><p class="callout-title">curl과 Swagger UI에서는 문제가 없던 이유</p><p>CORS는 브라우저가 지키는 규칙입니다. curl은 브라우저가 아니고, Swagger UI는 API와 같은 출처(<code>127.0.0.1:8000</code>)에서 열리기 때문에 지금까지는 CORS를 만날 일이 없었습니다.</p></div>
+<div class="callout warn"><p class="callout-title">모두 허용은 피합니다</p><p><code>allow_origins=["*"]</code>로 모든 출처를 허용하면 당장은 편하지만, 어떤 사이트의 화면이든 우리 API를 호출할 수 있게 됩니다. 허용할 출처를 설정 파일에 명확히 적습니다. 8일차 보안 점검표에서 다시 확인하는 항목입니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p9/s3-p9-02.html"><span class="dir">이전</span>S3-P9-02 Settings 클래스 적용</a>
+  <a class="next" href="../../s3/p9/s3-p9-04.html"><span class="dir">다음</span>S3-P9-04 CORS와 요청 로깅</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

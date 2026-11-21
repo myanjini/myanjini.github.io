@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P19-02 서비스 계층으로 옮기기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P19-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P19 계층 분리와 트랜잭션</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p19-01.html" style="flex:10" data-type="주요 개념" title="라우터, 서비스, 저장소 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p19-02.html" style="flex:10" data-type="주요 개념" title="서비스 계층으로 옮기기 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p19-03.html" style="flex:20" data-type="실습" title="서비스 계층 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s6-p19-04.html" style="flex:5" data-type="실습" title="계층 분리의 득과 실 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s6-p19-05.html" style="flex:5" data-type="정리" title="정리: 계층 분리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S6-P19-02</span></div>
+<h1>서비스 계층으로 옮기기</h1>
+
+<p class="lead">도서 라우터의 코드를 세 계층으로 옮기는 모습을 강사 화면으로 봅니다. 기능은 그대로 두고 자리만 바꾼 뒤, 새 기능인 재고를 서비스에 추가합니다.</p>
+
+<h2>새 폴더 구조</h2>
+<div class="codeblock"><pre><code>app/
+├── routers/
+│   └── books.py        경로 함수만 남습니다.
+├── services/
+│   ├── __init__.py     빈 파일
+│   └── books.py        검사 함수, 재고 규칙, 트랜잭션
+└── repositories/
+    ├── __init__.py     빈 파일
+    ├── books.py        도서 조회와 저장, 재고 기록 저장
+    └── authors.py      저자 조회</code></pre></div>
+
+<h2>무엇이 어디로 가나요</h2>
+<div class="table-wrap"><table><thead><tr><th>지금 라우터에 있는 코드</th><th>옮겨 갈 곳</th></tr></thead><tbody><tr><td><code>SORT_OPTIONS</code>, 목록 쿼리(<code>select</code>, <code>count</code>)</td><td>저장소 <code>search</code></td></tr><tr><td><code>db.get(Book, ...)</code>, ISBN으로 찾는 쿼리</td><td>저장소 <code>get</code>, <code>get_by_isbn</code></td></tr><tr><td><code>find_book</code>, <code>check_isbn_unique</code>, <code>check_author_exists</code>, <code>check_can_modify</code></td><td>서비스</td></tr><tr><td>등록, 수정, 삭제의 순서와 <code>db.commit()</code></td><td>서비스 <code>create_book</code>, <code>update_book</code>, <code>delete_book</code></td></tr><tr><td>경로, <code>Query</code>, 응답 모델, 상태 코드, <code>CurrentUserDep</code></td><td>라우터에 그대로</td></tr></tbody></table></div>
+
+<h2>저장소</h2>
+<div class="codeblock"><span class="file">app/repositories/books.py</span><pre><code>"""도서 저장소: 데이터베이스에서 도서를 읽고 쓰는 코드만 둡니다. commit은 하지 않습니다."""
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, selectinload
+
+from app.models import Book, StockLog
+
+# 정렬 기준으로 받을 수 있는 값과 실제 정렬 방법을 짝지어 둡니다.
+SORT_OPTIONS = {
+    "id": Book.id,
+    "price": Book.price,
+    "-price": Book.price.desc(),
+}
+
+
+def get(db: Session, book_id: int) -&gt; Book | None:
+    return db.get(Book, book_id)
+
+
+def get_by_isbn(db: Session, isbn: str) -&gt; Book | None:
+    return db.scalar(select(Book).where(Book.isbn == isbn))
+
+
+def search(db: Session, q: str | None, author_id: int | None, sort: str,
+           skip: int, limit: int) -&gt; tuple[list[Book], int]:
+    """조건에 맞는 도서 한 페이지와 전체 개수를 돌려줍니다."""
+    conditions = []
+    if q is not None:
+        conditions.append(Book.title.contains(q))
+    if author_id is not None:
+        conditions.append(Book.author_id == author_id)
+
+    total = db.scalar(select(func.count()).select_from(Book).where(*conditions))
+    stmt = (
+        select(Book)
+        .options(selectinload(Book.author))
+        .where(*conditions)
+        .order_by(SORT_OPTIONS[sort], Book.id)
+        .offset(skip)
+        .limit(limit)
+    )
+    return list(db.scalars(stmt).all()), total
+
+
+def add(db: Session, book: Book) -&gt; Book:
+    db.add(book)
+    db.flush()  # INSERT를 먼저 실행해 book.id를 받습니다. 확정(commit)은 아직 하지 않습니다.
+    return book
+
+
+def delete(db: Session, book: Book) -&gt; None:
+    db.delete(book)
+
+
+def add_stock_log(db: Session, book: Book, change: int, reason: str) -&gt; None:
+    db.add(StockLog(book_id=book.id, change=change, reason=reason))</code></pre></div>
+
+<p><code>add</code>에서 <code>flush</code>를 부르는 이유는 등록한 도서의 번호가 바로 필요하기 때문입니다. 재고 기록에 <code>book_id</code>를 넣어야 하는데, 번호는 데이터베이스가 INSERT를 실행해야 정해집니다. <code>flush</code>는 INSERT를 실행하지만 확정하지 않으므로, 뒤에서 실패하면 이 INSERT도 함께 취소됩니다.</p>
+
+<h2>서비스: 재고 규칙과 트랜잭션</h2>
+<div class="codeblock"><span class="file">app/services/books.py</span><pre><code>def change_stock(db: Session, book: Book, change: int, reason: str) -&gt; None:
+    """재고를 바꾸고 기록을 남깁니다. 확정(commit)은 이 함수를 부른 쪽에서 합니다."""
+    if book.stock + change &lt; 0:
+        raise AppError(409, "INSUFFICIENT_STOCK", f"재고가 부족합니다. 현재 재고는 {book.stock}권입니다.")
+    book.stock += change
+    book_repo.add_stock_log(db, book, change, reason)</code></pre></div>
+<div class="codeblock"><span class="file">app/services/books.py</span><pre><code>def create_book(db: Session, user: User, book_in: BookCreate) -&gt; Book:
+    check_isbn_unique(db, book_in.isbn)
+    check_author_exists(db, book_in.author_id)
+    book = book_repo.add(db, Book(**book_in.model_dump(exclude={"stock"}), owner_id=user.id))
+    if book_in.stock &gt; 0:
+        change_stock(db, book, book_in.stock, "입고")
+    db.commit()  # 도서 등록과 재고 기록을 한 번에 확정합니다.
+    db.refresh(book)
+    return book</code></pre></div>
+
+<p><code>change_stock</code>은 재고를 바꾸고 기록을 남기지만 <code>commit</code>하지 않습니다. 그래서 도서 등록 안에서도, 나중에 만들 대여 기능 안에서도 부를 수 있고, 부른 쪽의 트랜잭션에 자연스럽게 포함됩니다. <code>create_book</code>은 도서 INSERT, 재고 변경, 재고 기록 INSERT를 모두 마친 뒤 한 번만 <code>commit</code>합니다.</p>
+
+<h2>라우터: 받아서 넘기기만</h2>
+<div class="codeblock"><span class="file">app/routers/books.py</span><pre><code>@router.post("", response_model=BookRead, status_code=status.HTTP_201_CREATED, summary="도서 등록",
+             responses={401: {"description": "로그인 필요"}, 409: {"description": "이미 등록된 ISBN"}})
+def create_book(db: SessionDep, user: CurrentUserDep, book_in: BookCreate):
+    return book_service.create_book(db, user, book_in)</code></pre></div>
+
+<h2>오류가 나면 되돌리기</h2>
+<p>서비스 중간에 예외가 나면 <code>commit</code>까지 가지 못합니다. 이때 확정하지 않은 변경을 확실히 취소하도록 세션을 여는 <code>get_db</code>에서 <code>rollback</code>합니다.</p>
+<div class="codeblock"><span class="file">app/database.py</span><pre><code>def get_db():
+    """요청 하나에 세션 하나를 열어 주고, 요청이 끝나면 닫습니다."""
+    db = SessionLocal()
+    try:
+        yield db
+    except Exception:
+        db.rollback()  # 요청 처리 중 오류가 나면 확정하지 않은 변경을 모두 되돌립니다.
+        raise
+    finally:
+        db.close()</code></pre></div>
+
+<p>경로 함수에서 예외가 나면 FastAPI가 그 예외를 <code>yield</code> 자리로 다시 던져 줍니다. <code>except</code>에서 되돌린 뒤 <code>raise</code>로 예외를 그대로 넘겨야 원래의 오류 응답(409, 500 등)이 나갑니다. 사실 <code>close()</code>만 해도 확정하지 않은 변경은 버려지지만, 의도를 코드로 분명히 드러내려고 <code>rollback</code>을 적습니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p19/s6-p19-01.html"><span class="dir">이전</span>S6-P19-01 라우터, 서비스, 저장소</a>
+  <a class="next" href="../../s6/p19/s6-p19-03.html"><span class="dir">다음</span>S6-P19-03 서비스 계층 적용</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

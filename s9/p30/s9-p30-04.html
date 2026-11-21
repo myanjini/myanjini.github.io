@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P30-04 경로 조작과 자원 삽입 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P30-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P30 입력데이터 검증 1: SQL 삽입과 경로 조작</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p30-01.html" style="flex:10" data-type="주요 개념" title="입력데이터 검증 및 표현 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s9-p30-02.html" style="flex:10" data-type="주요 개념" title="SQL 삽입 재현과 방어 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p30-03.html" style="flex:15" data-type="실습" title="검색 API 보안 조치 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s9-p30-04.html" style="flex:10" data-type="실습" title="경로 조작과 자원 삽입 (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s9-p30-05.html" style="flex:5" data-type="정리" title="정리: SQL 삽입과 경로 조작 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S9-P30-04</span></div>
+<h1>경로 조작과 자원 삽입</h1>
+
+<p class="lead">파일 이름을 받아 파일을 내주는 기능에서는 "그 파일"이 정말 내가 의도한 폴더 안의 파일인지 확인해야 합니다. 자료실 내려받기 API로 경로 조작을 재현하고 고칩니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>../를 이용한 경로 조작을 재현하고, 경로 정규화와 기준 폴더 검사로 막을 수 있습니다.</p></div>
+<ol class="steps"><li><h3>자료 폴더와 위험한 내려받기 API</h3>
+<p><code>book-api</code> 안에 <code>files</code> 폴더를 만들고 <code>guide.txt</code>를 넣은 뒤, 라우터를 만들고 <code>main.py</code>에 연결합니다.</p>
+<div class="codeblock"><span class="file">files/guide.txt</span><pre><code>도서관 이용 안내
+
+1. 한 번에 3권까지 빌릴 수 있습니다.
+2. 빌린 도서는 14일 안에 반납합니다.</code></pre></div>
+<div class="codeblock"><span class="file">app/routers/files.py</span><pre><code>from pathlib import Path
+
+from fastapi import APIRouter
+from fastapi.responses import FileResponse
+
+from app.errors import AppError
+
+router = APIRouter(prefix="/files", tags=["자료실"])
+
+FILES_DIR = Path("files")  # 이용 안내 같은 공개 자료를 두는 폴더
+
+
+@router.get("/download", summary="자료 내려받기")
+def download_file(name: str):
+    # 위험한 코드: 사용자가 보낸 이름을 그대로 경로에 붙였습니다.
+    path = FILES_DIR / name
+    if not path.is_file():
+        raise AppError(404, "FILE_NOT_FOUND", "파일을 찾을 수 없습니다.")
+    return FileResponse(path)</code></pre></div>
+
+<p><code>GET /files/download?name=guide.txt</code>로 이용 안내가 내려오는지 확인합니다.</p>
+</li><li><h3>경로 조작 재현</h3>
+<div class="table-wrap"><table><thead><tr><th>name 값</th><th>실제로 열리는 파일</th><th>결과</th><th>내 결과</th></tr></thead><tbody><tr><td><code>../.env</code></td><td><code>files/../.env</code>, 즉 프로젝트의 <code>.env</code></td><td><code>SECRET_KEY</code>가 그대로 보입니다.</td><td><input data-save="f1" aria-label="내 결과"></td></tr><tr><td><code>../app/config.py</code></td><td>앱의 소스 코드</td><td>설정 코드가 보입니다.</td><td><input data-save="f2" aria-label="내 결과"></td></tr><tr><td><code>/etc/passwd</code>(macOS), <code>C:/Windows/win.ini</code>(Windows)</td><td>절대 경로는 앞의 <code>files</code>를 무시합니다.</td><td>운영체제 파일이 보입니다.</td><td><input data-save="f3" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p><code>..</code>는 "한 단계 위 폴더"라는 뜻입니다. 비밀 키가 새면 공격자는 아무 사용자의 토큰이나 만들 수 있습니다(S5-P16). 이것이 <strong>경로 조작</strong>입니다. KISA 가이드는 사용자 입력으로 파일, 포트, 호스트 같은 자원을 고르게 하는 <strong>자원 삽입</strong>과 함께 묶어 다룹니다.</p>
+</li><li><h3>기준 폴더 검사로 고치기</h3>
+<div class="codeblock"><span class="file">app/routers/files.py</span><pre><code>def safe_path(name: str) -&gt; Path:
+    """자료실 폴더 안의 파일만 가리키는지 확인한 실제 경로를 돌려줍니다."""
+    path = (FILES_DIR / name).resolve()  # ..와 바로 가기를 모두 풀어 실제 경로로 바꿉니다.
+    if not path.is_relative_to(FILES_DIR):
+        raise AppError(400, "INVALID_FILE_NAME", "허용되지 않는 파일 이름입니다.")
+    return path</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>코드</th><th>하는 일</th></tr></thead><tbody><tr><td><code>.resolve()</code></td><td><code>..</code>, 바로 가기, 상대 경로를 모두 풀어 실제 절대 경로로 바꿉니다. 이것을 경로 정규화라고 합니다.</td></tr><tr><td><code>is_relative_to(FILES_DIR)</code></td><td>정규화한 경로가 자료 폴더 안에 있는지 확인합니다. 문자열 비교(<code>startswith</code>)는 <code>files2</code> 같은 이웃 폴더를 통과시키므로 쓰지 않습니다.</td></tr></tbody></table></div>
+
+<p>입력 단계에서도 좁힙니다. 파일 이름에는 글자, 숫자, 점, 하이픈만 허용해 <code>/</code>와 <code>\</code>가 아예 들어오지 못하게 하고, 내려받기로 응답해 브라우저가 화면에 열지 않게 합니다.</p>
+<details><summary>app/routers/files.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/routers/files.py</span><pre><code>from pathlib import Path
+
+from fastapi import APIRouter, Query
+from fastapi.responses import FileResponse
+
+from app.errors import AppError
+
+router = APIRouter(prefix="/files", tags=["자료실"])
+
+FILES_DIR = Path("files").resolve()  # 이용 안내 같은 공개 자료를 두는 폴더(절대 경로)
+
+
+def safe_path(name: str) -&gt; Path:
+    """자료실 폴더 안의 파일만 가리키는지 확인한 실제 경로를 돌려줍니다."""
+    path = (FILES_DIR / name).resolve()  # ..와 바로 가기를 모두 풀어 실제 경로로 바꿉니다.
+    if not path.is_relative_to(FILES_DIR):
+        raise AppError(400, "INVALID_FILE_NAME", "허용되지 않는 파일 이름입니다.")
+    return path
+
+
+@router.get("/download", summary="자료 내려받기")
+def download_file(
+    name: str = Query(max_length=100, pattern=r"^[\w.\-]+$", description="파일 이름(글자, 숫자, 점, 하이픈만)"),
+):
+    path = safe_path(name)
+    if not path.is_file():
+        raise AppError(404, "FILE_NOT_FOUND", "파일을 찾을 수 없습니다.")
+    # filename을 주면 브라우저가 화면에 열지 않고 내려받기로 처리합니다.
+    return FileResponse(path, filename=path.name)</code></pre></div>
+</div></details>
+</li><li><h3>같은 공격 다시 하기</h3>
+<div class="table-wrap"><table><thead><tr><th>name 값</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td><code>../.env</code>, <code>/etc/passwd</code>, <code>..\.env</code></td><td>422. 허용하지 않는 글자가 있습니다.</td><td><input data-save="f4" aria-label="내 결과"></td></tr><tr><td><code>..</code></td><td>400, <code>INVALID_FILE_NAME</code>. 글자 검사는 통과했지만 기준 폴더 검사에서 막혔습니다.</td><td><input data-save="f5" aria-label="내 결과"></td></tr><tr><td><code>guide.txt</code></td><td>200, 응답 헤더 <code>content-disposition: attachment</code></td><td><input data-save="f6" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>회귀 테스트 추가</h3>
+<p><code>tests/test_attacks.py</code> 위쪽 가져오기에 <code>from app.routers import files</code>를 추가하고, 아래 테스트를 덧붙입니다. 두 번째 테스트는 <code>monkeypatch</code>로 자료 폴더를 임시 폴더로 바꿔, 실제 <code>files</code> 폴더에 기대지 않습니다.</p>
+<div class="codeblock"><span class="file">tests/test_attacks.py</span><pre><code>@pytest.mark.parametrize("name", ["../.env", "../app/config.py", "/etc/passwd", "..\\.env"])
+def test_download_blocks_path_traversal(client, name):
+    response = client.get("/files/download", params={"name": name})
+    assert response.status_code in (400, 422)
+
+
+def test_download_file(client, tmp_path, monkeypatch):
+    (tmp_path / "guide.txt").write_text("이용 안내", encoding="utf-8")
+    monkeypatch.setattr(files, "FILES_DIR", tmp_path.resolve())
+    response = client.get("/files/download", params={"name": "guide.txt"})
+    assert response.status_code == 200
+    assert response.text == "이용 안내"
+    assert "attachment" in response.headers["content-disposition"]</code></pre></div>
+</li></ol>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>../.env로 비밀 키가 새는 것을 재현했다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>resolve와 is_relative_to로 기준 폴더 밖의 경로를 막았다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>파일 이름에 허용하는 글자를 정했다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>경로 조작 회귀 테스트가 통과한다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p30-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p30/s9-p30-03.html"><span class="dir">이전</span>S9-P30-03 검색 API 보안 조치</a>
+  <a class="next" href="../../s9/p30/s9-p30-05.html"><span class="dir">다음</span>S9-P30-05 정리: SQL 삽입과 경로 조작</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

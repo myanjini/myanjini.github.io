@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P47-05 정리: 비밀정보 관리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P47-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 안전한 배포 구성</a><span class="sep">/</span><span>S14-P47 클라우드 비밀정보 관리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p47-01.html" style="flex:10" data-type="주요 개념" title="클라우드에서 비밀정보 다루기 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s14-p47-02.html" style="flex:10" data-type="주요 개념" title="Parameter Store 사용 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s14-p47-03.html" style="flex:20" data-type="실습" title="비밀정보 이전 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s14-p47-04.html" style="flex:5" data-type="주요 개념" title="비밀정보 교체 절차 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s14-p47-05.html" style="flex:5" data-type="정리" title="정리: 비밀정보 관리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S14-P47-05</span></div>
+<h1>정리: 비밀정보 관리</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>핵심</th></tr></thead><tbody><tr><td>보관소</td><td>비밀 값은 서버 파일이 아니라 Parameter Store의 SecureString(KMS 암호화)에 둡니다.</td></tr><tr><td>권한</td><td>EC2 역할은 <code>/book-api/*</code>만 읽을 수 있고, 읽은 기록은 CloudTrail에 남습니다.</td></tr><tr><td>앱</td><td><code>SSM_PREFIX</code>가 있으면 시작할 때 값을 읽어 환경 변수로 넣고, 기존 설정 검증을 그대로 거칩니다.</td></tr><tr><td>등록</td><td>비밀 값은 명령 기록에 남지 않게 콘솔에서 입력합니다.</td></tr><tr><td>교체</td><td>새 값 등록, 앱 재시작, 확인 순서. DB 암호는 RDS와 Parameter Store를 함께 바꿉니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">Parameter Store에 DB 접속 주소를 String(평문) 유형으로 저장하면 무엇이 문제인가요?</p><label><input type="radio" name="p47q1" value="1"> <span>1. 주소 안의 DB 암호가 암호화되지 않고, 읽기 권한만 있으면 누구나 그대로 본다</span></label><label><input type="radio" name="p47q1" value="2"> <span>2. 4KB를 넘는다</span></label><label><input type="radio" name="p47q1" value="3"> <span>3. 요금이 비싸다</span></label><label><input type="radio" name="p47q1" value="4"> <span>4. 앱이 읽을 수 없다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>비밀이 섞인 값은 SecureString으로 저장합니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">컨테이너 로그에 <code>NoCredentialsError</code>가 나고 바로 멈춥니다. 가장 먼저 확인할 것은 무엇인가요?</p><label><input type="radio" name="p47q2" value="1"> <span>1. Docker 버전</span></label><label><input type="radio" name="p47q2" value="2"> <span>2. Parameter Store의 값</span></label><label><input type="radio" name="p47q2" value="3"> <span>3. 인스턴스의 IAM 역할과 메타데이터 홉 제한</span></label><label><input type="radio" name="p47q2" value="4"> <span>4. RDS 보안 그룹</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>컨테이너가 역할의 임시 자격 증명을 받지 못한 경우입니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">비밀 값을 <code>aws ssm put-parameter --value</code>로 등록하지 않고 콘솔에서 입력한 이유는 무엇인가요?</p><label><input type="radio" name="p47q3" value="1"> <span>1. 명령에 적은 값이 터미널의 명령 기록에 남아서</span></label><label><input type="radio" name="p47q3" value="2"> <span>2. 콘솔이 더 빨라서</span></label><label><input type="radio" name="p47q3" value="3"> <span>3. CLI는 요금이 붙어서</span></label><label><input type="radio" name="p47q3" value="4"> <span>4. CLI는 SecureString을 지원하지 않아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>명령 기록 파일도 비밀 값이 새는 흔한 경로입니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>지금은 서버가 Git으로 소스를 받아 직접 이미지를 만듭니다. 다음 파트에서는 이미지를 내 PC에서 한 번만 만들어 ECR에 올리고, 서버는 버전 태그가 붙은 이미지를 받아 실행만 하게 바꿉니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p47/s14-p47-04.html"><span class="dir">이전</span>S14-P47-04 비밀정보 교체 절차</a>
+  <a class="next" href="../../s14/p48/s14-p48-01.html"><span class="dir">다음</span>S14-P48-01 컨테이너 레지스트리와 ECR</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

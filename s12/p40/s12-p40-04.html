@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P40-04 과금 구조와 비용 관리 원칙 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P40-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P40 클라우드와 AWS 개요</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p40-01.html" style="flex:10" data-type="주요 개념" title="클라우드 컴퓨팅 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p40-02.html" style="flex:10" data-type="주요 개념" title="AWS 글로벌 인프라와 주요 서비스 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p40-03.html" style="flex:15" data-type="실습" title="실습 계정과 콘솔 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s12-p40-04.html" style="flex:10" data-type="주요 개념" title="과금 구조와 비용 관리 원칙 (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s12-p40-05.html" style="flex:5" data-type="정리" title="정리: AWS 개요 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S12-P40-04</span></div>
+<h1>과금 구조와 비용 관리 원칙</h1>
+
+<p class="lead">클라우드는 "켜 두면 돈이 나가는" 구조입니다. 무엇에 요금이 붙는지 알고 있으면 실습 비용을 거의 0에 가깝게 유지할 수 있고, 반대로 모르면 잊고 둔 자원 하나가 한 달 내내 요금을 만듭니다.</p>
+
+<h2>무엇에 요금이 붙나요</h2>
+<div class="table-wrap"><table><thead><tr><th>과금 기준</th><th>예</th><th>이 과정의 자원</th></tr></thead><tbody><tr><td>켜 둔 시간</td><td>인스턴스가 실행 중인 시간(Linux EC2는 초 단위, 최소 60초)</td><td>EC2, RDS, ALB, NAT 게이트웨이</td></tr><tr><td>저장한 용량</td><td>GB를 한 달 동안 보관한 양</td><td>EC2의 디스크(EBS), RDS 스토리지와 백업, ECR 이미지, S3 객체, CloudWatch 로그</td></tr><tr><td>요청과 처리량</td><td>요청 수, 처리한 데이터 양</td><td>S3 요청, NAT 게이트웨이 처리량, ALB 처리량</td></tr><tr><td>밖으로 보낸 데이터</td><td>AWS에서 인터넷으로 나가는 데이터 GB</td><td>API 응답, 이미지 내려받기(실습 규모에서는 아주 적음)</td></tr><tr><td>공용 IPv4 주소</td><td>주소 하나에 시간당 0.005달러, 자원에 붙어 있든 아니든</td><td>EC2의 퍼블릭 IP, 탄력적 IP, ALB</td></tr></tbody></table></div>
+
+<p>공용 IPv4 주소 요금은 2024년 2월부터 생겼습니다. 금액은 작아 보이지만(한 달 내내 켜 두면 약 3.6달러), 학생 20명이 각자 여러 개를 잊고 두면 금방 커집니다. 서버를 멈춰도 탄력적 IP(고정 공용 주소)를 할당해 둔 채면 계속 과금되므로, 쓰지 않는 탄력적 IP는 할당을 해제합니다.</p>
+
+<h2>프리 티어에 기대지 않습니다</h2>
+<p>AWS는 새로 가입한 고객에게 일정 기간 크레딧과 무료 사용량을 주는 프리 티어를 운영합니다. 2025년 7월 이후 가입한 계정은 무료 플랜과 유료 플랜 가운데 하나를 고르고, 가입할 때 받는 크레딧 등으로 최대 6개월 동안 무료로 써 볼 수 있습니다. 하지만 기관이 AWS Organizations로 만든 실습 계정은 유료 플랜으로 운영되는 경우가 많고, 이전에 계정을 만든 적이 있으면 혜택 대상이 아닐 수 있습니다. 그래서 이 과정에서는 <strong>"무료일 것"이라고 가정하지 않고</strong>, 모든 자원에 요금이 붙는다고 보고 작게 만들고 빨리 지웁니다.</p>
+
+<h2>실습 비용을 지키는 원칙</h2>
+<div class="table-wrap"><table><thead><tr><th>원칙</th><th>하는 일</th></tr></thead><tbody><tr><td>작게 만든다</td><td>EC2와 RDS는 기관이 허용한 소형 인스턴스 유형만 고릅니다.</td></tr><tr><td>비싼 것은 만들지 않는다</td><td>NAT 게이트웨이는 쓰지 않는 구성으로 설계합니다. 서울 리전에서 시간당 약 0.059달러이고 처리한 데이터에도 요금이 붙어, 한 달 내내 두면 40달러가 넘습니다.</td></tr><tr><td>이름표를 붙인다</td><td>모든 자원에 <code>Owner</code> 태그(내 식별자)를 붙여, 누가 만든 자원인지 바로 알 수 있게 합니다.</td></tr><tr><td>멈춤과 삭제를 구분한다</td><td>EC2를 중지하면 인스턴스 요금은 멈추지만 디스크(EBS)와 탄력적 IP 요금은 계속됩니다. 중지한 RDS는 7일이 지나면 자동으로 다시 시작됩니다.</td></tr><tr><td>매일 확인한다</td><td>실습이 끝나는 16시 50분에 그날 만든 자원을 확인하고, 다음 날 쓰지 않을 것은 정리합니다(<a href="../../appendix/appendix-g.html">부록 G</a>).</td></tr><tr><td>경보를 둔다</td><td>기관이 계정마다 예산 경보를 설정해 두었습니다. 경보 메일을 받으면 바로 강사에게 알립니다.</td></tr></tbody></table></div>
+
+<h2>요금 확인하는 곳</h2>
+<p>콘솔의 <strong>Billing and Cost Management</strong>에서 이번 달 요금과 서비스별 요금을 볼 수 있습니다. 비용은 보통 하루쯤 늦게 반영되므로, 오늘 만든 자원의 요금은 내일 확인합니다. 새 자원을 만들기 전에 요금이 궁금하면 AWS 요금 계산기(AWS Pricing Calculator)로 미리 계산해 봅니다. 기관 정책에 따라 학생 계정에서 요금 화면이 보이지 않을 수 있습니다.</p>
+<div class="qa"><p class="question">계산해 보기. 실습용 EC2에 퍼블릭 IP를 붙이고 7일차부터 9일차까지 3일(72시간) 켜 두면, 공용 IPv4 주소 요금은 얼마인가요? 실수로 NAT 게이트웨이를 만들고 30일(720시간) 동안 잊었다면 시간당 요금만 얼마인가요?</p><textarea data-save="cost1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>공용 IPv4: 72시간 x 0.005달러 = 0.36달러입니다. NAT 게이트웨이: 720시간 x 0.059달러 = 42.48달러이고, 여기에 처리한 데이터 요금이 더해집니다. 작게 켜 둔 자원보다 잊고 둔 비싼 자원이 훨씬 위험하다는 것을 알 수 있습니다. 요금은 바뀔 수 있으므로 실제 금액은 AWS 요금 페이지에서 확인합니다.</p></div></details></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p40/s12-p40-03.html"><span class="dir">이전</span>S12-P40-03 실습 계정과 콘솔</a>
+  <a class="next" href="../../s12/p40/s12-p40-05.html"><span class="dir">다음</span>S12-P40-05 정리: AWS 개요</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

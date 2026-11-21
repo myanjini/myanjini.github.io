@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P16-01 JWT의 구조 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P16-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P16 OAuth2 Password Flow와 JWT</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p16-01.html" style="flex:10" data-type="주요 개념" title="JWT의 구조 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s5-p16-02.html" style="flex:5" data-type="주요 개념" title="OAuth2 Password Flow (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s5-p16-03.html" style="flex:10" data-type="주요 개념" title="로그인과 토큰 발급 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p16-04.html" style="flex:20" data-type="실습" title="로그인 API 구현 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s5-p16-05.html" style="flex:5" data-type="정리" title="정리: 토큰 발급 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S5-P16-01</span></div>
+<h1>JWT의 구조</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>로그인 시 JWT 액세스 토큰을 발급할 수 있습니다.</p></div>
+
+<p class="lead">로그인한 뒤에도 요청을 보낼 때마다 비밀번호를 보낼 수는 없습니다. 대신 로그인할 때 한 번 받은 토큰을 보여 줍니다. 이 페이지에서는 가장 널리 쓰는 토큰 형식인 JWT를 뜯어 봅니다.</p>
+
+<h2>토큰이란</h2>
+<p>놀이공원을 생각해 봅시다. 매표소에서 표를 확인받으면 손목 밴드를 채워 줍니다. 그다음부터는 놀이기구마다 표를 다시 보여 주지 않고 밴드만 보여 주면 됩니다. 밴드에는 오늘 날짜가 찍혀 있어서 다음 날에는 쓸 수 없습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>놀이공원</th><th>도서 API</th></tr></thead><tbody><tr><td>매표소에서 표 확인</td><td>로그인: 이메일과 비밀번호 확인</td></tr><tr><td>손목 밴드</td><td><strong>액세스 토큰(access token)</strong></td></tr><tr><td>놀이기구 앞에서 밴드 보여 주기</td><td>요청 헤더에 토큰 넣기: <code>Authorization: Bearer 토큰</code></td></tr><tr><td>밴드에 찍힌 날짜</td><td>토큰의 만료 시각</td></tr></tbody></table></div>
+
+<p>Bearer는 "가지고 있는 사람"이라는 뜻입니다. 이 토큰을 가진 사람을 토큰 주인으로 인정한다는 의미여서, 토큰이 새어 나가면 그 사람인 척할 수 있습니다. 그래서 토큰은 비밀번호처럼 다룹니다.</p>
+
+<h2>JWT의 세 부분</h2>
+<p><strong>JWT(JSON Web Token)</strong>는 점(<code>.</code>)으로 나뉜 세 부분으로 이루어진 문자열입니다. 다음은 실제 JWT입니다.</p>
+<div class="codeblock"><pre><code><span style="color:var(--bad)">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span>.<span style="color:var(--accent-ink)">eyJzdWIiOiIxIiwiZXhwIjoxNzk1MzkzODAwfQ</span>.<span style="color:var(--practice)">VQITLjTKfZnBH8M7TLl1Lwj6N3Nt0_FaZ9-RnpvnS1g</span></code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>부분</th><th>들어 있는 것</th><th>위 토큰을 풀어 보면</th></tr></thead><tbody><tr><td>헤더(header)</td><td>서명 방식</td><td><code>{"alg":"HS256","typ":"JWT"}</code></td></tr><tr><td>페이로드(payload)</td><td>토큰에 담은 정보. 하나하나를 클레임(claim)이라고 부릅니다.</td><td><code>{"sub":"1","exp":1795393800}</code></td></tr><tr><td>서명(signature)</td><td>헤더와 페이로드를 비밀 키로 계산한 값</td><td>풀어도 의미 있는 글자가 나오지 않습니다.</td></tr></tbody></table></div>
+
+<p>위 토큰은 색으로 세 부분을 나눠 보였습니다. 헤더와 페이로드는 Base64URL이라는 방식으로 글자만 바꿔 적은 것입니다. 암호화가 아니므로 누구나 원래 JSON으로 되돌려 읽을 수 있습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>클레임</th><th>뜻</th><th>이 과정의 값</th></tr></thead><tbody><tr><td><code>sub</code></td><td>subject. 이 토큰의 주인</td><td>사용자 번호를 문자열로: <code>"1"</code></td></tr><tr><td><code>exp</code></td><td>expiration. 만료 시각. 1970년 1월 1일부터 센 초</td><td><code>1795393800</code>은 2026년 11월 23일 오전 9시 30분(한국 시간)</td></tr></tbody></table></div>
+
+<h2>서명이 하는 일</h2>
+<p>누구나 페이로드를 읽을 수 있다면, <code>"sub":"1"</code>을 <code>"sub":"2"</code>로 바꿔 다른 사람인 척할 수 있지 않을까요? 이것을 막는 것이 서명입니다. 서버는 토큰을 만들 때 <strong>서버만 아는 비밀 키</strong>로 헤더와 페이로드의 서명을 계산해 붙입니다. 토큰을 받으면 같은 비밀 키로 서명을 다시 계산해 붙어 온 서명과 비교합니다. 페이로드를 한 글자라도 바꾸면 계산한 서명이 달라지고, 비밀 키를 모르는 사람은 맞는 서명을 새로 만들 수 없습니다.</p>
+<figure><svg viewBox="0 0 640 120" role="img" aria-label="서명은 내용과 비밀 키로 계산합니다. 내용이 바뀌거나 키가 다르면 서명이 맞지 않습니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="30" width="180" height="70" rx="8" class="svg-box"/><text x="100.0" y="61.0" text-anchor="middle" class="svg-text">헤더 + 페이로드</text><text x="100.0" y="81.0" text-anchor="middle" class="svg-small">누구나 읽을 수 있음</text><rect x="240" y="30" width="160" height="70" rx="8" class="svg-box-accent"/><text x="320.0" y="61.0" text-anchor="middle" class="svg-text">비밀 키</text><text x="320.0" y="81.0" text-anchor="middle" class="svg-small">서버만 앎</text><rect x="450" y="30" width="180" height="70" rx="8" class="svg-box"/><text x="540.0" y="61.0" text-anchor="middle" class="svg-text">서명</text><text x="540.0" y="81.0" text-anchor="middle" class="svg-small">위조하면 맞지 않음</text><line x1="195" y1="65" x2="235" y2="65" class="svg-line" marker-end="url(#arr)"/><line x1="405" y1="65" x2="445" y2="65" class="svg-line" marker-end="url(#arr)"/><text x="425" y="55" text-anchor="middle" class="svg-mono">HS256</text></svg><figcaption>서명은 내용과 비밀 키로 계산합니다. 내용이 바뀌거나 키가 다르면 서명이 맞지 않습니다.</figcaption></figure>
+
+<h2>JWT에 넣으면 안 되는 것</h2>
+<p>서명은 "바뀌지 않았음"을 보장할 뿐 "남이 읽지 못함"을 보장하지 않습니다. 따라서 페이로드에 비밀번호, 주민등록번호, 전화번호 같은 정보를 넣으면 안 됩니다. 이 과정에서는 사용자 번호와 만료 시각만 넣습니다.</p>
+
+<h2>비밀 키 관리</h2>
+<p>서명에 쓰는 비밀 키는 2일차 S3-P9에서 <code>.env</code>의 <code>SECRET_KEY</code>에 넣어 둔 값입니다. 이 키가 유출되면 누구든 아무 사용자의 토큰이나 만들 수 있으므로, 서버 전체의 열쇠라고 생각해야 합니다.</p>
+<ul>
+  <li><code>secrets.token_hex(32)</code>처럼 추측할 수 없는 값을 씁니다. 32바이트보다 짧으면 안전하지 않습니다.</li>
+  <li><code>.env</code>는 Git에 올리지 않습니다. 이미 <code>.gitignore</code>에 넣어 두었습니다.</li>
+  <li>개발용 키와 운영용 키를 다르게 씁니다. 7일차에는 운영용 키를 AWS Parameter Store에 보관합니다.</li>
+</ul>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p15/s5-p15-05.html"><span class="dir">이전</span>S5-P15-05 정리: 회원가입</a>
+  <a class="next" href="../../s5/p16/s5-p16-02.html"><span class="dir">다음</span>S5-P16-02 OAuth2 Password Flow</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P2-02 개발 환경 구성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P2-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. REST API와 FastAPI 기초</a><span class="sep">/</span><span>S1-P2 개발 환경 구성과 첫 FastAPI 앱</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p2-01.html" style="flex:10" data-type="주요 개념" title="FastAPI와 Uvicorn (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p2-02.html" style="flex:15" data-type="실습" title="개발 환경 구성 (15분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s1-p2-03.html" style="flex:5" data-type="주요 개념" title="첫 앱 실행 과정 보기 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s1-p2-04.html" style="flex:15" data-type="실습" title="첫 API 만들기 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s1-p2-05.html" style="flex:5" data-type="정리" title="정리: 서버 실행 흐름 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S1-P2-02</span></div>
+<h1>개발 환경 구성</h1>
+
+<p class="lead">책 전체에서 쓸 프로젝트 폴더와 Python 가상환경을 만들고 FastAPI를 설치합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>가상환경을 활성화한 상태에서 FastAPI를 설치하고 VSCode에서 같은 환경을 쓰도록 설정할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>Python 버전 확인</h3>
+<p>명령 프롬프트(macOS는 터미널)를 열고 Python 버전을 확인합니다.</p>
+<div class="codeblock term"><pre><code>python --version</code></pre></div>
+
+<p><code>Python 3.12</code> 이상이 나오면 됩니다. macOS에서 명령을 찾지 못하면 <code>python3 --version</code>으로 확인하고, 이후 명령에서도 <code>python</code> 대신 <code>python3</code>을 씁니다.</p>
+</li><li><h3>프로젝트 폴더 만들기</h3>
+<p>실습 파일을 모아 둘 폴더를 만들고 그 안으로 이동합니다.</p>
+<div class="codeblock term"><pre><code>mkdir book-api
+cd book-api</code></pre></div>
+
+<p>폴더 이름과 경로에는 한글과 공백을 넣지 않습니다. 일부 도구가 한글 경로에서 오류를 내기 때문입니다.</p>
+</li><li><h3>가상환경 만들고 켜기</h3>
+<p>가상환경은 프로젝트마다 패키지를 따로 설치하는 공간입니다. 다른 프로젝트와 패키지 버전이 섞이지 않게 해 줍니다.</p>
+<div class="codeblock term"><pre><code>python -m venv .venv</code></pre></div>
+
+<p>Windows 명령 프롬프트에서 켜기:</p>
+<div class="codeblock term"><pre><code>.venv\Scripts\activate</code></pre></div>
+
+<p>macOS 터미널에서 켜기:</p>
+<div class="codeblock term"><pre><code>source .venv/bin/activate</code></pre></div>
+
+<p>프롬프트 앞에 <code>(.venv)</code>가 붙으면 가상환경이 켜진 것입니다. 앞으로 실습할 때는 항상 이 표시가 있는지 먼저 확인합니다.</p>
+</li><li><h3>FastAPI 설치</h3>
+<div class="codeblock term"><pre><code>pip install "fastapi[standard]"</code></pre></div>
+
+<p><code>[standard]</code>를 붙이면 FastAPI와 함께 Uvicorn, <code>fastapi</code> 명령, 자주 쓰는 부가 패키지가 한 번에 설치됩니다. 따옴표는 일부 터미널이 대괄호를 다르게 해석하지 않게 하려고 붙입니다.</p>
+</li><li><h3>설치 확인</h3>
+<div class="codeblock term"><pre><code>pip show fastapi
+fastapi --version</code></pre></div>
+
+<p><code>pip show</code> 결과의 <code>Location</code>이 프로젝트의 <code>.venv</code> 폴더 안을 가리키면 가상환경에 제대로 설치된 것입니다. <code>fastapi --version</code>은 서버를 실행할 때 쓸 <code>fastapi</code> 명령이 설치되었는지 확인하며, <code>FastAPI CLI version</code>으로 시작하는 줄이 나오면 됩니다.</p>
+</li><li><h3>VSCode에서 폴더 열고 인터프리터 고르기</h3>
+<div class="codeblock term"><pre><code>code .</code></pre></div>
+
+<p>VSCode가 열리면 <code>Ctrl + Shift + P</code>(macOS는 <code>Cmd + Shift + P</code>)를 누르고 <strong>Python: Select Interpreter</strong>를 선택한 뒤, 목록에서 <code>.venv</code>가 들어간 항목을 고릅니다. 그래야 VSCode가 설치한 패키지를 인식해 코드에 빨간 밑줄을 긋지 않습니다.</p>
+<p><code>code</code> 명령이 없다면 VSCode를 직접 실행해 <strong>파일 &gt; 폴더 열기</strong>로 <code>book-api</code> 폴더를 엽니다.</p>
+</li></ol>
+<div class="callout warn"><p class="callout-title">Windows에서 VSCode 터미널을 쓸 때</p><p>VSCode의 기본 터미널이 PowerShell이면 가상환경을 켤 때 실행 정책 오류가 날 수 있습니다. 터미널 오른쪽 위의 아래 화살표에서 <strong>Command Prompt</strong>를 골라 명령 프롬프트로 바꿔 쓰세요.</p></div>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>Python 3.12 이상이 설치되어 있다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>book-api 폴더 안에 .venv 폴더가 있다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>프롬프트 앞에 (.venv)가 보인다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>pip show fastapi의 Location이 .venv 안을 가리킨다.</span></label></li><li><label><input type="checkbox" data-save="check5"> <span>VSCode에서 .venv 인터프리터를 선택했다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>'python'은(는) 내부 또는 외부 명령...</code></td><td>Python이 없거나 PATH에 등록되지 않았습니다. python.org 설치 프로그램 첫 화면에서 <strong>Add python.exe to PATH</strong>를 선택해 다시 설치하고, 명령 프롬프트를 새로 엽니다.</td></tr><tr><td>python을 입력하면 Microsoft Store가 열림</td><td>Windows 설정의 <strong>앱 &gt; 고급 앱 설정 &gt; 앱 실행 별칭</strong>에서 python.exe, python3.exe를 끕니다.</td></tr><tr><td><code>No module named fastapi</code></td><td>가상환경을 켜지 않고 실행했을 가능성이 큽니다. <code>(.venv)</code> 표시를 확인하고 다시 설치합니다.</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p2/s1-p2-01.html"><span class="dir">이전</span>S1-P2-01 FastAPI와 Uvicorn</a>
+  <a class="next" href="../../s1/p2/s1-p2-03.html"><span class="dir">다음</span>S1-P2-03 첫 앱 실행 과정 보기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

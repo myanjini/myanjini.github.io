@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P41-03 IAM 역할 만들기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P41-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P41 IAM과 접근 관리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p41-01.html" style="flex:10" data-type="주요 개념" title="IAM 핵심 개념 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p41-02.html" style="flex:10" data-type="주요 개념" title="정책 문서 읽기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p41-03.html" style="flex:20" data-type="실습" title="IAM 역할 만들기 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s12-p41-04.html" style="flex:5" data-type="주요 개념" title="액세스 키 관리 수칙 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p41-05.html" style="flex:5" data-type="정리" title="정리: IAM (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S12-P41-03</span></div>
+<h1>IAM 역할 만들기</h1>
+
+<p class="lead">7일차에 만들 EC2 서버가 맡을 IAM 역할을 미리 만듭니다. 서버가 해야 할 일은 세 가지입니다. Session Manager로 접속을 받고, ECR에서 이미지를 내려받고, Parameter Store에서 도서 API의 비밀 값을 읽습니다. 이 세 가지만 허용하는 역할을 만듭니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>EC2용 IAM 역할을 만들고, 꼭 필요한 권한만 붙일 수 있습니다.</p></div>
+
+<h2>붙일 정책</h2>
+<div class="table-wrap"><table><thead><tr><th>필요한 일</th><th>정책</th><th>종류</th></tr></thead><tbody><tr><td>Session Manager로 접속(SSH 없이)</td><td><code>AmazonSSMManagedInstanceCore</code></td><td>AWS 관리형 정책</td></tr><tr><td>ECR에서 이미지 내려받기</td><td><code>AmazonEC2ContainerRegistryPullOnly</code></td><td>AWS 관리형 정책</td></tr><tr><td><code>/book-api/</code> 파라미터 읽기</td><td><code>book-api-read-parameters</code></td><td>직접 쓰는 정책(인라인)</td></tr></tbody></table></div>
+
+<p><strong>AWS 관리형 정책</strong>은 AWS가 만들어 관리하는 정책입니다. ECR에는 읽기 전용 정책(<code>ReadOnly</code>)도 있지만, 이미지 목록을 보는 권한까지 포함되므로 내려받기만 허용하는 <code>PullOnly</code>를 고릅니다. Parameter Store는 관리형 정책이 모든 파라미터를 대상으로 하므로, 내 서비스의 경로만 읽게 정책을 직접 씁니다. SecureString(암호화된 문자열)으로 저장한 값도 AWS가 기본으로 제공하는 키(<code>aws/ssm</code>)로 암호화했다면 이 정책만으로 읽을 수 있습니다.</p>
+<ol class="steps"><li><h3>역할 만들기 시작</h3>
+<p>콘솔에서 IAM을 열고 <strong>역할</strong>, <strong>역할 생성</strong>을 누릅니다. 신뢰할 수 있는 엔터티 유형은 <strong>AWS 서비스</strong>, 사용 사례는 <strong>EC2</strong>를 고릅니다. 이 선택이 앞 페이지의 신뢰 정책을 만듭니다.</p>
+</li><li><h3>관리형 정책 붙이기</h3>
+<p>권한 추가 화면의 검색창에서 두 정책을 찾아 체크합니다.</p>
+<ul class="checklist"><li><label><input type="checkbox" data-save="pol1"> <span>AmazonSSMManagedInstanceCore</span></label></li><li><label><input type="checkbox" data-save="pol2"> <span>AmazonEC2ContainerRegistryPullOnly</span></label></li></ul>
+
+<p>기관이 권한 경계를 안내했다면, 같은 화면 아래쪽의 <strong>권한 경계 설정</strong>을 펼쳐 안내받은 정책을 고릅니다. 고르지 않으면 역할 생성이 거부될 수 있습니다.</p>
+</li><li><h3>이름과 태그</h3><div class="table-wrap"><table><thead><tr><th>항목</th><th>값</th></tr></thead><tbody><tr><td>역할 이름</td><td><code>book-api-ec2-role-내식별자</code>(예: <code>book-api-ec2-role-student07</code>)</td></tr><tr><td>설명</td><td>도서 API EC2 서버용: Session Manager, ECR 내려받기, /book-api 파라미터 읽기</td></tr><tr><td>태그</td><td>키 <code>Owner</code>, 값 <code>내 식별자</code></td></tr></tbody></table></div>
+<p>한 계정을 여러 학생이 함께 쓰면 이름이 겹치지 않게 식별자를 붙입니다. 학생마다 계정이 따로 있다면 <code>book-api-ec2-role</code>로 해도 됩니다. 아래에서는 <code>book-api-ec2-role</code>로 적습니다. 마지막으로 <strong>역할 생성</strong>을 누릅니다.</p></li><li><h3>파라미터 읽기 정책 추가</h3>
+<p>만든 역할을 열고 <strong>권한 추가</strong>, <strong>인라인 정책 생성</strong>을 누릅니다. 편집기를 <strong>JSON</strong>으로 바꾸고 앞 페이지의 정책을 붙여 넣은 뒤, <code>123456789012</code>를 내 계정 ID로 바꿉니다. 정책 이름은 <code>book-api-read-parameters</code>로 합니다.</p>
+<div class="callout note"><p class="callout-title">편집기의 경고</p><p>JSON 편집기 아래에 오류나 경고가 보이면 읽어 봅니다. IAM은 정책을 저장하기 전에 문법 오류, 존재하지 않는 동작 이름, 지나치게 넓은 권한 같은 문제를 알려 줍니다.</p></div>
+</li><li><h3>CLI로 확인</h3><div class="codeblock term"><pre><code>aws iam get-role --role-name book-api-ec2-role --query "Role.Arn" --output text
+arn:aws:iam::123456789012:role/book-api-ec2-role
+
+aws iam list-attached-role-policies --role-name book-api-ec2-role --query "AttachedPolicies[].PolicyName"
+[
+    "AmazonSSMManagedInstanceCore",
+    "AmazonEC2ContainerRegistryPullOnly"
+]
+
+aws iam list-role-policies --role-name book-api-ec2-role
+{
+    "PolicyNames": [
+        "book-api-read-parameters"
+    ]
+}</code></pre></div>
+<p><code>list-attached-role-policies</code>는 역할에 붙인 관리형 정책을, <code>list-role-policies</code>는 역할 안에 직접 쓴 인라인 정책을 보여 줍니다.</p></li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>역할 ARN</td><td><input data-save="rolearn" aria-label="내 결과"></td></tr><tr><td>붙은 관리형 정책 수(2)</td><td><input data-save="attached" aria-label="내 결과"></td></tr><tr><td>인라인 정책 이름</td><td><input data-save="inline" aria-label="내 결과"></td></tr></tbody></table></div>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p41c1"> <span>신뢰 정책이 EC2 서비스만 허용한다(역할의 "신뢰 관계" 탭).</span></label></li><li><label><input type="checkbox" data-save="p41c2"> <span>관리형 정책 2개와 인라인 정책 1개만 붙어 있다.</span></label></li><li><label><input type="checkbox" data-save="p41c3"> <span>인라인 정책의 Resource가 내 계정 ID와 /book-api/*로 되어 있다.</span></label></li><li><label><input type="checkbox" data-save="p41c4"> <span>Owner 태그를 붙였다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">콘솔이 만들어 주는 인스턴스 프로파일</p><p>EC2에 역할을 붙일 때는 사실 역할을 담는 "인스턴스 프로파일"이라는 그릇을 붙입니다. 콘솔에서 EC2 사용 사례로 역할을 만들면 같은 이름의 인스턴스 프로파일이 자동으로 함께 만들어지므로 따로 할 일은 없습니다. 7일차에 EC2를 만들 때 이 이름을 고릅니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p41/s12-p41-02.html"><span class="dir">이전</span>S12-P41-02 정책 문서 읽기</a>
+  <a class="next" href="../../s12/p41/s12-p41-04.html"><span class="dir">다음</span>S12-P41-04 액세스 키 관리 수칙</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

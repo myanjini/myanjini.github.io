@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P29-05 정리: 개발보안의 틀 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P29-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P29 소프트웨어 개발보안과 KISA 가이드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p29-01.html" style="flex:5" data-type="주요 개념" title="4일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s9-p29-02.html" style="flex:10" data-type="주요 개념" title="소프트웨어 개발보안이란 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p29-03.html" style="flex:10" data-type="주요 개념" title="KISA 가이드의 보안약점 분류 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s9-p29-04.html" style="flex:20" data-type="실습" title="도서 API에서 공격 지점 찾기 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s9-p29-05.html" style="flex:5" data-type="정리" title="정리: 개발보안의 틀 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S9-P29-05</span></div>
+<h1>정리: 개발보안의 틀</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>보안약점은 공격에 쓰일 수 있는 결함이고, 보안 취약점은 그중 실제로 공격할 수 있게 된 것입니다.</li>
+  <li>소프트웨어 개발보안은 요구사항부터 운영까지 단계마다 보안 활동을 넣는 것이며, 늦게 고칠수록 비용이 커집니다.</li>
+  <li>공공 정보화사업은 감리 대상 사업 전체에 개발보안이 의무이고, 기준은 KISA 소프트웨어 개발보안 가이드입니다.</li>
+  <li>가이드는 설계 단계 보안 요구항목과, 구현 단계 보안약점 7개 유형을 제시합니다.</li>
+  <li>OWASP API Security Top 10은 API에서 자주 뚫리는 위험의 순위이며, 1위는 객체 수준 인가 취약입니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">다음 중 구현 단계 보안약점의 "입력데이터 검증 및 표현" 유형에 속하는 것은 무엇인가요?</p><label><input type="radio" name="p29q1" value="1"> <span>1. 오류 메시지를 통한 정보 노출</span></label><label><input type="radio" name="p29q1" value="2"> <span>2. 부적절한 인가</span></label><label><input type="radio" name="p29q1" value="3"> <span>3. 경로 조작 및 자원 삽입</span></label><label><input type="radio" name="p29q1" value="4"> <span>4. 경쟁 조건</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>외부 입력이 파일 경로로 흘러가는 경로 조작은 입력데이터 검증 및 표현 유형입니다. 나머지는 보안기능, 시간 및 상태, 에러처리입니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">SQL 삽입이 가능한 코드가 있지만 그 기능이 아직 외부에 공개되지 않았습니다. 알맞은 설명은 무엇인가요?</p><label><input type="radio" name="p29q2" value="1"> <span>1. 보안약점이므로 공개되기 전에 고쳐야 한다.</span></label><label><input type="radio" name="p29q2" value="2"> <span>2. OWASP 목록에 없으므로 괜찮다.</span></label><label><input type="radio" name="p29q2" value="3"> <span>3. 운영 중에 사고가 나면 고친다.</span></label><label><input type="radio" name="p29q2" value="4"> <span>4. 취약점이 아니므로 고칠 필요가 없다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>아직 공격할 수 없어도 결함은 남아 있습니다. 개발 단계에서 고치는 것이 가장 싸고 안전합니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">로그인한 사용자가 URL의 번호만 바꿔 남의 대여 기록을 읽을 수 있습니다. OWASP API 2023의 어느 항목인가요?</p><label><input type="radio" name="p29q3" value="1"> <span>1. API7 SSRF</span></label><label><input type="radio" name="p29q3" value="2"> <span>2. API9 부적절한 자산 관리</span></label><label><input type="radio" name="p29q3" value="3"> <span>3. API1 객체 수준 인가 취약</span></label><label><input type="radio" name="p29q3" value="4"> <span>4. API4 제한 없는 자원 소비</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>번호로 가리킨 객체에 대한 권한을 확인하지 않은 것이므로 BOLA입니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>S9-P30에서는 입력데이터 검증의 원칙을 정리하고, SQL 삽입과 경로 조작을 직접 재현한 뒤 고칩니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p29/s9-p29-04.html"><span class="dir">이전</span>S9-P29-04 도서 API에서 공격 지점 찾기</a>
+  <a class="next" href="../../s9/p30/s9-p30-01.html"><span class="dir">다음</span>S9-P30-01 입력데이터 검증 및 표현</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

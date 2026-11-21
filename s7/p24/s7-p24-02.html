@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P24-02 인증 테스트 작성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P24-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 테스트 자동화와 CI</a><span class="sep">/</span><span>S7-P24 인증 API 테스트와 커버리지</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p24-01.html" style="flex:5" data-type="주요 개념" title="인증 흐름 테스트 전략 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s7-p24-02.html" style="flex:20" data-type="실습" title="인증 테스트 작성 (20분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s7-p24-03.html" style="flex:10" data-type="주요 개념" title="커버리지 측정 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s7-p24-04.html" style="flex:10" data-type="실습" title="부족한 테스트 보완 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s7-p24-05.html" style="flex:5" data-type="정리" title="정리: 인증 테스트 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S7-P24-02</span></div>
+<h1>인증 테스트 작성</h1>
+
+<p class="lead">인증과 권한 테스트를 작성합니다. 같은 모양의 테스트를 값만 바꿔 여러 번 실행하는 parametrize도 함께 씁니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>사용자별 헤더를 준비하는 fixture로 401, 403, 토큰 재발급 테스트를 작성할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>conftest.py 고치기</h3>
+<p>가져오기 두 줄을 고치고, 맨 아래의 <code>auth_headers</code>를 앞 페이지의 <code>make_user</code>와 새 <code>auth_headers</code>로 바꿉니다.</p>
+<div class="codeblock"><span class="file">tests/conftest.py</span><pre><code>from sqlalchemy import create_engine, select
+
+from app.models import Author, User</code></pre></div>
+
+<p>바꾼 뒤 <code>pytest</code>를 실행해 도서 테스트 10개가 그대로 통과하는지 먼저 확인합니다.</p>
+</li><li><h3>값만 다른 테스트를 하나로: parametrize</h3>
+<p>"토큰 없음"과 "위조한 토큰"은 보내는 헤더와 기대하는 오류 코드만 다르고 나머지는 같습니다. 이럴 때 <code>@pytest.mark.parametrize</code>로 값 목록을 주면 pytest가 값마다 테스트를 한 번씩 실행합니다.</p>
+<div class="codeblock"><pre><code>@pytest.mark.parametrize("headers, code", [
+    ({}, "NOT_AUTHENTICATED"),                                     # 헤더 없음
+    ({"Authorization": "Bearer abc.def.ghi"}, "INVALID_TOKEN"),    # 위조한 토큰
+])
+def test_create_book_without_valid_token_returns_401(client, author_id, headers, code):
+    ...</code></pre></div>
+
+<p>실행 결과에는 <code>test_create_book_without_valid_token_returns_401[headers0-NOT_AUTHENTICATED]</code>처럼 값마다 따로 표시됩니다.</p>
+</li><li><h3>인증 테스트 작성</h3>
+<p><code>tests/test_auth.py</code>를 만듭니다. 아래 표의 테스트를 먼저 직접 써 보고, 막히면 펼쳐 봅니다.</p>
+<div class="table-wrap"><table><thead><tr><th>테스트 이름</th><th>시험할 내용</th></tr></thead><tbody><tr><td><code>test_signup_does_not_return_password</code></td><td>가입 응답에 password와 hashed_password가 없다.</td></tr><tr><td><code>test_signup_with_duplicate_email_returns_409</code></td><td>대소문자만 다른 이메일로 다시 가입하면 409</td></tr><tr><td><code>test_login_with_wrong_password_returns_401</code></td><td>틀린 비밀번호로 로그인하면 401, INVALID_CREDENTIALS</td></tr><tr><td><code>test_me_with_token</code></td><td>토큰으로 /auth/me를 부르면 내 이메일</td></tr><tr><td><code>test_create_book_without_valid_token_returns_401</code></td><td>위의 parametrize 테스트</td></tr><tr><td><code>test_update_others_book_returns_403</code></td><td>다른 사람이 수정하면 403</td></tr><tr><td><code>test_admin_can_update_others_book</code></td><td>관리자는 수정할 수 있음</td></tr><tr><td><code>test_refresh_token_can_be_used_only_once</code></td><td>첫 재발급은 200이고 새 리프레시 토큰을 받으며, 같은 토큰으로 두 번째는 401</td></tr><tr><td><code>test_logout_blocks_refresh</code></td><td>로그아웃 204 뒤에 재발급하면 401</td></tr></tbody></table></div>
+<details><summary>tests/test_auth.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">tests/test_auth.py</span><pre><code>import pytest
+
+from tests.helpers import create_book
+
+
+def test_signup_does_not_return_password(client):
+    response = client.post("/auth/signup", json={"email": "new@example.com", "password": "test-pass-123"})
+    assert response.status_code == 201
+    body = response.json()
+    assert body["email"] == "new@example.com"
+    assert "password" not in body and "hashed_password" not in body
+
+
+def test_signup_with_duplicate_email_returns_409(client):
+    client.post("/auth/signup", json={"email": "dup@example.com", "password": "test-pass-123"})
+    response = client.post("/auth/signup", json={"email": "DUP@example.com", "password": "test-pass-123"})
+    assert response.status_code == 409
+
+
+def test_login_with_wrong_password_returns_401(client, make_user):
+    make_user("user1@example.com")
+    response = client.post("/auth/token", data={"username": "user1@example.com", "password": "wrong-pass"})
+    assert response.status_code == 401
+    assert response.json()["code"] == "INVALID_CREDENTIALS"
+
+
+def test_me_with_token(client, auth_headers):
+    response = client.get("/auth/me", headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json()["email"] == "tester@example.com"
+
+
+@pytest.mark.parametrize("headers, code", [
+    ({}, "NOT_AUTHENTICATED"),                                     # 헤더 없음
+    ({"Authorization": "Bearer abc.def.ghi"}, "INVALID_TOKEN"),    # 위조한 토큰
+])
+def test_create_book_without_valid_token_returns_401(client, author_id, headers, code):
+    response = client.post("/books", json={"title": "x", "author_id": author_id, "price": 1}, headers=headers)
+    assert response.status_code == 401
+    assert response.json()["code"] == code
+
+
+def test_update_others_book_returns_403(client, make_user, author_id):
+    owner = make_user("owner@example.com")
+    other = make_user("other@example.com")
+    book = create_book(client, owner, author_id)
+    response = client.patch(f"/books/{book['id']}", json={"price": 1}, headers=other)
+    assert response.status_code == 403
+
+
+def test_admin_can_update_others_book(client, make_user, author_id):
+    owner = make_user("owner@example.com")
+    admin = make_user("admin@example.com", role="admin")
+    book = create_book(client, owner, author_id)
+    response = client.patch(f"/books/{book['id']}", json={"price": 1}, headers=admin)
+    assert response.status_code == 200
+
+
+def test_refresh_token_can_be_used_only_once(client, make_user):
+    make_user("user1@example.com")
+    tokens = client.post("/auth/token", data={"username": "user1@example.com", "password": "test-pass-123"}).json()
+
+    first = client.post("/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+    assert first.status_code == 200
+    assert first.json()["refresh_token"] != tokens["refresh_token"]
+
+    second = client.post("/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+    assert second.status_code == 401
+
+
+def test_logout_blocks_refresh(client, make_user):
+    make_user("user1@example.com")
+    tokens = client.post("/auth/token", data={"username": "user1@example.com", "password": "test-pass-123"}).json()
+    assert client.post("/auth/logout", json={"refresh_token": tokens["refresh_token"]}).status_code == 204
+    response = client.post("/auth/refresh", json={"refresh_token": tokens["refresh_token"]})
+    assert response.status_code == 401</code></pre></div>
+</div></details>
+</li><li><h3>실행</h3>
+<div class="codeblock term"><pre><code>pytest -v</code></pre></div>
+
+<p>도서 10개와 인증 10개(parametrize가 2개로 나뉨)를 합쳐 <code>20 passed</code>가 나와야 합니다. 테스트 하나에 사용자를 여러 명 만들어도 다음 테스트에는 남지 않습니다.</p>
+</li><li><h3>테스트가 정말 잡아내는지 확인</h3>
+<p>테스트가 항상 통과하기만 한다면 정말 검사하고 있는지 알 수 없습니다. <code>app/services/books.py</code>의 <code>check_can_modify</code>에서 <code>raise</code> 줄 앞에 <code>return</code>을 넣어 권한 검사를 일부러 망가뜨리고 실행해 봅니다.</p>
+<div class="codeblock"><pre><code>def check_can_modify(book: Book, user: User) -&gt; None:
+    if user.role == "admin" or book.owner_id == user.id:
+        return
+    return  # 일부러 망가뜨림
+    raise AppError(403, "FORBIDDEN", "이 도서를 수정하거나 삭제할 권한이 없습니다.")</code></pre></div>
+
+<p><code>test_update_others_book_returns_403</code>이 <code>assert 200 == 403</code>으로 실패하면 테스트가 제 역할을 하는 것입니다. 넣었던 줄을 지웁니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>make_user로 한 테스트 안에서 사용자를 여럿 만들 수 있다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>401, 403, 관리자, 토큰 재발급, 로그아웃 테스트가 모두 통과한다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>권한 검사를 망가뜨리면 테스트가 실패하는 것을 확인하고 되돌렸다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p24-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s7/p24/s7-p24-01.html"><span class="dir">이전</span>S7-P24-01 인증 흐름 테스트 전략</a>
+  <a class="next" href="../../s7/p24/s7-p24-03.html"><span class="dir">다음</span>S7-P24-03 커버리지 측정</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

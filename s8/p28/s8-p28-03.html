@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P28-03 API에 로깅 적용 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P28-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P28 로깅과 모니터링 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p28-01.html" style="flex:10" data-type="주요 개념" title="로그가 필요한 이유 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p28-02.html" style="flex:10" data-type="주요 개념" title="logging 설정과 요청 ID (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p28-03.html" style="flex:20" data-type="실습" title="API에 로깅 적용 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s8-p28-04.html" style="flex:5" data-type="실습" title="헬스 체크 확장 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s8-p28-05.html" style="flex:5" data-type="정리" title="정리: 4일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S8-P28-03</span></div>
+<h1>API에 로깅 적용</h1>
+
+<p class="lead">API 전체에 로그 설정을 적용하고, 서비스에서 중요한 사건을 기록합니다. 데이터베이스를 일부러 멈춰 오류 로그를 요청 ID로 찾아봅니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>JSON 로그와 요청 ID를 적용하고, docker compose logs로 요청과 오류를 추적할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>로그 설정 파일과 설정값</h3>
+<p>앞 페이지의 <code>app/logging_config.py</code>를 만들고, <code>app/config.py</code>에 수준 설정을 추가합니다.</p>
+<div class="codeblock"><span class="file">app/config.py</span><pre><code>    log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR 중 하나</code></pre></div>
+</li><li><h3>main.py 고치기</h3>
+<p>가져오기를 추가하고, 라우터를 연결하기 전에 <code>setup_logging</code>을 부르고, 미들웨어를 바꿉니다.</p>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>import logging
+import time
+import uuid
+...
+from app.logging_config import request_id_var, setup_logging
+...
+setup_logging(settings.log_level)</code></pre></div>
+<details><summary>app/main.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/main.py</span><pre><code>import logging
+import time
+import uuid
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
+
+from app.config import settings
+from app.dependencies import SessionDep
+from app.errors import AppError
+from app.logging_config import request_id_var, setup_logging
+from app.routers import auth, authors, books, loans
+from app.services.covers import COVER_DIR
+
+setup_logging(settings.log_level)
+
+app = FastAPI(
+    title=settings.app_name,
+    description="도서를 등록하고 조회, 수정, 삭제하는 API입니다.",
+    version="0.1.0",
+)
+
+# 이 주소에서 실행되는 웹 화면만 브라우저에서 이 API를 호출할 수 있습니다.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+logger = logging.getLogger("app.request")
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    request_id_var.set(uuid.uuid4().hex[:16])  # 이 요청에서 남기는 모든 로그에 같은 ID가 붙습니다.
+    start = time.perf_counter()
+    info = {"method": request.method, "path": request.url.path}
+    try:
+        response = await call_next(request)  # 실제 경로 함수가 여기서 실행됩니다.
+    except Exception:
+        info["duration_ms"] = round((time.perf_counter() - start) * 1000, 1)
+        logger.exception("처리하지 못한 오류", extra={**info, "status": 500})
+        raise  # 응답은 FastAPI의 기본 처리에 맡깁니다. 5일차에 안전한 오류 응답으로 바꿉니다.
+    duration_ms = round((time.perf_counter() - start) * 1000, 1)
+    response.headers["X-Request-ID"] = request_id_var.get()
+    response.headers["X-Process-Time"] = f"{duration_ms}ms"
+    logger.info("요청 처리", extra={**info, "status": response.status_code, "duration_ms": duration_ms})
+    return response
+
+
+@app.exception_handler(AppError)
+def handle_app_error(request: Request, exc: AppError):
+    # 어떤 AppError든 같은 모양의 JSON으로 바꿔 응답합니다.
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"code": exc.code, "message": exc.message},
+        headers=exc.headers,
+    )
+
+
+@app.get("/", tags=["기본"])
+def read_root():
+    return {"message": f"{settings.app_name}에 오신 것을 환영합니다."}
+
+
+@app.get("/health", tags=["기본"])
+def health_check(db: SessionDep):
+    try:
+        db.execute(text("SELECT 1"))  # 데이터베이스에 가장 가벼운 질의를 보내 봅니다.
+    except SQLAlchemyError:
+        logger.exception("데이터베이스 연결 확인 실패")
+        return JSONResponse(status_code=503, content={"status": "error", "database": "unreachable"})
+    return {"status": "ok", "database": "ok"}
+
+
+app.include_router(auth.router)
+app.include_router(authors.router)
+app.include_router(books.router)
+app.include_router(loans.router)
+
+# 올린 표지 파일을 /covers/파일이름 주소로 내보냅니다.
+COVER_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/covers", StaticFiles(directory=COVER_DIR), name="covers")</code></pre></div>
+</div></details>
+
+<p>전체 코드에는 다음 페이지에서 만들 <code>/health</code>도 들어 있습니다. 지금은 미들웨어까지만 바꿔도 됩니다.</p>
+</li><li><h3>서비스에서 사건 기록하기</h3>
+<p>각 파일 위쪽에 <code>logger = logging.getLogger(__name__)</code>를 두면 로거 이름이 모듈 경로(<code>app.services.loans</code>)가 되어 어디서 남긴 로그인지 알 수 있습니다.</p>
+<div class="codeblock"><span class="file">app/services/loans.py</span><pre><code>    logger.info("도서 대여", extra={"user_id": user.id, "book_id": book.id, "loan_id": loan.id})</code></pre></div>
+<div class="codeblock"><span class="file">app/routers/auth.py</span><pre><code>    if user is None:
+        logger.warning("로그인 실패")  # 입력한 이메일과 비밀번호는 로그에 남기지 않습니다.</code></pre></div>
+
+<p>반납에도 "도서 반납" 로그를 같은 방법으로 넣습니다. <code>commit</code>이 끝난 뒤에 남겨야 실제로 일어난 일만 기록됩니다.</p>
+</li><li><h3>업로드 기록을 로그로 바꾸기</h3>
+<p><code>app/services/covers.py</code>에서 <code>LOG_FILE</code>과 <code>datetime</code> 가져오기를 지우고, <code>import logging</code>과 <code>logger</code>를 추가한 뒤 기록 함수를 바꿉니다.</p>
+<div class="codeblock"><span class="file">app/services/covers.py</span><pre><code>def write_upload_log(book_id: int, user_id: int, original_name: str, size: int) -&gt; None:
+    """업로드 기록을 로그로 남깁니다."""
+    logger.info("표지 업로드", extra={"book_id": book_id, "user_id": user_id,
+                                      "original_name": original_name, "size": size})</code></pre></div>
+
+<p>S7-P24 도전 과제로 <code>tests/test_covers.py</code>를 만들었다면 <code>LOG_FILE</code>을 바꾸던 <code>monkeypatch</code> 줄을 지웁니다.</p>
+</li><li><h3>로컬에서 확인</h3>
+<div class="codeblock term"><pre><code>uvicorn app.main:app --reload</code></pre></div>
+
+<p>서버 시작 메시지부터 JSON 한 줄씩 나옵니다. Swagger UI에서 요청을 보내면 <code>"message": "요청 처리"</code> 로그가 찍히고, 응답 헤더에 <code>x-request-id</code>가 있습니다. <code>pytest</code>도 실행해 모두 통과하는지 확인합니다.</p>
+</li><li><h3>컨테이너에서 요청 추적하기</h3>
+<div class="codeblock term"><pre><code>docker compose up -d --build</code></pre></div>
+
+<p>Swagger UI에서 user1으로 일부러 틀린 비밀번호로 한 번 로그인하고, 올바르게 로그인한 뒤 도서를 하나 대여합니다. 대여 응답 헤더의 <code>x-request-id</code>를 복사해 그 요청의 로그만 찾습니다.</p>
+<div class="codeblock term"><pre><code>docker compose logs api --no-log-prefix | Select-String 요청ID      # Windows PowerShell
+docker compose logs api --no-log-prefix | grep 요청ID               # macOS</code></pre></div>
+<div class="codeblock term"><pre><code>{"time": "...", "level": "INFO", "logger": "app.services.loans", "message": "도서 대여", "request_id": "ad824d09a715491f", "user_id": 1, "book_id": 1, "loan_id": 2}
+{"time": "...", "level": "INFO", "logger": "app.request", "message": "요청 처리", "request_id": "ad824d09a715491f", "method": "POST", "path": "/loans", "status": 201, "duration_ms": 20.7}</code></pre></div>
+
+<p>서비스의 "도서 대여" 로그와 미들웨어의 "요청 처리" 로그가 같은 ID로 묶였습니다. 로그인 실패는 <code>"level": "WARNING"</code>으로 남고, 입력한 비밀번호는 어디에도 없어야 합니다.</p>
+</li><li><h3>데이터베이스를 멈추고 오류 찾기</h3>
+<div class="codeblock term"><pre><code>docker compose stop db</code></pre></div>
+
+<p>브라우저에서 <code>/books</code>를 열면 <code>Internal Server Error</code>가 나옵니다. 최근 로그에서 ERROR를 찾습니다.</p>
+<div class="codeblock term"><pre><code>docker compose logs api --no-log-prefix --since 1m | Select-String ERROR     # Windows PowerShell
+docker compose logs api --no-log-prefix --since 1m | grep ERROR              # macOS</code></pre></div>
+<div class="codeblock term"><pre><code>{"time": "...", "level": "ERROR", "logger": "app.request", "message": "처리하지 못한 오류", "request_id": "...",
+ "method": "GET", "path": "/books", "duration_ms": ..., "status": 500,
+ "error": "Traceback (most recent call last): ... sqlalchemy.exc.OperationalError: (psycopg.OperationalError) ..."}</code></pre></div>
+
+<p>어떤 요청(<code>GET /books</code>)에서 무슨 오류(데이터베이스 연결 실패)가 났는지 로그 한 줄로 알 수 있습니다. 확인했으면 데이터베이스를 다시 시작합니다.</p>
+<div class="codeblock term"><pre><code>docker compose start db</code></pre></div>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>로컬과 컨테이너 모두에서 로그가 JSON 한 줄씩 나온다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>응답 헤더에 X-Request-ID가 있고, 그 ID로 한 요청의 로그를 모아 볼 수 있다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>로그인 실패 로그에 이메일과 비밀번호가 없다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>데이터베이스를 멈췄을 때 ERROR 로그에서 경로와 오류 내용을 찾았다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>KeyError: "Attempt to overwrite 'filename' in LogRecord"</code></td><td><code>extra</code>에 <code>filename</code>, <code>name</code>, <code>message</code>처럼 로그 기록이 원래 쓰는 이름을 넣었습니다. <code>original_name</code>처럼 다른 이름을 씁니다.</td></tr><tr><td>로그가 JSON이 아니라 글자로 나옴</td><td><code>setup_logging</code>을 부르지 않았거나, 라우터를 가져오기 전에 다른 곳에서 로그 설정을 했습니다.</td></tr><tr><td>모든 로그의 request_id가 <code>-</code></td><td>미들웨어를 등록하지 않았습니다. 서버 시작 메시지처럼 요청 밖의 로그는 <code>-</code>가 맞습니다.</td></tr><tr><td>로그가 늦게 보임</td><td>Dockerfile의 <code>PYTHONUNBUFFERED=1</code>이 빠졌습니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p28-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p28/s8-p28-02.html"><span class="dir">이전</span>S8-P28-02 logging 설정과 요청 ID</a>
+  <a class="next" href="../../s8/p28/s8-p28-04.html"><span class="dir">다음</span>S8-P28-04 헬스 체크 확장</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

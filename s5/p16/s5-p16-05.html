@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P16-05 정리: 토큰 발급 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P16-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P16 OAuth2 Password Flow와 JWT</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p16-01.html" style="flex:10" data-type="주요 개념" title="JWT의 구조 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s5-p16-02.html" style="flex:5" data-type="주요 개념" title="OAuth2 Password Flow (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s5-p16-03.html" style="flex:10" data-type="주요 개념" title="로그인과 토큰 발급 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p16-04.html" style="flex:20" data-type="실습" title="로그인 API 구현 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s5-p16-05.html" style="flex:5" data-type="정리" title="정리: 토큰 발급 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S5-P16-05</span></div>
+<h1>정리: 토큰 발급</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>로그인할 때 한 번 비밀번호를 확인하고, 이후에는 액세스 토큰을 <code>Authorization: Bearer</code> 헤더에 넣어 보냅니다.</li>
+  <li>JWT는 헤더, 페이로드, 서명의 세 부분입니다. 페이로드는 누구나 읽을 수 있으므로 민감한 정보를 넣지 않습니다.</li>
+  <li>서명은 비밀 키로 계산하므로, 키를 모르면 내용을 바꾼 토큰을 만들 수 없습니다. 비밀 키는 서버 전체의 열쇠입니다.</li>
+  <li>OAuth2 Password Flow의 로그인 API는 <code>username</code>과 <code>password</code>를 폼 형식으로 받고 <code>access_token</code>, <code>token_type</code>을 돌려줍니다.</li>
+  <li>이메일이 틀린 경우와 비밀번호가 틀린 경우의 응답은 메시지와 걸리는 시간 모두 같게 만듭니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">JWT 페이로드에 대한 설명으로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p16q1" value="1"> <span>1. 비밀 키가 없으면 읽을 수 없다.</span></label><label><input type="radio" name="p16q1" value="2"> <span>2. 누구나 읽을 수 있지만, 바꾸면 서명 검증에서 걸린다.</span></label><label><input type="radio" name="p16q1" value="3"> <span>3. 서버만 바꿀 수 있고 읽는 것도 서버만 할 수 있다.</span></label><label><input type="radio" name="p16q1" value="4"> <span>4. 만료 시각을 넣을 수 없다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>페이로드는 Base64URL로 적은 것일 뿐이라 누구나 읽습니다. 대신 내용을 바꾸면 서명이 맞지 않습니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">없는 이메일로 로그인할 때도 가짜 해시로 비밀번호 검증을 한 번 하는 이유는 무엇인가요?</p><label><input type="radio" name="p16q2" value="1"> <span>1. 해시 도구를 미리 데워 두려고</span></label><label><input type="radio" name="p16q2" value="2"> <span>2. 401 대신 404를 보내려고</span></label><label><input type="radio" name="p16q2" value="3"> <span>3. 가짜 계정을 자동으로 만들려고</span></label><label><input type="radio" name="p16q2" value="4"> <span>4. 응답 시간 차이로 가입된 이메일인지 알아내는 것을 막으려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>검증을 건너뛰면 없는 이메일의 응답이 훨씬 빨라져, 시간만 재 보고도 가입 여부를 알 수 있게 됩니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">웹 화면 개발자가 로그인 요청을 JSON으로 보냈더니 422가 나왔습니다. 알맞은 안내는 무엇인가요?</p><label><input type="radio" name="p16q3" value="1"> <span>1. 비밀번호를 해시해서 보내야 한다.</span></label><label><input type="radio" name="p16q3" value="2"> <span>2. username과 password를 폼 형식으로 보내야 한다.</span></label><label><input type="radio" name="p16q3" value="3"> <span>3. Authorization 헤더에 비밀번호를 넣어야 한다.</span></label><label><input type="radio" name="p16q3" value="4"> <span>4. GET 메서드로 보내야 한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>OAuth2 Password Flow 규칙에 따라 로그인 API는 폼 형식으로 받습니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>토큰을 발급할 수 있게 되었습니다. S5-P17에서는 도서 등록, 수정, 삭제 앞에 토큰 검사를 세우고, 도서를 등록한 본인과 관리자만 고칠 수 있도록 권한을 검사합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p16/s5-p16-04.html"><span class="dir">이전</span>S5-P16-04 로그인 API 구현</a>
+  <a class="next" href="../../s5/p17/s5-p17-01.html"><span class="dir">다음</span>S5-P17-01 현재 사용자 의존성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

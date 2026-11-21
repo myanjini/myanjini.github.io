@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P51-01 CloudWatch 개요 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P51-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P51 CloudWatch 로그와 모니터링</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p51-01.html" style="flex:10" data-type="주요 개념" title="CloudWatch 개요 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p51-02.html" style="flex:10" data-type="주요 개념" title="컨테이너 로그 전송 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p51-03.html" style="flex:20" data-type="실습" title="로그 조회와 경보 설정 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s15-p51-04.html" style="flex:5" data-type="주요 개념" title="로그 보안 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s15-p51-05.html" style="flex:5" data-type="정리" title="정리: 모니터링 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S15-P51-01</span></div>
+<h1>CloudWatch 개요</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>컨테이너 로그를 CloudWatch로 모으고 경보를 설정할 수 있습니다.</p></div>
+
+<p class="lead">서비스를 운영한다는 것은 "지금 잘 돌고 있는가"를 계속 알고 있는 것입니다. CloudWatch는 AWS의 로그, 지표, 경보를 한곳에서 다루는 서비스입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>기능</th><th>뜻</th><th>이번 실습</th></tr></thead><tbody><tr><td>로그 그룹과 로그 스트림</td><td>로그를 모아 두는 곳입니다. 로그 그룹은 서비스 단위의 묶음이고, 그 안의 로그 스트림은 보내는 쪽(컨테이너) 하나에 해당합니다. 보존 기간은 로그 그룹마다 정합니다.</td><td><code>/book-api/app</code>, 30일 보존</td></tr><tr><td>Logs Insights</td><td>로그 그룹에 질의 언어로 검색과 집계를 합니다. JSON 로그는 필드를 자동으로 알아봅니다.</td><td>요청 ID로 추적, 상태 코드별 집계</td></tr><tr><td>지표(metric)</td><td>시간에 따른 숫자입니다. EC2의 CPU 사용률, 상태 검사 실패처럼 AWS가 자동으로 모으는 것과, 로그에서 만들어 내는 것이 있습니다.</td><td>CPUUtilization, StatusCheckFailed</td></tr><tr><td>경보(alarm)</td><td>지표가 정한 조건을 넘으면 상태가 <code>경보</code>로 바뀌고, SNS 주제로 메일 같은 알림을 보냅니다.</td><td>CPU 80% 이상, 상태 검사 실패</td></tr><tr><td>대시보드</td><td>여러 지표 그래프를 한 화면에 모아 봅니다.</td><td>개념만</td></tr></tbody></table></div>
+
+<h2>S8과 S10에서 준비해 둔 것</h2>
+<p>도서 API는 S8에서 로그를 JSON 한 줄씩 남기게 했고, 요청마다 요청 ID를 붙여 응답 헤더(<code>X-Request-ID</code>)와 로그에 함께 적었습니다. S10에서는 이메일과 토큰을 가리는 마스킹을 넣었습니다. 이 준비 덕분에 CloudWatch에서 "이 사용자가 오류 화면에서 본 요청 ID"로 그 요청의 로그를 바로 찾을 수 있습니다.</p>
+<div class="codeblock"><span class="file">도서 API 로그 한 줄</span><pre><code>{"time": "2026-11-24T01:12:03.412+00:00", "level": "INFO", "logger": "app.request", "message": "요청 처리", "request_id": "3bdf17d7efda407c", "method": "POST", "path": "/auth/signup", "status": 201, "duration_ms": 110.1}</code></pre></div>
+
+<h2>요금</h2>
+<p>CloudWatch Logs는 받아들인 로그의 양(GB)과 보관한 양에, 경보는 경보 개수에 요금이 붙습니다. AWS가 자동으로 모으는 EC2의 기본 지표(5분 간격)는 추가 요금이 없습니다. 보존 기간을 정하지 않으면 로그를 영원히 보관하므로, 로그 그룹을 만들 때 보존 기간을 꼭 정합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p50/s15-p50-05.html"><span class="dir">이전</span>S15-P50-05 정리: S3</a>
+  <a class="next" href="../../s15/p51/s15-p51-02.html"><span class="dir">다음</span>S15-P51-02 컨테이너 로그 전송</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P55-03 장애 대응 실습 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P55-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. 운영 보안 점검과 장애 대응</a><span class="sep">/</span><span>S16-P55 장애 대응과 롤백</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p55-01.html" style="flex:10" data-type="주요 개념" title="장애 대응 절차 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p55-02.html" style="flex:5" data-type="주요 개념" title="장애 시나리오 안내 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s16-p55-03.html" style="flex:25" data-type="실습" title="장애 대응 실습 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s16-p55-04.html" style="flex:5" data-type="실습" title="대응 과정 돌아보기 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s16-p55-05.html" style="flex:5" data-type="정리" title="정리: 장애 대응 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S16-P55-03</span></div>
+<h1>장애 대응 실습</h1>
+
+<p class="lead">두 시나리오를 차례로 일으키고, 탐지부터 기록까지 절차대로 대응합니다. 각 단계의 시각을 장애 대응 기록에 적으며 진행합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>로그와 경보로 장애를 찾고, 이미지 롤백과 설정 복구로 서비스를 되살린 뒤 기록을 남길 수 있습니다.</p></div>
+<p><a href="../../assets/files/incident-report.md" download>장애 대응 기록 양식 내려받기(Markdown)</a></p>
+<ol class="steps"><li><h3>시작 전 정상 상태 기록</h3><div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code># EC2
+grep IMAGE ~/book-api/.env
+IMAGE=123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/book-api:git-9c2e5d1
+# 내 PC
+aws ssm get-parameter --name /book-api/DATABASE_URL --query Parameter.Version
+1</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>내 값</th></tr></thead><tbody><tr><td>정상 이미지 태그</td><td><input data-save="good_tag" aria-label="내 결과"></td></tr><tr><td>DATABASE_URL 정상 버전</td><td><input data-save="good_ver" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>시나리오 A: 잘못된 이미지 배포</h3>
+<p>내 PC에서 Dockerfile 마지막 줄의 포트를 8080으로 바꿔 main에 푸시합니다. 배포 워크플로가 실행되고, 마지막 확인 단계가 2분쯤 재시도하다 실패합니다. 그 사이 ALB로 접속해 증상을 봅니다.</p>
+<div class="codeblock term"><pre><code>git commit -am "Dockerfile 정리(실습용 실수)"
+git push
+
+curl -s -o /dev/null -w "%{http_code}\n" $ALB/health
+502</code></pre></div>
+
+<p>서버에서 상태와 로그를 봅니다. 컨테이너는 떠 있지만 8080에서 기다리고 있습니다.</p>
+<div class="codeblock term"><pre><code>docker compose -f compose.prod.yaml ps --format "{{.Image}}  {{.Status}}"
+...book-api:git-3f1a7b2  Up 2 minutes (unhealthy)
+docker compose -f compose.prod.yaml logs api --tail 3 | grep "Uvicorn running"
+{"time": "...", "level": "INFO", "logger": "uvicorn.error", "message": "Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)", "request_id": "-"}</code></pre></div>
+</li><li><h3>시나리오 A: 롤백</h3>
+<p>원인을 이미 짐작했더라도, 먼저 직전 정상 이미지로 되돌립니다. 이미지가 ECR에 남아 있으므로 빌드할 필요가 없습니다.</p>
+<div class="codeblock term"><pre><code>cd ~/book-api
+sed -i 's|^IMAGE=.*|IMAGE=123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/book-api:git-9c2e5d1|' .env
+docker compose -f compose.prod.yaml up -d
+(30초쯤 뒤)
+docker compose -f compose.prod.yaml ps --format "{{.Image}}  {{.Status}}"
+...book-api:git-9c2e5d1  Up 35 seconds (healthy)</code></pre></div>
+<div class="codeblock term"><pre><code>curl -s $ALB/health
+{"status":"ok","database":"ok"}</code></pre></div>
+
+<p>서비스가 돌아왔습니다. 그다음 코드를 고칩니다. 실수한 커밋을 되돌려 푸시하면 정상 코드가 새 커밋 태그로 다시 배포됩니다.</p>
+<div class="codeblock term"><pre><code>git revert --no-edit HEAD
+git push</code></pre></div>
+</li><li><h3>시나리오 B: DB 연결 오류 일으키기</h3>
+<p>콘솔의 Parameter Store에서 <code>/book-api/DATABASE_URL</code>을 편집해 암호 부분의 마지막 글자 세 개를 바꿔 저장합니다(버전 2가 됩니다). 서버에서 앱을 다시 시작합니다.</p>
+<div class="codeblock term"><pre><code>docker compose -f compose.prod.yaml up -d --force-recreate
+curl -s $ALB/health
+{"status":"error","database":"unreachable"}</code></pre></div>
+</li><li><h3>시나리오 B: 로그로 원인 찾기</h3>
+<p>CloudWatch Logs Insights에서 최근 오류를 봅니다. 결과 한 줄을 펼치면 <code>error</code> 필드에 트레이스백이 있고, 마지막 부분에 원인이 있습니다.</p>
+<div class="codeblock"><span class="file">최근 ERROR 로그</span><pre><code>fields @timestamp, request_id, message, path
+| filter level = "ERROR"
+| sort @timestamp desc
+| limit 20</code></pre></div>
+<div class="codeblock term"><pre><code>... psycopg.OperationalError: connection failed: connection to server at "10.0.11.152", port 5432 failed: FATAL:  password authentication failed for user "bookapi"</code></pre></div>
+
+<p>원인은 "암호가 틀림"입니다. 네트워크(보안 그룹)나 RDS 자체의 문제가 아닙니다. 로그에 암호 값은 찍히지 않았다는 것도 확인합니다(S10에서 <code>hide_parameters</code>와 마스킹을 넣은 덕분입니다). 같은 원인의 오류가 언제부터 몇 번 났는지도 셉니다.</p>
+<div class="codeblock"><span class="file">원인별로 시간대 집계</span><pre><code>fields @timestamp, request_id
+| filter level = "ERROR" and error like /password authentication failed/
+| stats count() as errors by bin(1m)</code></pre></div>
+</li><li><h3>시나리오 B: 이전 값으로 복구</h3>
+<p>Parameter Store는 이름 뒤에 <code>:버전</code>을 붙여 이전 값을 읽을 수 있습니다. 화면에 값을 찍지 않고 이전 버전 값을 그대로 새 버전으로 저장합니다.</p>
+<div class="codeblock term"><pre><code>aws ssm put-parameter --name /book-api/DATABASE_URL --type SecureString --overwrite \
+  --value "$(aws ssm get-parameter --name /book-api/DATABASE_URL:1 --with-decryption --query Parameter.Value --output text)"
+{
+    "Version": 3,
+    "Tier": "Standard"
+}</code></pre></div>
+<div class="callout note"><p class="callout-title">명령 기록에 값이 남지 않나요?</p><p>명령에 적힌 것은 <code>$(...)</code>라는 식이고, 값 자체는 실행할 때만 만들어져 명령 기록에는 남지 않습니다. 다만 같은 PC의 다른 사용자가 실행 중인 프로세스 목록을 보면 잠깐 보일 수 있으므로, 공용 PC에서는 콘솔에서 이전 버전 값을 복사해 붙여 넣는 방법을 씁니다.</p></div>
+<div class="codeblock term"><pre><code>docker compose -f compose.prod.yaml up -d --force-recreate
+curl -s $ALB/health
+{"status":"ok","database":"ok"}</code></pre></div>
+</li><li><h3>RDS 백업 확인</h3>
+<p>데이터 자체가 잘못된 장애(실수로 테이블을 지움 등)라면 RDS 백업으로 되돌립니다. 이번에는 복원하지 않고, 무엇이 남아 있는지만 확인합니다.</p>
+<div class="codeblock term"><pre><code>aws rds describe-db-instances --db-instance-identifier book-api-db --query "DBInstances[0].[BackupRetentionPeriod,LatestRestorableTime]" --output text
+1	2026-11-24T06:35:00+00:00
+
+aws rds describe-db-snapshots --db-instance-identifier book-api-db --snapshot-type automated --query "DBSnapshots[].[DBSnapshotIdentifier,SnapshotCreateTime,Encrypted]" --output text
+rds:book-api-db-2026-11-23-17-05	2026-11-23T17:05:12+00:00	True</code></pre></div>
+
+<p><code>LatestRestorableTime</code>은 "이 시각까지는 되돌릴 수 있다"는 뜻이고, 보통 몇 분 전입니다. 시점 복원을 하면 기존 DB를 덮어쓰지 않고 <strong>새 DB 인스턴스</strong>가 만들어지므로, 복원한 뒤 <code>DATABASE_URL</code>의 주소를 새 엔드포인트로 바꿔야 합니다. 복원에는 수십 분이 걸리고 새 인스턴스 요금이 붙으므로 실습에서는 하지 않습니다.</p>
+</li><li><h3>기록 남기기</h3><p>내려받은 양식에 두 시나리오의 시간순 기록, 원인, 재발 방지를 적습니다. 탐지와 복구에 걸린 시간도 계산합니다.</p><div class="table-wrap"><table><thead><tr><th>시나리오</th><th>탐지까지(분)</th><th>복구까지(분)</th></tr></thead><tbody><tr><td>A. 잘못된 이미지</td><td><input data-save="a_mttd" aria-label="내 결과"></td><td><input data-save="a_mttr" aria-label="내 결과"></td></tr><tr><td>B. DB 연결 오류</td><td><input data-save="b_mttd" aria-label="내 결과"></td><td><input data-save="b_mttr" aria-label="내 결과"></td></tr></tbody></table></div>
+</li></ol>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p55c1"> <span>이전 이미지 태그로 롤백해 ALB의 /health가 다시 200이 되었다.</span></label></li><li><label><input type="checkbox" data-save="p55c2"> <span>실수한 커밋을 revert로 되돌려 정상 코드가 다시 배포되었다.</span></label></li><li><label><input type="checkbox" data-save="p55c3"> <span>Logs Insights로 DB 연결 오류의 원인(암호 인증 실패)을 찾았다.</span></label></li><li><label><input type="checkbox" data-save="p55c4"> <span>Parameter Store의 이전 버전 값으로 복구했다.</span></label></li><li><label><input type="checkbox" data-save="p55c5"> <span>RDS의 자동 스냅샷과 복원 가능 시각을 확인했다.</span></label></li><li><label><input type="checkbox" data-save="p55c6"> <span>장애 대응 기록 두 건을 작성했다.</span></label></li></ul>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s16/p55/s16-p55-02.html"><span class="dir">이전</span>S16-P55-02 장애 시나리오 안내</a>
+  <a class="next" href="../../s16/p55/s16-p55-04.html"><span class="dir">다음</span>S16-P55-04 대응 과정 돌아보기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P35-02 정보가 새는 응답 찾기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P35-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 보안기능과 에러처리</a><span class="sep">/</span><span>S10-P35 에러처리, 캡슐화와 정보 노출</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p35-01.html" style="flex:10" data-type="주요 개념" title="에러처리 보안약점 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p35-02.html" style="flex:10" data-type="주요 개념" title="정보가 새는 응답 찾기 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s10-p35-03.html" style="flex:20" data-type="실습" title="안전한 오류 응답 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p35-04.html" style="flex:5" data-type="주요 개념" title="캡슐화와 디버그 코드 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p35-05.html" style="flex:5" data-type="정리" title="정리: 5일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S10-P35-02</span></div>
+<h1>정보가 새는 응답 찾기</h1>
+
+<p class="lead">도서 API의 응답과 로그를 공격자의 눈으로 다시 보며 정보가 새는 곳을 찾습니다. 아래는 모두 지금 코드에서 실제로 나온 결과입니다.</p>
+
+<h2>1. 422 응답이 보낸 값을 되돌려 줍니다</h2>
+<div class="codeblock"><pre><code>POST /auth/signup  {"email": "leak@example.com", "password": "pw-leak"}
+
+422 {"detail": [{"type": "string_too_short", "loc": ["body", "password"],
+      "msg": "String should have at least 10 characters", "input": "pw-leak", "ctx": {"min_length": 10}}]}</code></pre></div>
+
+<p>FastAPI의 기본 422 응답은 검사에 실패한 값을 <code>input</code>에 그대로 담습니다. 비밀번호가 응답에 실려 돌아오고, 이 응답을 기록하는 장비나 브라우저 확장 프로그램이 있으면 그곳에 남습니다.</p>
+
+<h2>2. SQL 오류에 값이 들어 있습니다</h2>
+<div class="codeblock"><pre><code>(sqlite3.IntegrityError) UNIQUE constraint failed: users.email
+[SQL: INSERT INTO users (email, hashed_password, role) VALUES (?, ?, 'user')]
+[parameters: ('user1@example.com', '$argon2id$v=19$m=65536,t=3,p=4$abc$def')]</code></pre></div>
+
+<p>SQLAlchemy의 오류 메시지는 SQL 문장과 함께 넘긴 값까지 보여 줍니다. 처리하지 못한 오류로 로그에 남으면 이메일과 비밀번호 해시가 로그에 쌓입니다. S9-P30에서 SQL 삽입 오류 로그에 SQL 문장이 그대로 찍힌 것도 같은 이유입니다.</p>
+
+<h2>3. 500 응답에 요청 ID가 없습니다</h2>
+<p>처리하지 못한 오류가 나면 <code>Internal Server Error</code>라는 글자만 갑니다. 내부 정보가 새지는 않지만 형식이 다른 응답과 다르고, 요청 ID 헤더도 빠져 사용자가 알려 줄 단서가 없습니다. 개발할 때 <code>FastAPI(debug=True)</code>로 바꾸면 트레이스백 전체가 화면에 나오므로 운영에서는 절대 쓰지 않습니다.</p>
+
+<h2>4. 응답 헤더가 내부를 알려 줍니다</h2>
+<div class="table-wrap"><table><thead><tr><th>헤더</th><th>알려 주는 것</th></tr></thead><tbody><tr><td><code>server: uvicorn</code></td><td>서버 프로그램 이름. 공격자는 그 프로그램의 알려진 취약점부터 시험합니다.</td></tr><tr><td><code>x-process-time: 1.7ms</code></td><td>처리 시간. 계정이 있을 때와 없을 때의 시간 차이처럼 내부 동작을 짐작하는 단서가 됩니다.</td></tr></tbody></table></div>
+
+<h2>5. 운영 환경에서 API 문서가 열려 있습니다</h2>
+<p><code>/docs</code>와 <code>/openapi.json</code>은 모든 API의 주소, 매개변수, 오류 코드를 보여 줍니다. <code>/admin</code> 아래의 관리자 API 목록도 그대로 보입니다. 개발과 테스트 때는 꼭 필요하지만, 일반 사용자에게 공개하는 운영 서버에서는 끕니다. OWASP API 목록의 API8(보안 설정 오류)과 API9(부적절한 자산 관리)에 해당합니다.</p>
+<div class="qa"><p class="question">질문. 다섯 가지 중 내 서비스에서 가장 먼저 고칠 것을 고르고, 그 이유를 적어 보세요.</p><textarea data-save="q1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>1번(422의 비밀번호 반환)과 2번(로그 속 이메일과 해시)을 먼저 고칩니다. 실제 중요정보가 응답과 로그에 남는 문제이기 때문입니다. 3번과 4번은 공격 단서를 줄이는 일이고, 5번은 운영 환경 설정이므로 배포 전까지 반드시 처리합니다. 순서와 상관없이 다음 실습에서 다섯 가지를 모두 고칩니다.</p></div></details></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p35/s10-p35-01.html"><span class="dir">이전</span>S10-P35-01 에러처리 보안약점</a>
+  <a class="next" href="../../s10/p35/s10-p35-03.html"><span class="dir">다음</span>S10-P35-03 안전한 오류 응답 적용</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

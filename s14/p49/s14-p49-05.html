@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P49-05 정리: 7일차 마무리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P49-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 안전한 배포 구성</a><span class="sep">/</span><span>S14-P49 운영 배포 완성</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p49-01.html" style="flex:5" data-type="주요 개념" title="운영 배포 구성 점검 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s14-p49-02.html" style="flex:10" data-type="주요 개념" title="운영용 Compose 설정 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s14-p49-03.html" style="flex:25" data-type="실습" title="도서 API 배포 완성 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s14-p49-04.html" style="flex:5" data-type="실습" title="배포 결과 자기 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s14-p49-05.html" style="flex:5" data-type="정리" title="정리: 7일차 마무리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S14-P49-05</span></div>
+<h1>정리: 7일차 마무리</h1>
+
+<h2>7일차 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>시간</th><th>만든 것</th><th>핵심</th></tr></thead><tbody><tr><td>오전</td><td>VPC, 보안 그룹, EC2, RDS</td><td>NAT 없는 퍼블릭과 프라이빗 구성, Session Manager, 프라이빗 RDS와 SSL</td></tr><tr><td>오후 1</td><td>Parameter Store 비밀 값</td><td>SecureString, 역할로 읽기, 서버 디스크에 비밀 값 없음, 교체 절차</td></tr><tr><td>오후 2</td><td>ECR 저장소와 이미지</td><td>태그 변경 불가, 스캔, 버전과 커밋 태그, 롤백</td></tr><tr><td>오후 3</td><td>운영 배포</td><td>운영용 Compose, production 설정, healthcheck, 로그 제한, 재부팅 확인</td></tr></tbody></table></div>
+
+<p>지금 도서 API는 이렇게 배포되어 있습니다. 내 PC → EC2(보안 그룹: 내 IP의 8000) → ECR에서 받은 <code>book-api:1.0.0</code> 컨테이너 → 시작할 때 역할로 Parameter Store에서 비밀 값을 읽음 → RDS(프라이빗, SSL).</p>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">운영용 Compose 파일을 저장소에 올려도 되는 이유는 무엇인가요?</p><label><input type="radio" name="p49q1" value="1"> <span>1. 서버에서만 읽혀서</span></label><label><input type="radio" name="p49q1" value="2"> <span>2. 저장소가 비공개라서</span></label><label><input type="radio" name="p49q1" value="3"> <span>3. 비밀 값이 하나도 없고, 비밀 값은 Parameter Store에 있어서</span></label><label><input type="radio" name="p49q1" value="4"> <span>4. Compose 파일은 암호화되어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>비밀이 없는 설정은 코드처럼 리뷰하고 이력을 남기는 것이 좋습니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">1.0.1을 배포한 뒤 문제가 생겼습니다. 가장 빠른 되돌리기 방법은 무엇인가요?</p><label><input type="radio" name="p49q2" value="1"> <span>1. 서버의 .env에서 IMAGE를 1.0.0으로 바꾸고 docker compose up -d</span></label><label><input type="radio" name="p49q2" value="2"> <span>2. RDS를 스냅샷으로 복원한다</span></label><label><input type="radio" name="p49q2" value="3"> <span>3. EC2를 새로 만든다</span></label><label><input type="radio" name="p49q2" value="4"> <span>4. 서버에서 이전 커밋을 받아 다시 빌드한다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>이전 이미지가 ECR에 남아 있으므로 태그만 바꿔 다시 띄웁니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q"><code>healthcheck</code>가 해 주지 않는 것은 무엇인가요?</p><label><input type="radio" name="p49q3" value="1"> <span>1. 컨테이너 안에서 /health를 주기적으로 부르기</span></label><label><input type="radio" name="p49q3" value="2"> <span>2. 상태를 healthy나 unhealthy로 표시하기</span></label><label><input type="radio" name="p49q3" value="3"> <span>3. unhealthy일 때 담당자에게 알림 보내기</span></label><label><input type="radio" name="p49q3" value="4"> <span>4. 시작 직후의 실패를 일정 시간 세지 않기</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>알림은 8일차에 CloudWatch 경보로 만듭니다.</p></div>
+
+<h2>8일차 예고</h2>
+<p>8일차 오전에는 7일차 배포의 남은 숙제를 풉니다. 표지 이미지를 S3로 옮기고, 로그를 CloudWatch Logs로 보내 경보를 만들고, ALB와 HTTPS를 앞에 두어 인터넷 사용자가 안전하게 접속하게 합니다. 마지막으로 GitHub Actions가 테스트, 이미지 빌드, ECR 푸시, EC2 배포까지 자동으로 하게 만듭니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p49/s14-p49-04.html"><span class="dir">이전</span>S14-P49-04 배포 결과 자기 점검</a>
+  <a class="next" href="../../s15/p50/s15-p50-01.html"><span class="dir">다음</span>S15-P50-01 7일차 복습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

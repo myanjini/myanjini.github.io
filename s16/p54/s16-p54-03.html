@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P54-03 내 환경 점검과 조치 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P54-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. 운영 보안 점검과 장애 대응</a><span class="sep">/</span><span>S16-P54 AWS 보안 점검</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p54-01.html" style="flex:10" data-type="주요 개념" title="AWS 보안 점검 항목 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p54-02.html" style="flex:10" data-type="주요 개념" title="점검 도구 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s16-p54-03.html" style="flex:25" data-type="실습" title="내 환경 점검과 조치 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s16-p54-04.html" style="flex:5" data-type="정리" title="정리: 보안 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S16-P54-03</span></div>
+<h1>내 환경 점검과 조치</h1>
+
+<p class="lead"><a href="../../appendix/appendix-c.html">부록 C</a> 점검표로 내 배포 환경을 하나씩 확인하고, "아니요"가 나온 항목을 조치합니다. 이 작성본이 8일차 평가 대상입니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>점검표의 항목마다 근거를 들어 확인하고, 과다 권한과 열린 설정을 조치할 수 있습니다.</p></div>
+<p><a href="../../assets/files/deploy-security-checklist.md" download>부록 C 점검표 양식 내려받기(Markdown)</a></p>
+<ol class="steps"><li><h3>애플리케이션 항목(1~7)</h3><div class="table-wrap"><table><thead><tr><th>번호</th><th>확인 방법</th></tr></thead><tbody><tr><td>1</td><td><code>git log -p | grep -c -E "SECRET_KEY=.{20,}"</code>가 0, 서버 <code>.env</code>에 IMAGE와 COVER_BUCKET만, <code>docker inspect</code>에 비밀 값 없음(S14-P49-04)</td></tr><tr><td>2</td><td>ALB로 <code>/books/abc</code>(잘못된 경로 값)를 요청해 422 본문에 입력 값과 내부 정보가 없는지, <code>X-Request-ID</code>만 있는지</td></tr><tr><td>3</td><td><code>curl -o /dev/null -w "%{http_code}" $ALB/docs</code>가 404</td></tr><tr><td>4</td><td>아래 CORS 확인 명령</td></tr><tr><td>5</td><td>틀린 비밀번호 6번에 429, 액세스 토큰 만료 15분(설정값)</td></tr><tr><td>6</td><td><code>.txt</code> 업로드가 415, S3 퍼블릭 액세스 차단 4개 true</td></tr><tr><td>7</td><td>최근 배포 실행(Actions)의 bandit, pip-audit 단계가 성공</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>ALB=http://book-api-alb-1234567890.ap-northeast-2.elb.amazonaws.com
+curl -s -o /dev/null -D - -X OPTIONS $ALB/books -H "Origin: http://evil.example" -H "Access-Control-Request-Method: GET" | grep -i -E "^HTTP|access-control-allow-origin"
+HTTP/1.1 400 Bad Request</code></pre></div>
+
+<p>도서 API는 아직 브라우저 화면이 없는데, 설정에는 개발용 <code>http://localhost:5173</code>이 그대로 허용되어 있습니다. 4번은 "아니요"입니다. 운영용 Compose의 <code>environment</code>에 아래 줄을 더하고 푸시하면 배포 워크플로가 반영합니다. 위 명령처럼 허용하지 않은 Origin은 <code>Access-Control-Allow-Origin</code> 헤더 없이 거부되어야 합니다.</p>
+<div class="codeblock"><span class="file">compose.prod.yaml의 environment에 추가</span><pre><code>      CORS_ORIGINS: "[]"  # 브라우저 화면이 없으므로 어떤 Origin도 허용하지 않습니다. 화면이 생기면 그 주소만 적습니다.</code></pre></div>
+</li><li><h3>AWS 항목(8~14)</h3><div class="codeblock term"><pre><code># 8. 내 사용자의 MFA
+aws iam list-mfa-devices --query "MFADevices[].SerialNumber"
+
+# 9. EC2 역할의 권한 목록
+aws iam list-attached-role-policies --role-name book-api-ec2-role --query "AttachedPolicies[].PolicyName"
+aws iam list-role-policies --role-name book-api-ec2-role --query PolicyNames
+[
+    "book-api-logs",
+    "book-api-read-parameters",
+    "book-api-s3-covers"
+]
+
+# 10. 0.0.0.0/0이 열린 인바운드 규칙 찾기
+aws ec2 describe-security-groups --filters Name=vpc-id,Values=vpc-0a1b2c3d4e5f67890 Name=ip-permission.cidr,Values=0.0.0.0/0 --query "SecurityGroups[].[GroupName,IpPermissions[].FromPort]" --output text
+book-api-alb-sg	80
+
+# 11. RDS 공개 여부와 암호화
+aws rds describe-db-instances --db-instance-identifier book-api-db --query "DBInstances[0].[PubliclyAccessible,StorageEncrypted]" --output text
+False	True
+
+# 13. 로그 그룹 보존 기간
+aws logs describe-log-groups --log-group-name-prefix /book-api --query "logGroups[].[logGroupName,retentionInDays]" --output text
+/book-api/app	30
+
+# 14. Owner 태그가 붙은 내 자원 목록
+aws resourcegroupstaggingapi get-resources --tag-filters Key=Owner,Values=student07 --query "ResourceTagMappingList[].ResourceARN" --output text</code></pre></div>
+
+<p>10번에서 <code>book-api-alb-sg</code> 말고 다른 보안 그룹이 나오면 "아니요"입니다. 12번은 GitHub 저장소의 Secrets에 AWS 키가 없고, 배포 실행 기록의 자격 증명 단계가 역할(<code>assumed-role/book-api-github-deploy</code>)을 썼는지로 확인합니다. 14번의 태그 목록에서 빠진 자원(예: 대상 그룹, 경보)이 보이면 태그를 붙입니다.</p>
+</li><li><h3>도구로 한 번 더</h3>
+<p>Trusted Advisor 콘솔의 <strong>보안</strong>에서 새로 고침을 누르고, 빨간색이나 노란색 항목을 확인합니다. IAM의 <code>book-api-ec2-role</code>에서 <strong>마지막 액세스</strong> 탭을 열어 쓰지 않은 서비스가 있는지 봅니다. ECR에서 지금 배포된 <code>git-</code> 태그 이미지의 스캔 결과에 CRITICAL이나 HIGH가 있으면 판정 근거를 점검표에 적습니다.</p>
+</li><li><h3>조치하고 다시 확인</h3>
+<p>"아니요"인 항목을 고친 뒤 같은 명령으로 다시 확인하고, 점검표의 결과를 "예"로 바꿉니다. 조치하지 못한 항목은 이유와 계획을 적습니다(예: HTTPS는 도메인이 없어 미적용, 시연으로 대체).</p>
+</li></ol>
+<div class="table-wrap"><table><thead><tr><th>점검 결과</th><th>내 값</th></tr></thead><tbody><tr><td>"예" 항목 수</td><td><input data-save="c_yes" aria-label="내 결과"></td></tr><tr><td>"아니요"였다가 조치한 항목</td><td><input data-save="c_fixed" aria-label="내 결과"></td></tr><tr><td>조치하지 못한 항목과 이유</td><td><input data-save="c_open" aria-label="내 결과"></td></tr></tbody></table></div>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p54c1"> <span>14개 항목 모두에 결과와 근거를 적었다.</span></label></li><li><label><input type="checkbox" data-save="p54c2"> <span>CORS 허용 Origin을 운영에 맞게 바꾸고 배포했다.</span></label></li><li><label><input type="checkbox" data-save="p54c3"> <span>0.0.0.0/0 인바운드가 ALB 보안 그룹에만 있다.</span></label></li><li><label><input type="checkbox" data-save="p54c4"> <span>Owner 태그가 빠진 자원에 태그를 붙였다.</span></label></li></ul>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s16/p54/s16-p54-02.html"><span class="dir">이전</span>S16-P54-02 점검 도구 보기</a>
+  <a class="next" href="../../s16/p54/s16-p54-04.html"><span class="dir">다음</span>S16-P54-04 정리: 보안 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S18-P63-02 9일 과정 핵심 정리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S18-P63-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S18. 보안 점검, 배포와 발표</a><span class="sep">/</span><span>S18-P63 평가, 회고와 자원 정리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s18-p63-01.html" style="flex:15" data-type="실습" title="자기 평가와 회고 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s18-p63-02.html" style="flex:10" data-type="주요 개념" title="9일 과정 핵심 정리 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s18-p63-03.html" style="flex:5" data-type="주요 개념" title="후속 학습 로드맵 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s18-p63-04.html" style="flex:15" data-type="실습" title="AWS 자원 정리 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s18-p63-05.html" style="flex:5" data-type="정리" title="정리: 수료 안내 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S18-P63-02</span></div>
+<h1>9일 과정 핵심 정리</h1>
+
+<p class="lead">9일 동안 배운 것을 하나의 흐름으로 다시 봅니다. 매일 배운 것은 따로 떨어진 주제가 아니라, API 하나를 설계부터 운영까지 끌고 가는 한 줄의 과정이었습니다.</p>
+<figure><svg viewBox="0 0 970 130" role="img" aria-label="9일차 미니 프로젝트에서는 이 흐름 전체를 하루에 한 번 더 지나갔습니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="40" width="130" height="56" rx="8" class="svg-box"/><text x="75.0" y="64.0" text-anchor="middle" class="svg-text">설계</text><text x="75.0" y="84.0" text-anchor="middle" class="svg-small">1일차</text><rect x="170" y="40" width="130" height="56" rx="8" class="svg-box"/><text x="235.0" y="64.0" text-anchor="middle" class="svg-text">구현</text><text x="235.0" y="84.0" text-anchor="middle" class="svg-small">1~3일차</text><rect x="330" y="40" width="150" height="56" rx="8" class="svg-box"/><text x="405.0" y="64.0" text-anchor="middle" class="svg-text">테스트, 컨테이너</text><text x="405.0" y="84.0" text-anchor="middle" class="svg-small">4일차</text><rect x="510" y="40" width="130" height="56" rx="8" class="svg-box-accent"/><text x="575.0" y="64.0" text-anchor="middle" class="svg-text">개발 보안</text><text x="575.0" y="84.0" text-anchor="middle" class="svg-small">5~6일차</text><rect x="670" y="40" width="130" height="56" rx="8" class="svg-box-accent"/><text x="735.0" y="64.0" text-anchor="middle" class="svg-text">AWS 배포</text><text x="735.0" y="84.0" text-anchor="middle" class="svg-small">6~8일차</text><rect x="830" y="40" width="130" height="56" rx="8" class="svg-box"/><text x="895.0" y="64.0" text-anchor="middle" class="svg-text">운영</text><text x="895.0" y="84.0" text-anchor="middle" class="svg-small">8일차</text><line x1="140" y1="68" x2="168" y2="68" class="svg-line" marker-end="url(#arr)"/><line x1="300" y1="68" x2="328" y2="68" class="svg-line" marker-end="url(#arr)"/><line x1="480" y1="68" x2="508" y2="68" class="svg-line" marker-end="url(#arr)"/><line x1="640" y1="68" x2="668" y2="68" class="svg-line" marker-end="url(#arr)"/><line x1="800" y1="68" x2="828" y2="68" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>9일차 미니 프로젝트에서는 이 흐름 전체를 하루에 한 번 더 지나갔습니다.</figcaption></figure>
+<div class="table-wrap"><table><thead><tr><th>일차</th><th>배운 것</th><th>남은 습관</th></tr></thead><tbody><tr><td>1일차</td><td>REST와 HTTP, FastAPI 첫 API, Pydantic 검증, 응답 모델과 상태 코드, 오류 응답, 구조화</td><td>자원은 URI로, 동작은 메서드로, 실패도 같은 모양으로</td></tr><tr><td>2일차</td><td>의존성, 설정 분리, CORS, SQLAlchemy와 CRUD, 관계, Alembic</td><td>스키마는 마이그레이션으로만 바꾼다</td></tr><tr><td>3일차</td><td>회원가입과 해시, JWT, 권한, 리프레시 토큰, 계층 분리, 파일 업로드, 대여</td><td>검사는 서비스에 한곳으로</td></tr><tr><td>4일차</td><td>테스트, CI, Docker와 Compose, 로그와 헬스 체크</td><td>확인은 테스트로, 실행 환경은 이미지로</td></tr><tr><td>5일차</td><td>KISA 보안약점, 입력 검증, 업로드, 인가, 비밀정보, 인증 시도 제한, 오류 처리</td><td>입력은 믿지 않고, 비밀은 코드에 두지 않는다</td></tr><tr><td>6일차</td><td>경쟁 조건, 자동 점검, 진단과 조치, 클라우드와 IAM, VPC</td><td>도구 결과는 판정하고, 권한은 최소로</td></tr><tr><td>7일차</td><td>EC2, 서버의 Docker, RDS, Parameter Store, ECR, 운영 배포 구성</td><td>공개할 것만 공개하고, 비밀은 역할로 읽는다</td></tr><tr><td>8일차</td><td>S3, CloudWatch, ALB, OIDC 배포 자동화, 보안 점검, 장애 대응, 비용</td><td>배포는 자동으로, 되돌릴 수 있게</td></tr><tr><td>9일차</td><td>미니 프로젝트: 설계, 구현, 점검, 배포, 발표</td><td>작게 끝까지</td></tr></tbody></table></div>
+
+<h2>끝까지 기억할 원칙 다섯 가지</h2>
+<div class="table-wrap"><table><thead><tr><th>원칙</th><th>이 과정에서 본 모습</th></tr></thead><tbody><tr><td>기본은 거부, 필요한 것만 허용</td><td><code>extra="forbid"</code>, CORS 허용 없음, 보안 그룹, IAM 기본 거부</td></tr><tr><td>검사는 한곳에서, 빠짐없이</td><td><code>get_current_user</code>, 서비스의 소유자 검사, 전역 오류 처리기</td></tr><tr><td>비밀은 코드 밖에</td><td><code>.env</code>, Parameter Store, OIDC로 키 없는 배포</td></tr><tr><td>말이 아니라 확인으로</td><td>테스트, CI, 자동 점검, 배포 후 확인 단계, 점검표의 근거</td></tr><tr><td>되돌릴 수 있게</td><td>마이그레이션, 태그 변경 불가 이미지, 파라미터 버전, RDS 백업</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s18/p63/s18-p63-01.html"><span class="dir">이전</span>S18-P63-01 자기 평가와 회고</a>
+  <a class="next" href="../../s18/p63/s18-p63-03.html"><span class="dir">다음</span>S18-P63-03 후속 학습 로드맵</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

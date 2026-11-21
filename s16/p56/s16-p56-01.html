@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P56-01 비용 확인과 자원 정리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P56-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. 운영 보안 점검과 장애 대응</a><span class="sep">/</span><span>S16-P56 비용 정리와 미니 프로젝트 준비</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p56-01.html" style="flex:10" data-type="주요 개념" title="비용 확인과 자원 정리 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p56-02.html" style="flex:10" data-type="실습" title="불필요한 자원 정리 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s16-p56-03.html" style="flex:10" data-type="주요 개념" title="미니 프로젝트 안내 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s16-p56-04.html" style="flex:15" data-type="실습" title="주제와 보안 요구사항 정하기 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s16-p56-05.html" style="flex:5" data-type="정리" title="정리: 8일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S16-P56-01</span></div>
+<h1>비용 확인과 자원 정리</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>AWS 비용을 확인하고 자원 정리 계획을 세우며, 미니 프로젝트 주제를 정할 수 있습니다.</p></div>
+
+<p class="lead">클라우드 비용은 "만든 것을 잊었을 때" 가장 많이 나갑니다. 지금까지 만든 자원의 비용을 확인하는 방법과, 다 쓴 자원을 안전한 순서로 지우는 방법을 정리합니다.</p>
+
+<h2>비용을 보는 곳</h2>
+<div class="table-wrap"><table><thead><tr><th>도구</th><th>보는 것</th><th>주의</th></tr></thead><tbody><tr><td>Cost Explorer(비용 탐색기)</td><td>일별, 서비스별 비용 그래프. 태그로 나눠 볼 수도 있습니다.</td><td>비용은 보통 하루쯤 늦게 반영됩니다. 태그로 나눠 보려면 관리자가 Owner 태그를 "비용 할당 태그"로 활성화해야 하고, 활성화와 반영에 각각 최대 24시간이 걸립니다.</td></tr><tr><td>Budgets(예산)</td><td>정한 금액을 넘거나 넘을 것으로 예상되면 메일로 알려 줍니다.</td><td>기관이 계정마다 설정해 두었습니다(<a href="../../appendix/appendix-c.html">부록 C</a>의 14번).</td></tr><tr><td>청구서</td><td>이번 달 서비스별 요금 합계</td><td>학생 계정에서는 보이지 않을 수 있습니다.</td></tr></tbody></table></div>
+
+<h2>지금 요금이 나가는 자원</h2>
+<div class="table-wrap"><table><thead><tr><th>자원</th><th>요금 기준</th><th>9일차에 필요한가</th></tr></thead><tbody><tr><td>ALB</td><td>시간, 처리량, 공용 IPv4(가용 영역 수만큼)</td><td>발표 시연과 배포 확인에 씁니다.</td></tr><tr><td>EC2</td><td>시간, EBS, 공용 IPv4</td><td>프로젝트를 배포합니다.</td></tr><tr><td>RDS</td><td>시간, 스토리지, 백업</td><td>프로젝트 DB로 씁니다.</td></tr><tr><td>ECR, S3, CloudWatch</td><td>저장 용량, 로그 양, 경보 수</td><td>대부분 작음. 오래된 이미지는 정리</td></tr><tr><td>Parameter Store, IAM, VPC</td><td>요금 없음(표준 파라미터, NAT 없는 VPC)</td><td>프로젝트에서 그대로 씁니다.</td></tr></tbody></table></div>
+
+<h2>삭제 순서가 정해진 이유</h2>
+<p>AWS 자원은 서로 기대어 있어서, 아직 쓰이는 자원은 지울 수 없습니다. 예를 들어 VPC 안에 EC2나 RDS가 남아 있으면 VPC를 지울 수 없고, ALB가 보안 그룹을 쓰고 있으면 그 보안 그룹을 지울 수 없습니다. 그래서 "다른 것을 쓰는 쪽"부터 지웁니다.</p>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>자원</th><th>이 순서인 이유</th></tr></thead><tbody><tr><td>1</td><td>ALB와 대상 그룹</td><td>EC2와 보안 그룹, 서브넷을 쓰고 있습니다.</td></tr><tr><td>2</td><td>EC2</td><td>보안 그룹, 서브넷, IAM 역할을 쓰고 있습니다.</td></tr><tr><td>3</td><td>RDS</td><td>DB 서브넷 그룹, 보안 그룹을 쓰고 있습니다. 최종 스냅샷을 남길지 정합니다.</td></tr><tr><td>4~8</td><td>ECR, S3, 탄력적 IP, CloudWatch와 SNS, Parameter Store</td><td>서로 의존하지 않으므로 순서는 자유입니다. S3는 객체를 비워야 지워집니다.</td></tr><tr><td>9</td><td>보안 그룹, 서브넷, 라우팅 테이블, 인터넷 게이트웨이, VPC</td><td>위의 자원이 모두 사라져야 지워집니다. VPC를 지우면 남은 구성 요소를 함께 지워 줍니다.</td></tr><tr><td>10</td><td>IAM 역할, OIDC 공급자</td><td>다른 자원이 없어진 뒤 지워야, 지우는 도중 권한 문제가 생기지 않습니다.</td></tr><tr><td>11</td><td>비용 확인</td><td>다음 날 Cost Explorer에서 요금이 0에 가까운지 봅니다.</td></tr></tbody></table></div>
+
+<h2>내 자원 찾기</h2>
+<p>Owner 태그를 꾸준히 붙인 덕분에, 내 자원을 한 번에 찾을 수 있습니다. 태그가 없는 자원은 이 목록에 나오지 않으므로, 정리할 때 빠뜨리기 쉽습니다.</p>
+<div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>aws resourcegroupstaggingapi get-resources --tag-filters Key=Owner,Values=student07 \
+  --query "ResourceTagMappingList[].ResourceARN" --output text | tr '\t' '\n' | sort</code></pre></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s16/p55/s16-p55-05.html"><span class="dir">이전</span>S16-P55-05 정리: 장애 대응</a>
+  <a class="next" href="../../s16/p56/s16-p56-02.html"><span class="dir">다음</span>S16-P56-02 불필요한 자원 정리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

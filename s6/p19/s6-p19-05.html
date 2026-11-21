@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P19-05 정리: 계층 분리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P19-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P19 계층 분리와 트랜잭션</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p19-01.html" style="flex:10" data-type="주요 개념" title="라우터, 서비스, 저장소 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p19-02.html" style="flex:10" data-type="주요 개념" title="서비스 계층으로 옮기기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p19-03.html" style="flex:20" data-type="실습" title="서비스 계층 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s6-p19-04.html" style="flex:5" data-type="실습" title="계층 분리의 득과 실 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s6-p19-05.html" style="flex:5" data-type="정리" title="정리: 계층 분리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S6-P19-05</span></div>
+<h1>정리: 계층 분리</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>라우터는 HTTP, 서비스는 업무 규칙과 트랜잭션, 저장소는 데이터베이스 읽기와 쓰기를 맡습니다. 호출은 한 방향으로만 흐릅니다.</li>
+  <li>트랜잭션은 전부 되거나 전부 안 되는 작업 묶음입니다. 서비스 함수 하나가 트랜잭션 하나이고, 마지막에 한 번만 <code>commit</code>합니다.</li>
+  <li><code>flush</code>는 SQL을 실행하지만 확정하지 않으므로 이후 실패하면 함께 취소됩니다.</li>
+  <li><code>get_db</code>에서 예외가 나면 <code>rollback</code>하고, 예외는 다시 <code>raise</code>합니다.</li>
+  <li>재고처럼 여러 기능이 쓰는 규칙은 <code>commit</code>하지 않는 서비스 함수(<code>change_stock</code>)로 만들어 어느 트랜잭션에서든 부를 수 있게 합니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">저장소 함수 안에서 <code>db.commit()</code>을 하지 않는 이유로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p19q1" value="1"> <span>1. 여러 저장소 작업을 서비스가 하나의 트랜잭션으로 묶어 확정해야 해서</span></label><label><input type="radio" name="p19q1" value="2"> <span>2. commit은 라우터에서만 할 수 있어서</span></label><label><input type="radio" name="p19q1" value="3"> <span>3. flush가 commit보다 빨라서</span></label><label><input type="radio" name="p19q1" value="4"> <span>4. 저장소는 데이터베이스에 접근할 수 없어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>저장소마다 commit하면 중간에 실패했을 때 일부만 저장됩니다. 확정 시점은 서비스가 정합니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q"><code>book_repo.add</code>에서 <code>flush</code>한 뒤, 재고 기록을 추가하다가 예외가 났습니다. 데이터베이스의 결과는 무엇인가요?</p><label><input type="radio" name="p19q2" value="1"> <span>1. 도서만 저장된다.</span></label><label><input type="radio" name="p19q2" value="2"> <span>2. 재고 기록만 저장된다.</span></label><label><input type="radio" name="p19q2" value="3"> <span>3. 둘 다 저장되지 않는다.</span></label><label><input type="radio" name="p19q2" value="4"> <span>4. 도서가 재고 0으로 저장된다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>flush는 확정이 아니므로 rollback되면 도서 INSERT도 취소됩니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">다음 중 라우터에 남겨야 하는 코드는 무엇인가요?</p><label><input type="radio" name="p19q3" value="1"> <span>1. 응답 모델과 상태 코드(201) 지정</span></label><label><input type="radio" name="p19q3" value="2"> <span>2. 도서와 재고 기록의 commit</span></label><label><input type="radio" name="p19q3" value="3"> <span>3. ISBN 중복 검사</span></label><label><input type="radio" name="p19q3" value="4"> <span>4. 재고가 음수가 되는지 검사</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>응답 모델과 상태 코드는 HTTP에 관한 일이므로 라우터의 몫입니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>S6-P20에서는 도서에 표지 이미지를 올리는 업로드 API를 만들고, 응답을 보낸 뒤에 실행할 작업을 등록하는 방법을 배웁니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p19/s6-p19-04.html"><span class="dir">이전</span>S6-P19-04 계층 분리의 득과 실</a>
+  <a class="next" href="../../s6/p20/s6-p20-01.html"><span class="dir">다음</span>S6-P20-01 파일 업로드와 저장 전략</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

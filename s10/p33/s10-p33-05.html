@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P33-05 정리: 중요정보 보호 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P33-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 보안기능과 에러처리</a><span class="sep">/</span><span>S10-P33 보안기능 2: 중요정보 보호와 암호화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p33-01.html" style="flex:10" data-type="주요 개념" title="중요정보와 암호화 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p33-02.html" style="flex:10" data-type="주요 개념" title="하드코딩된 비밀정보 찾기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s10-p33-03.html" style="flex:20" data-type="실습" title="비밀정보 정리 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p33-04.html" style="flex:5" data-type="주요 개념" title="전송 구간 보호 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p33-05.html" style="flex:5" data-type="정리" title="정리: 중요정보 보호 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S10-P33-05</span></div>
+<h1>정리: 중요정보 보호</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>Base64 같은 인코딩은 보호가 아닙니다. 확인만 할 값은 해시, 다시 꺼낼 값은 암호화합니다.</li>
+  <li>비밀번호는 Argon2, bcrypt, PBKDF2로, 무결성은 SHA-256 이상으로 처리하고, MD5와 SHA-1은 쓰지 않습니다.</li>
+  <li>토큰과 비밀 키는 <code>random</code>이 아니라 <code>secrets</code>로 만듭니다.</li>
+  <li>비밀 값은 코드와 Git 이력 모두에서 찾고, 한 번 노출된 값은 교체합니다.</li>
+  <li>약한 비밀 키로는 서버가 시작하지 않게 하고, 설정 오류에 입력 값이 찍히지 않게 합니다.</li>
+  <li>개인정보는 필요한 화면에서 필요한 만큼만 보여 줍니다. 전송 구간은 HTTPS, HSTS, 쿠키 보안 속성으로 보호합니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">비밀번호 재설정용 6자리 인증 번호를 만들 때 알맞은 코드는 무엇인가요?</p><label><input type="radio" name="p33q1" value="1"> <span>1. <code>random.randint(0, 999999)</code></span></label><label><input type="radio" name="p33q1" value="2"> <span>2. <code>secrets.randbelow(1000000)</code></span></label><label><input type="radio" name="p33q1" value="3"> <span>3. <code>int(time.time()) % 1000000</code></span></label><label><input type="radio" name="p33q1" value="4"> <span>4. <code>hash(email) % 1000000</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>추측되면 안 되는 값은 secrets 모듈로 만듭니다. 나머지는 예측할 수 있습니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">예전 커밋에 SECRET_KEY가 들어 있었다는 것을 발견했습니다. 가장 먼저 할 일은 무엇인가요?</p><label><input type="radio" name="p33q2" value="1"> <span>1. 저장소를 비공개로 바꾼다.</span></label><label><input type="radio" name="p33q2" value="2"> <span>2. 아무도 모를 것이므로 그대로 둔다.</span></label><label><input type="radio" name="p33q2" value="3"> <span>3. 그 커밋을 지운다.</span></label><label><input type="radio" name="p33q2" value="4"> <span>4. 새 키를 만들어 서버의 키를 교체한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>이미 복제되었을 수 있으므로 노출된 것으로 보고 교체합니다. 이력 정리는 그다음입니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">리프레시 토큰을 쿠키에 담을 때 JavaScript가 읽지 못하게 하는 속성은 무엇인가요?</p><label><input type="radio" name="p33q3" value="1"> <span>1. Secure</span></label><label><input type="radio" name="p33q3" value="2"> <span>2. HttpOnly</span></label><label><input type="radio" name="p33q3" value="3"> <span>3. SameSite</span></label><label><input type="radio" name="p33q3" value="4"> <span>4. Max-Age</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>HttpOnly 쿠키는 스크립트에서 읽을 수 없어 XSS로 토큰을 훔치기 어렵습니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>지금 로그인 API는 비밀번호를 몇 번 틀려도 계속 시도할 수 있습니다. S10-P34에서는 반복된 로그인 시도를 제한하고 비밀번호 규칙을 강화합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p33/s10-p33-04.html"><span class="dir">이전</span>S10-P33-04 전송 구간 보호</a>
+  <a class="next" href="../../s10/p34/s10-p34-01.html"><span class="dir">다음</span>S10-P34-01 반복된 인증 시도와 인증 우회</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

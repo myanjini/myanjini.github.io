@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P51-02 컨테이너 로그 전송 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P51-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P51 CloudWatch 로그와 모니터링</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p51-01.html" style="flex:10" data-type="주요 개념" title="CloudWatch 개요 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p51-02.html" style="flex:10" data-type="주요 개념" title="컨테이너 로그 전송 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p51-03.html" style="flex:20" data-type="실습" title="로그 조회와 경보 설정 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s15-p51-04.html" style="flex:5" data-type="주요 개념" title="로그 보안 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s15-p51-05.html" style="flex:5" data-type="정리" title="정리: 모니터링 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S15-P51-02</span></div>
+<h1>컨테이너 로그 전송</h1>
+
+<p class="lead">컨테이너의 로그를 CloudWatch로 보내는 방법은 여러 가지가 있습니다. 이번에는 Docker에 들어 있는 <code>awslogs</code> 로그 드라이버를 씁니다. 앱 코드는 바꾸지 않고 운영용 Compose의 설정만 바꿉니다.</p>
+
+<h2>awslogs 로그 드라이버</h2>
+<p>로그 드라이버는 Docker가 컨테이너의 출력(표준 출력과 표준 오류)을 어디로 보낼지 정하는 부품입니다. 지금까지는 서버의 파일에 저장하는 <code>json-file</code>을 썼습니다. <code>awslogs</code>로 바꾸면 Docker 엔진이 컨테이너 출력을 받아 CloudWatch Logs로 바로 보냅니다. 보낼 때는 서버(EC2)의 IAM 역할 권한을 씁니다.</p>
+<div class="codeblock"><span class="file">compose.prod.yaml의 logging 부분</span><pre><code>    logging:
+      driver: awslogs            # 로그를 CloudWatch Logs로 보냅니다.
+      options:
+        awslogs-region: ap-northeast-2
+        awslogs-group: /book-api/app
+        awslogs-create-group: "false"   # 로그 그룹은 미리 만들어 둡니다(보존 기간을 정하려고).</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>옵션</th><th>뜻</th></tr></thead><tbody><tr><td><code>awslogs-region</code></td><td>로그를 보낼 리전</td></tr><tr><td><code>awslogs-group</code></td><td>로그 그룹 이름</td></tr><tr><td><code>awslogs-create-group: "false"</code></td><td>로그 그룹을 Docker가 만들지 않습니다. 미리 만들어 보존 기간을 정해 두고, 역할에는 그룹 만들기 권한을 주지 않습니다.</td></tr><tr><td>로그 스트림 이름</td><td>적지 않으면 컨테이너 ID가 스트림 이름이 됩니다. 컨테이너를 새로 만들 때마다 새 스트림이 생깁니다.</td></tr></tbody></table></div>
+
+<p>Docker 20.10부터는 다른 로그 드라이버를 써도 서버에 작은 임시 사본을 남기는 "이중 로깅"이 기본이라, <code>docker compose logs</code>도 그대로 쓸 수 있습니다.</p>
+
+<h2>IAM 권한</h2>
+<p>EC2 역할이 이 로그 그룹 안에 스트림을 만들고 로그를 넣는 것만 허용합니다.</p>
+<div class="codeblock"><span class="file">인라인 정책 book-api-logs</span><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BookApiLogs",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:ap-northeast-2:123456789012:log-group:/book-api/app:*"
+    }
+  ]
+}</code></pre></div>
+
+<h2>최종 운영용 Compose 파일</h2>
+<p>S3 설정, 로그 드라이버, 그리고 다음 파트(ALB)에서 필요한 <code>FORWARDED_ALLOW_IPS</code>까지 넣은 8일차 오전의 최종 파일입니다. 볼륨이 하나도 없다는 점에 주목합니다. 서버에 남는 데이터가 없으므로, 서버를 지우고 새로 만들어도 서비스가 그대로 이어집니다.</p>
+<div class="codeblock"><span class="file">compose.prod.yaml</span><pre><code># 운영(EC2)용 Compose 파일
+# - 이미지는 ECR에서 받습니다. 어떤 이미지를 쓸지는 같은 폴더의 .env에 IMAGE=... 로 적습니다.
+# - 비밀 값(SECRET_KEY, DATABASE_URL)은 이 파일에도 .env에도 적지 않고, 앱이 Parameter Store에서 읽습니다.
+# - 데이터베이스는 RDS를 쓰므로 db 서비스가 없습니다.
+# - 표지는 S3에, 로그는 CloudWatch Logs에 저장하므로 서버에 볼륨이 필요 없습니다.
+services:
+  api:
+    image: ${IMAGE:?IMAGE를 .env에 적어 주세요}
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: production              # /docs, /redoc, /openapi.json을 끕니다.
+      SSM_PREFIX: /book-api/           # 이 경로 아래의 비밀 값을 읽습니다.
+      AWS_DEFAULT_REGION: ap-northeast-2
+      LOG_LEVEL: INFO
+      COVER_BUCKET: ${COVER_BUCKET:?COVER_BUCKET을 .env에 적어 주세요}  # 표지를 저장할 S3 버킷
+      FORWARDED_ALLOW_IPS: 10.0.0.0/16  # 이 범위(VPC 안의 ALB)가 보낸 X-Forwarded-For만 믿습니다.
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: awslogs            # 로그를 CloudWatch Logs로 보냅니다.
+      options:
+        awslogs-region: ap-northeast-2
+        awslogs-group: /book-api/app
+        awslogs-create-group: "false"   # 로그 그룹은 미리 만들어 둡니다(보존 기간을 정하려고).</code></pre></div>
+<div class="callout note"><p class="callout-title">FORWARDED_ALLOW_IPS는 다음 파트에서</p><p>이 값이 무엇인지는 S15-P52-01에서 설명합니다. 지금 넣어 두어도 ALB가 없는 동안에는 동작에 영향이 없습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p51/s15-p51-01.html"><span class="dir">이전</span>S15-P51-01 CloudWatch 개요</a>
+  <a class="next" href="../../s15/p51/s15-p51-03.html"><span class="dir">다음</span>S15-P51-03 로그 조회와 경보 설정</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

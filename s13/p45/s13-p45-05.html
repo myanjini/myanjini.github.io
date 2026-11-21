@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P45-05 정리: EC2 배포 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P45-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P45 EC2에서 Docker로 API 실행</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p45-01.html" style="flex:10" data-type="주요 개념" title="서버에 Docker 설치하기 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p45-02.html" style="flex:15" data-type="실습" title="Docker 설치와 소스 받기 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s13-p45-03.html" style="flex:15" data-type="실습" title="컨테이너로 API 실행 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s13-p45-04.html" style="flex:5" data-type="주요 개념" title="접속이 안 될 때 점검 순서 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p45-05.html" style="flex:5" data-type="정리" title="정리: EC2 배포 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S13-P45-05</span></div>
+<h1>정리: EC2 배포</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>핵심</th></tr></thead><tbody><tr><td>설치</td><td><code>dnf install</code>로 Docker와 Git을, GitHub 배포 파일로 Compose와 Buildx 플러그인을 설치했습니다. <code>systemctl enable --now</code>로 자동 시작하게 했습니다.</td></tr><tr><td>소스와 비밀 값</td><td>소스는 Git으로 받고, 비밀 값은 서버에서 새로 만들어 소스 폴더 밖의 권한 600 파일에 두었습니다.</td></tr><tr><td>실행</td><td><code>docker run</code>에 포트, 설정 파일, 볼륨, 재시작 정책을 주고, <code>alembic upgrade head</code>로 테이블을 만들었습니다.</td></tr><tr><td>접속</td><td>내 PC에서 <code>http://퍼블릭IP:8000</code>으로 접속했고, 다른 네트워크에서는 막힙니다.</td></tr><tr><td>점검 순서</td><td>컨테이너, 앱, 포트 연결, 보안 그룹, 주소, 경로, 그 밖의 방화벽 순서로 안쪽부터 확인합니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">서버에서 <code>docker</code> 명령이 "permission denied"로 실패합니다. <code>usermod -aG docker ssm-user</code>는 이미 실행했습니다. 무엇을 해야 하나요?</p><label><input type="radio" name="p45q1" value="1"> <span>1. 보안 그룹에 2375번을 연다</span></label><label><input type="radio" name="p45q1" value="2"> <span>2. Docker를 다시 설치한다</span></label><label><input type="radio" name="p45q1" value="3"> <span>3. Session Manager 세션을 끊고 다시 연결한다</span></label><label><input type="radio" name="p45q1" value="4"> <span>4. 서버를 종료한다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>그룹 변경은 새 로그인 세션부터 적용됩니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">브라우저에서 바로 "연결 거부"가 났습니다. 가장 먼저 의심할 곳은 어디인가요?</p><label><input type="radio" name="p45q2" value="1"> <span>1. 서버의 포트에 기다리는 프로그램이 없음(컨테이너가 멈췄거나 -p 누락)</span></label><label><input type="radio" name="p45q2" value="2"> <span>2. 라우팅 테이블</span></label><label><input type="radio" name="p45q2" value="3"> <span>3. 기관 방화벽</span></label><label><input type="radio" name="p45q2" value="4"> <span>4. 보안 그룹</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>요청이 서버에 닿았지만 그 포트에서 받는 프로그램이 없을 때 바로 거부됩니다. 보안 그룹에 막히면 보통 시간 초과가 납니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">설정 파일을 <code>~/book-api/.env</code>가 아니라 <code>~/book-api.env</code>에 둔 이유로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p45q3" value="1"> <span>1. SQLite가 홈 폴더를 써서</span></label><label><input type="radio" name="p45q3" value="2"> <span>2. Docker가 홈 폴더의 파일만 읽어서</span></label><label><input type="radio" name="p45q3" value="3"> <span>3. 소스 폴더 밖에 두어 Git이나 이미지에 실수로 들어가지 않게 하려고</span></label><label><input type="radio" name="p45q3" value="4"> <span>4. 이름이 짧아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>비밀 값은 코드와 분리해 보관합니다. 오늘 오후에는 Parameter Store로 옮겨 서버의 파일에서도 없앱니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>지금 데이터는 서버 안의 SQLite 파일에 있습니다. 서버가 망가지면 데이터도 함께 위험합니다. 다음 파트에서는 관리형 데이터베이스인 RDS PostgreSQL을 프라이빗 서브넷에 만들고, 도서 API의 데이터베이스를 RDS로 바꿉니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p45/s13-p45-04.html"><span class="dir">이전</span>S13-P45-04 접속이 안 될 때 점검 순서</a>
+  <a class="next" href="../../s13/p46/s13-p46-01.html"><span class="dir">다음</span>S13-P46-01 관리형 데이터베이스와 RDS</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

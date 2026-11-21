@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P28-02 logging 설정과 요청 ID | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P28-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P28 로깅과 모니터링 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p28-01.html" style="flex:10" data-type="주요 개념" title="로그가 필요한 이유 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p28-02.html" style="flex:10" data-type="주요 개념" title="logging 설정과 요청 ID (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p28-03.html" style="flex:20" data-type="실습" title="API에 로깅 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s8-p28-04.html" style="flex:5" data-type="실습" title="헬스 체크 확장 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s8-p28-05.html" style="flex:5" data-type="정리" title="정리: 4일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S8-P28-02</span></div>
+<h1>logging 설정과 요청 ID</h1>
+
+<p class="lead">모든 로그를 JSON 한 줄로 쓰는 설정과, 요청마다 ID를 붙여 한 요청의 로그를 묶는 방법을 강사 화면으로 봅니다.</p>
+
+<h2>로그 설정 파일</h2>
+<div class="codeblock"><span class="file">app/logging_config.py</span><pre><code>"""로그 설정: 모든 로그를 한 줄짜리 JSON으로 표준 출력에 씁니다."""
+import json
+import logging
+import sys
+from contextvars import ContextVar
+from datetime import datetime, timezone
+
+# 지금 처리 중인 요청의 ID. 요청마다 따로 보관됩니다.
+request_id_var: ContextVar[str] = ContextVar("request_id", default="-")
+
+# LogRecord가 원래 가진 속성 이름. 이 밖의 속성은 extra로 넘긴 값입니다.
+_STANDARD_KEYS = set(logging.LogRecord("", 0, "", 0, "", None, None).__dict__) | {"message", "taskName", "color_message"}
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -&gt; str:
+        data = {
+            "time": datetime.fromtimestamp(record.created, timezone.utc).isoformat(timespec="milliseconds"),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+            "request_id": request_id_var.get(),
+        }
+        for key, value in record.__dict__.items():  # extra로 넘긴 값을 덧붙입니다.
+            if key not in _STANDARD_KEYS:
+                data[key] = value
+        if record.exc_info:
+            data["error"] = self.formatException(record.exc_info)
+        return json.dumps(data, ensure_ascii=False, default=str)
+
+
+def setup_logging(level: str = "INFO") -&gt; None:
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(JsonFormatter())
+    root = logging.getLogger()
+    root.handlers = [handler]
+    root.setLevel(level)
+    # uvicorn의 로그도 같은 형식으로 내보내고, 요청 기록은 우리 미들웨어가 남기므로 끕니다.
+    for name in ("uvicorn", "uvicorn.error"):
+        logging.getLogger(name).handlers = []
+        logging.getLogger(name).propagate = True
+    logging.getLogger("uvicorn.access").disabled = True</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>부분</th><th>하는 일</th></tr></thead><tbody><tr><td><code>ContextVar</code></td><td>요청마다 따로 보관되는 변수입니다. 요청 여러 개가 동시에 처리되어도 서로의 ID가 섞이지 않습니다.</td></tr><tr><td><code>JsonFormatter</code></td><td>로그 한 건을 JSON 한 줄로 바꿉니다. 시각은 UTC로 적습니다.</td></tr><tr><td><code>extra</code>로 넘긴 값</td><td><code>logger.info("도서 대여", extra={"book_id": 3})</code>처럼 넘긴 값이 JSON 항목으로 붙습니다.</td></tr><tr><td><code>setup_logging</code></td><td>모든 로그가 지나가는 뿌리 로거(root)에 JSON 출력을 하나 달고, uvicorn의 로그도 같은 형식으로 모읍니다. uvicorn이 남기던 요청 기록은 우리 미들웨어가 더 자세히 남기므로 끕니다.</td></tr></tbody></table></div>
+
+<h2>요청 ID 미들웨어</h2>
+<p>요청이 동시에 여러 개 처리되면 로그가 뒤섞입니다. 요청이 들어올 때 무작위 ID를 하나 정해 두면, 그 요청을 처리하는 동안 어디서 남긴 로그든 같은 ID가 붙어 한 요청의 로그만 골라 볼 수 있습니다.</p>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>logger = logging.getLogger("app.request")
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    request_id_var.set(uuid.uuid4().hex[:16])  # 이 요청에서 남기는 모든 로그에 같은 ID가 붙습니다.
+    start = time.perf_counter()
+    info = {"method": request.method, "path": request.url.path}
+    try:
+        response = await call_next(request)  # 실제 경로 함수가 여기서 실행됩니다.
+    except Exception:
+        info["duration_ms"] = round((time.perf_counter() - start) * 1000, 1)
+        logger.exception("처리하지 못한 오류", extra={**info, "status": 500})
+        raise  # 응답은 FastAPI의 기본 처리에 맡깁니다. 5일차에 안전한 오류 응답으로 바꿉니다.
+    duration_ms = round((time.perf_counter() - start) * 1000, 1)
+    response.headers["X-Request-ID"] = request_id_var.get()
+    response.headers["X-Process-Time"] = f"{duration_ms}ms"
+    logger.info("요청 처리", extra={**info, "status": response.status_code, "duration_ms": duration_ms})
+    return response</code></pre></div>
+
+<p>2일차의 처리 시간 미들웨어를 이 미들웨어로 바꿉니다. 응답 헤더 <code>X-Request-ID</code>로 ID를 돌려주므로, 사용자가 "이 요청에서 오류가 났다"고 알려 올 때 ID만 받으면 그 요청의 로그를 바로 찾을 수 있습니다.</p>
+<figure><svg viewBox="0 0 640 100" role="img" aria-label="한 요청 안의 로그는 모두 같은 request_id를 가집니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="20" width="170" height="60" rx="8" class="svg-box-accent"/><text x="95.0" y="46.0" text-anchor="middle" class="svg-text">미들웨어</text><text x="95.0" y="66.0" text-anchor="middle" class="svg-small">ID 정하기</text><rect x="235" y="20" width="170" height="60" rx="8" class="svg-box"/><text x="320.0" y="46.0" text-anchor="middle" class="svg-text">서비스</text><text x="320.0" y="66.0" text-anchor="middle" class="svg-small">도서 대여 로그</text><rect x="460" y="20" width="170" height="60" rx="8" class="svg-box"/><text x="545.0" y="46.0" text-anchor="middle" class="svg-text">미들웨어</text><text x="545.0" y="66.0" text-anchor="middle" class="svg-small">요청 처리 로그</text><line x1="185" y1="50" x2="230" y2="50" class="svg-line" marker-end="url(#arr)"/><line x1="410" y1="50" x2="455" y2="50" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>한 요청 안의 로그는 모두 같은 request_id를 가집니다.</figcaption></figure>
+
+<h2>처리하지 못한 오류</h2>
+<p>경로 함수에서 예상하지 못한 예외가 나면 <code>logger.exception</code>이 오류 내용(트레이스백)을 <code>error</code> 항목에 담아 ERROR 로그를 남기고, 예외는 그대로 다시 던집니다. 사용자에게 가는 500 응답은 아직 FastAPI 기본 처리에 맡깁니다. uvicorn도 같은 오류를 한 번 더 기록하는데, 5일차에 전역 예외 처리기를 만들면서 오류 응답과 로그를 함께 정리합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p28/s8-p28-01.html"><span class="dir">이전</span>S8-P28-01 로그가 필요한 이유</a>
+  <a class="next" href="../../s8/p28/s8-p28-03.html"><span class="dir">다음</span>S8-P28-03 API에 로깅 적용</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

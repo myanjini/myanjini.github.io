@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P37-05 정리: 자동 점검 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P37-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P37 API 오용과 자동 보안 점검 도구</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p37-01.html" style="flex:10" data-type="주요 개념" title="API 오용과 자동 점검의 역할 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s11-p37-02.html" style="flex:10" data-type="주요 개념" title="bandit과 pip-audit 실행 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s11-p37-03.html" style="flex:20" data-type="실습" title="내 코드 점검과 결과 판정 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s11-p37-04.html" style="flex:5" data-type="실습" title="CI에 보안 점검 추가 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s11-p37-05.html" style="flex:5" data-type="정리" title="정리: 자동 점검 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S11-P37-05</span></div>
+<h1>정리: 자동 점검</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>핵심</th></tr></thead><tbody><tr><td>위험한 함수</td><td>eval, pickle.loads, yaml.load, shell=True는 밖에서 온 데이터를 코드처럼 실행할 수 있습니다. JSON, safe_load, 인자 목록을 씁니다.</td></tr><tr><td>bandit(정적 분석)</td><td>내 코드에서 위험한 모양을 찾습니다. 심각도와 신뢰도를 보고 판정합니다.</td></tr><tr><td>pip-audit(의존성 점검)</td><td>설치한 패키지 버전을 취약점 데이터베이스와 대조합니다. 결과는 날마다 바뀝니다.</td></tr><tr><td>판정</td><td>오탐은 근거를 확인한 뒤 규칙 번호를 적은 nosec과 주석으로 남기고, 애매하면 고칩니다.</td></tr><tr><td>CI</td><td>푸시할 때마다 점검하고, 결과가 있으면 빌드를 실패시킵니다.</td></tr><tr><td>한계</td><td>인가 누락, 경쟁 조건, 업무 규칙 오류는 도구가 찾지 못합니다. 사람의 진단이 꼭 필요합니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">외부에서 받은 YAML 설정 파일을 읽을 때 알맞은 코드는 무엇인가요?</p><label><input type="radio" name="p37q1" value="1"> <span>1. <code>yaml.load(text, Loader=yaml.Loader)</code></span></label><label><input type="radio" name="p37q1" value="2"> <span>2. <code>yaml.safe_load(text)</code></span></label><label><input type="radio" name="p37q1" value="3"> <span>3. <code>eval(text)</code></span></label><label><input type="radio" name="p37q1" value="4"> <span>4. <code>pickle.loads(text)</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>safe_load는 기본 자료형만 만들고, Python 객체를 만드는 태그는 거부합니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">bandit 결과에서 Confidence가 Low라는 것은 무엇을 뜻하나요?</p><label><input type="radio" name="p37q2" value="1"> <span>1. 이미 고친 약점이다.</span></label><label><input type="radio" name="p37q2" value="2"> <span>2. 테스트 코드에서 나온 결과다.</span></label><label><input type="radio" name="p37q2" value="3"> <span>3. 약점의 피해가 작다.</span></label><label><input type="radio" name="p37q2" value="4"> <span>4. bandit이 진짜 약점이라고 확신하지 못해 오탐일 가능성이 크다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>피해의 크기는 Severity(심각도)입니다. 신뢰도가 낮을수록 사람이 더 꼼꼼히 따져 판정합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">지난주에 통과하던 pip-audit 단계가 코드를 고치지 않았는데 오늘 실패했습니다. 알맞은 대응은 무엇인가요?</p><label><input type="radio" name="p37q3" value="1"> <span>1. CI에서 pip-audit 단계를 지운다.</span></label><label><input type="radio" name="p37q3" value="2"> <span>2. 취약점 내용을 확인하고 고쳐진 버전으로 올린 뒤 테스트를 돌린다.</span></label><label><input type="radio" name="p37q3" value="3"> <span>3. 실패를 무시하고 배포한다.</span></label><label><input type="radio" name="p37q3" value="4"> <span>4. bandit을 다시 실행한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>쓰던 패키지에 새 취약점이 공개된 것입니다. 도구가 제 역할을 한 것이므로 버전을 올려 대응합니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>다음 파트에서는 보안약점이 일부러 섞여 있는 "동아리 공지 게시판" API를 받아, 지금까지 배운 7개 유형을 기준으로 직접 진단하고 진단표를 작성합니다. 오늘 배운 두 도구도 진단의 보조 수단으로 씁니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p37/s11-p37-04.html"><span class="dir">이전</span>S11-P37-04 CI에 보안 점검 추가</a>
+  <a class="next" href="../../s11/p38/s11-p38-01.html"><span class="dir">다음</span>S11-P38-01 진단 과제 안내</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

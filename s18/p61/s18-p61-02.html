@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S18-P61-02 AWS 배포 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S18-P61-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S18. 보안 점검, 배포와 발표</a><span class="sep">/</span><span>S18-P61 보안 점검과 AWS 배포</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s18-p61-01.html" style="flex:15" data-type="실습" title="보안 점검 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s18-p61-02.html" style="flex:25" data-type="실습" title="AWS 배포 (25분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s18-p61-03.html" style="flex:5" data-type="실습" title="README 작성 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s18-p61-04.html" style="flex:5" data-type="정리" title="정리: 발표 준비 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S18-P61-02</span></div>
+<h1>AWS 배포</h1>
+
+<p class="lead">8일차에 만든 배포 구성(EC2, RDS, ALB, 배포 워크플로)을 그대로 써서 프로젝트를 배포합니다. 새로 만드는 것은 프로젝트만의 이미지 저장소, 데이터베이스, 비밀 값, 로그 그룹뿐이고, 나머지는 권한 범위를 넓혀 함께 씁니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>기존 배포 파이프라인과 서버를 재사용해 프로젝트를 AWS에 배포하고, ALB 주소로 동작을 확인할 수 있습니다.</p></div>
+
+<h2>무엇을 새로 만들고 무엇을 바꾸나요</h2>
+<div class="table-wrap"><table><thead><tr><th>자원</th><th>도서 API</th><th>프로젝트</th><th>할 일</th></tr></thead><tbody><tr><td>ECR 저장소</td><td><code>book-api</code></td><td><code>project-api</code></td><td>새로 만들기</td></tr><tr><td>RDS의 데이터베이스와 계정</td><td><code>bookapi</code>(마스터 계정)</td><td><code>projectapi</code>(앱 전용 계정 <code>projectapp</code>)</td><td>같은 RDS 안에 새로 만들기</td></tr><tr><td>Parameter Store</td><td><code>/book-api/*</code></td><td><code>/project-api/*</code></td><td>새로 만들기</td></tr><tr><td>로그 그룹</td><td><code>/book-api/app</code></td><td><code>/project-api/app</code></td><td>새로 만들기</td></tr><tr><td>EC2 역할</td><td><code>book-api-ec2-role</code></td><td>같은 역할</td><td>파라미터와 로그 권한에 새 경로 추가</td></tr><tr><td>배포 역할</td><td><code>book-api-github-deploy</code></td><td>같은 역할</td><td>신뢰 정책에 새 저장소, ECR 권한에 새 저장소 추가</td></tr><tr><td>EC2, ALB, 대상 그룹</td><td>8000번, <code>/health</code></td><td>같은 포트, 같은 경로</td><td>도서 API 컨테이너를 내리고 프로젝트 컨테이너를 올리기</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">RDS에 앱 전용 계정을 만드는 이유</p><p>7일차에는 단순하게 마스터 계정 하나로 도서 API를 연결했고, 실제 서비스에서는 앱 전용 계정을 따로 만든다고 했습니다(S13-P46-04). 같은 RDS에 두 앱이 함께 있게 되었으므로 이번에는 그렇게 합니다. 프로젝트 계정은 자기 데이터베이스(<code>projectapi</code>)에만 접속할 수 있고, 도서 API의 데이터는 볼 수 없습니다. 하나가 뚫려도 다른 하나는 지킬 수 있습니다.</p></div>
+<ol class="steps"><li><h3>ECR 저장소와 로그 그룹(내 PC)</h3><div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>aws ecr create-repository --repository-name project-api --image-tag-mutability IMMUTABLE \
+  --image-scanning-configuration scanOnPush=true --tags Key=Owner,Value=student07 \
+  --query repository.repositoryUri --output text
+123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/project-api
+
+aws logs create-log-group --log-group-name /project-api/app --tags Owner=student07
+aws logs put-retention-policy --log-group-name /project-api/app --retention-in-days 30</code></pre></div>
+</li><li><h3>앱 전용 DB 계정 암호와 비밀 값(내 PC)</h3>
+<p>앱 계정 암호와 JWT 서명 키를 새로 만들어 Parameter Store에 넣습니다. 도서 API의 값을 다시 쓰지 않습니다. 앱 계정 암호는 다음 단계에서 한 번 더 입력해야 하므로, 화면에 한 번 출력해 복사해 둡니다.</p>
+<div class="codeblock term"><pre><code>APP_PW=$(python -c "import secrets; print(secrets.token_urlsafe(24))")
+echo $APP_PW        # 다음 단계에서 붙여 넣을 값. 복사한 뒤 clear로 화면을 지웁니다.
+
+aws ssm put-parameter --name /project-api/SECRET_KEY --type SecureString --tags Key=Owner,Value=student07 \
+  --value "$(python -c 'import secrets; print(secrets.token_urlsafe(32))')"
+aws ssm put-parameter --name /project-api/DATABASE_URL --type SecureString --tags Key=Owner,Value=student07 \
+  --value "postgresql+psycopg://projectapp:$APP_PW@book-api-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com:5432/projectapi?sslmode=require"
+unset APP_PW</code></pre></div>
+</li><li><h3>데이터베이스와 계정 만들기(EC2)</h3>
+<p>Session Manager로 EC2에 접속해 마스터 계정으로 RDS에 들어갑니다(S13-P46-03). <code>\password</code>는 암호를 화면에 보이지 않게 두 번 묻습니다. 앞 단계에서 복사한 값을 붙여 넣습니다. 이렇게 하면 암호가 명령 기록에 남지 않습니다.</p>
+<div class="codeblock term"><pre><code>psql "host=book-api-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com dbname=bookapi user=bookapi sslmode=require"</code></pre></div>
+<div class="codeblock"><span class="file">psql에서 한 줄씩 실행</span><pre><code>CREATE ROLE projectapp LOGIN;
+\password projectapp
+GRANT projectapp TO bookapi;
+CREATE DATABASE projectapi OWNER projectapp;
+REVOKE ALL ON DATABASE projectapi FROM PUBLIC;
+REVOKE ALL ON DATABASE bookapi FROM PUBLIC;</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>명령</th><th>하는 일</th></tr></thead><tbody><tr><td><code>CREATE ROLE projectapp LOGIN</code></td><td>로그인할 수 있는 계정을 만듭니다. 관리 권한은 주지 않습니다.</td></tr><tr><td><code>\password projectapp</code></td><td>암호를 정합니다.</td></tr><tr><td><code>GRANT projectapp TO bookapi</code></td><td>RDS의 마스터 계정은 완전한 관리자(슈퍼유저)가 아닙니다. PostgreSQL 16부터는 다른 계정을 데이터베이스의 주인으로 정하려면 그 계정의 권한을 쓸 수 있어야 해서, 이 줄이 없으면 다음 줄이 <code>must be able to SET ROLE</code> 오류로 실패합니다.</td></tr><tr><td><code>CREATE DATABASE projectapi OWNER projectapp</code></td><td>프로젝트 데이터베이스를 만들고 주인을 앱 계정으로 정합니다. 주인이므로 마이그레이션으로 테이블을 만들 수 있습니다.</td></tr><tr><td><code>REVOKE ALL ON DATABASE ... FROM PUBLIC</code></td><td>PostgreSQL은 기본으로 모든 계정이 모든 데이터베이스에 접속할 수 있게 해 둡니다. 이 권한을 거둬, 각 앱 계정이 자기 데이터베이스에만 접속하게 합니다.</td></tr></tbody></table></div>
+<div class="codeblock term"><pre><code>psql "host=book-api-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com dbname=bookapi user=projectapp sslmode=require" -c "select 1"
+psql: error: ... FATAL:  permission denied for database "bookapi"
+DETAIL:  User does not have CONNECT privilege.</code></pre></div>
+<p>앱 계정으로 도서 API 데이터베이스에 접속하면 거부되는 것을 확인합니다.</p></li><li><h3>EC2 역할 권한 넓히기(콘솔)</h3>
+<p>IAM에서 <code>book-api-ec2-role</code>을 열고 두 인라인 정책의 <code>Resource</code>를 목록으로 바꿉니다. 정책 이름은 그대로 둡니다.</p>
+<div class="codeblock"><span class="file">book-api-read-parameters</span><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadAppParameters",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters"
+      ],
+      "Resource": [
+        "arn:aws:ssm:ap-northeast-2:123456789012:parameter/book-api/*",
+        "arn:aws:ssm:ap-northeast-2:123456789012:parameter/project-api/*"
+      ]
+    }
+  ]
+}</code></pre></div>
+<div class="codeblock"><span class="file">book-api-logs</span><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "AppLogs",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": [
+        "arn:aws:logs:ap-northeast-2:123456789012:log-group:/book-api/app:*",
+        "arn:aws:logs:ap-northeast-2:123456789012:log-group:/project-api/app:*"
+      ]
+    }
+  ]
+}</code></pre></div>
+</li><li><h3>배포 역할 넓히기(콘솔)</h3>
+<p><code>book-api-github-deploy</code> 역할의 <strong>신뢰 관계</strong>에서 <code>sub</code> 조건을 목록으로 바꿉니다. 목록의 값 가운데 하나와 같으면 허용됩니다. 권한 정책에서는 ECR 푸시 문장의 <code>Resource</code>에 새 저장소를 더합니다. 배포 명령을 보낼 수 있는 서버(<code>ssm:SendCommand</code>의 인스턴스)는 같으므로 바꾸지 않습니다.</p>
+<div class="codeblock"><span class="file">신뢰 정책의 Condition 일부</span><pre><code>"token.actions.githubusercontent.com:sub": [
+  "repo:내아이디/book-api:ref:refs/heads/main",
+  "repo:내아이디/study-api:ref:refs/heads/main"
+]</code></pre></div>
+<div class="codeblock"><span class="file">권한 정책의 ECR 문장</span><pre><code>{
+  "Sid": "EcrPushAppImages",
+  "Effect": "Allow",
+  "Action": [
+    "ecr:BatchCheckLayerAvailability",
+    "ecr:InitiateLayerUpload",
+    "ecr:UploadLayerPart",
+    "ecr:CompleteLayerUpload",
+    "ecr:PutImage",
+    "ecr:BatchGetImage"
+  ],
+  "Resource": [
+    "arn:aws:ecr:ap-northeast-2:123456789012:repository/book-api",
+    "arn:aws:ecr:ap-northeast-2:123456789012:repository/project-api"
+  ]
+}</code></pre></div>
+</li><li><h3>서버 준비(EC2)</h3><div class="codeblock term"><pre><code>cd ~/book-api &amp;&amp; docker compose -f compose.prod.yaml down
+mkdir ~/project-api &amp;&amp; cd ~/project-api
+cat &gt; compose.prod.yaml        # 내 저장소의 compose.prod.yaml 내용을 붙여 넣고 Ctrl+D
+echo "IMAGE=pending" &gt; .env    # 첫 배포가 실제 이미지 주소로 바꿉니다.
+docker compose -f compose.prod.yaml config --services
+api</code></pre></div>
+<p>도서 API 컨테이너를 내리면 ALB는 잠시 502를 돌려줍니다. 첫 배포가 끝나면 같은 8000번에서 프로젝트가 응답합니다. 도서 API는 <code>~/book-api</code>에 그대로 있으므로, 필요하면 프로젝트를 내리고 <code>up -d</code>로 다시 띄울 수 있습니다.</p></li><li><h3>GitHub 변수 등록과 배포</h3>
+<p>프로젝트 저장소의 Settings, Secrets and variables, Actions, <strong>Variables</strong>에 도서 API 저장소와 같은 값으로 세 변수를 등록합니다. 비밀 값이 아니므로 Secrets가 아닌 Variables에 둡니다.</p>
+<div class="table-wrap"><table><thead><tr><th>이름</th><th>값</th></tr></thead><tbody><tr><td><code>AWS_DEPLOY_ROLE_ARN</code></td><td><code>arn:aws:iam::123456789012:role/book-api-github-deploy</code></td></tr><tr><td><code>EC2_INSTANCE_ID</code></td><td><code>i-0123456789abcdef0</code></td></tr><tr><td><code>ALB_DNS_NAME</code></td><td><code>book-api-alb-1234567890.ap-northeast-2.elb.amazonaws.com</code></td></tr></tbody></table></div>
+
+<p>변수가 생기면 배포 단계가 더는 건너뛰어지지 않습니다. Actions 화면의 deploy 워크플로에서 <strong>Run workflow</strong>를 누르거나, README를 고쳐 푸시합니다. 테스트, 이미지 빌드와 푸시, Run Command(마이그레이션, 실행), ALB 확인 순서로 진행됩니다.</p>
+</li><li><h3>배포 확인</h3><div class="codeblock term"><pre><code>ALB=http://book-api-alb-1234567890.ap-northeast-2.elb.amazonaws.com
+curl -s $ALB/health
+{"status":"ok","database":"ok"}
+curl -s -o /dev/null -w "%{http_code}\n" $ALB/docs
+404
+BASE=$ALB bash tools/demo.sh
+...
+== 5. 참가자가 남의 모임 수정 시도(403)
+{"code":"FORBIDDEN","message":"모임을 개설한 사람만 할 수 있습니다."}</code></pre></div>
+<p><code>tools/demo.sh</code>는 예시 프로젝트에 들어 있는 시연 스크립트입니다. 내 프로젝트에 맞게 고쳐 쓰면 발표 시연에도 그대로 씁니다(S18-P62). CloudWatch Logs의 <code>/project-api/app</code>에 요청 로그가 들어오는지도 확인합니다.</p></li></ol>
+
+<h2>배포가 실패할 때</h2>
+<div class="table-wrap"><table><thead><tr><th>어디서</th><th>메시지</th><th>원인과 해결</th></tr></thead><tbody><tr><td>자격 증명 단계</td><td><code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code></td><td>배포 역할 신뢰 정책의 <code>sub</code>에 새 저장소가 없거나 이름이 다릅니다(대소문자 포함).</td></tr><tr><td>이미지 푸시</td><td><code>not authorized to perform: ecr:InitiateLayerUpload</code></td><td>배포 역할의 ECR 문장에 <code>project-api</code>가 없습니다.</td></tr><tr><td>이미지 푸시</td><td><code>repository with name 'project-api' does not exist</code></td><td>ECR 저장소를 만들지 않았거나 다른 리전에 만들었습니다.</td></tr><tr><td>Run Command</td><td><code>Parameter Store에 없는 파라미터</code> 또는 <code>AccessDeniedException</code></td><td>파라미터 이름의 경로가 다르거나, EC2 역할의 파라미터 정책에 <code>/project-api/*</code>가 없습니다.</td></tr><tr><td>Run Command</td><td><code>password authentication failed for user "projectapp"</code></td><td><code>\password</code>로 넣은 값과 DATABASE_URL의 암호가 다릅니다. 다시 <code>\password</code>로 맞춥니다.</td></tr><tr><td>Run Command</td><td><code>failed to create task for container: ... awslogs ... AccessDenied</code></td><td>EC2 역할의 로그 정책에 <code>/project-api/app</code>이 없거나 로그 그룹을 만들지 않았습니다.</td></tr><tr><td>ALB 확인</td><td>502가 계속됨</td><td>서버에서 <code>docker compose -f compose.prod.yaml ps</code>와 <code>logs</code>로 컨테이너 상태를 봅니다(S16-P55).</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>배포 결과</th><th>내 값</th></tr></thead><tbody><tr><td>ALB의 /health 결과</td><td><input data-save="p61_health" aria-label="내 결과"></td></tr><tr><td>배포된 이미지 태그</td><td><input data-save="p61_tag" aria-label="내 결과"></td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s18/p61/s18-p61-01.html"><span class="dir">이전</span>S18-P61-01 보안 점검</a>
+  <a class="next" href="../../s18/p61/s18-p61-03.html"><span class="dir">다음</span>S18-P61-03 README 작성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

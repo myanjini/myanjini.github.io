@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P42-01 VPC 구성 요소 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P42-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P42 VPC와 네트워크 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p42-01.html" style="flex:15" data-type="주요 개념" title="VPC 구성 요소 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s12-p42-02.html" style="flex:10" data-type="주요 개념" title="보안 그룹과 네트워크 ACL (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p42-03.html" style="flex:15" data-type="실습" title="배포 네트워크 설계 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s12-p42-04.html" style="flex:5" data-type="실습" title="설계 자기 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p42-05.html" style="flex:5" data-type="정리" title="정리: 6일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S12-P42-01</span></div>
+<h1>VPC 구성 요소</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>VPC의 구성 요소를 이해하고 API 서버와 DB의 네트워크 배치를 설계할 수 있습니다.</p></div>
+
+<p class="lead">VPC(Virtual Private Cloud)는 AWS 안에 만드는 나만의 사설 네트워크입니다. EC2와 RDS는 모두 VPC 안에 놓이고, 어떤 서브넷에 두고 어떤 경로를 열어 주느냐에 따라 인터넷에서 닿는지 아닌지가 정해집니다.</p>
+
+<h2>CIDR: 주소 범위 표기</h2>
+<p>VPC를 만들 때 가장 먼저 그 안에서 쓸 IP 주소 범위를 정합니다. 범위는 <strong>CIDR</strong> 표기로 적습니다. <code>10.0.0.0/16</code>에서 <code>/16</code>은 앞의 16비트(10.0)를 고정한다는 뜻이고, 남은 16비트로 2<sup>16</sup> = 65,536개 주소를 쓸 수 있습니다. 숫자가 클수록 범위가 좁습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>CIDR</th><th>고정 부분</th><th>주소 수</th><th>이 과정에서</th></tr></thead><tbody><tr><td><code>10.0.0.0/16</code></td><td>10.0</td><td>65,536</td><td>VPC 전체</td></tr><tr><td><code>10.0.1.0/24</code></td><td>10.0.1</td><td>256(AWS가 5개를 예약해 251개 사용)</td><td>서브넷 하나</td></tr><tr><td><code>203.0.113.25/32</code></td><td>주소 전체</td><td>1</td><td>보안 그룹에서 "내 IP 하나"를 뜻할 때</td></tr><tr><td><code>0.0.0.0/0</code></td><td>없음</td><td>모든 주소</td><td>"인터넷 전체"를 뜻할 때</td></tr></tbody></table></div>
+
+<p>VPC에는 인터넷에서 쓰지 않기로 약속한 사설 IP 대역(<code>10.0.0.0/8</code>, <code>172.16.0.0/12</code>, <code>192.168.0.0/16</code>)을 씁니다. 집 공유기가 <code>192.168.0.x</code> 주소를 나눠 주는 것과 같은 원리입니다.</p>
+
+<h2>VPC의 구성 요소</h2>
+<div class="table-wrap"><table><thead><tr><th>구성 요소</th><th>뜻</th></tr></thead><tbody><tr><td>서브넷</td><td>VPC 주소 범위를 잘게 나눈 구역입니다. <strong>서브넷 하나는 가용 영역 하나에만</strong> 속합니다.</td></tr><tr><td>라우팅 테이블</td><td>"이 주소로 가는 요청은 어디로 보낼까"를 적은 표입니다. 서브넷마다 하나씩 연결됩니다. VPC 안끼리 통신하는 <code>local</code> 경로는 기본으로 들어 있습니다.</td></tr><tr><td>인터넷 게이트웨이(IGW)</td><td>VPC와 인터넷을 잇는 문입니다. VPC에 하나 붙입니다.</td></tr><tr><td>퍼블릭 서브넷</td><td>라우팅 테이블에 <code>0.0.0.0/0 → 인터넷 게이트웨이</code> 경로가 있는 서브넷입니다. 여기 있는 자원에 공용 IP가 있으면 인터넷과 통신합니다.</td></tr><tr><td>프라이빗 서브넷</td><td>인터넷 게이트웨이로 가는 경로가 없는 서브넷입니다. 인터넷에서 들어올 길이 없습니다.</td></tr><tr><td>NAT 게이트웨이</td><td>프라이빗 서브넷의 자원이 밖으로 나가는 요청(예: 패키지 내려받기)만 할 수 있게 해 주는 장치입니다. 들어오는 연결은 받지 않습니다.</td></tr></tbody></table></div>
+
+<p>"퍼블릭"과 "프라이빗"은 서브넷을 만들 때 고르는 옵션이 아니라, <strong>라우팅 테이블에 인터넷 게이트웨이로 가는 경로가 있느냐</strong>로 정해진다는 점이 중요합니다.</p>
+<figure><svg viewBox="0 0 760 440" role="img" aria-label="실습 VPC의 배치. 퍼블릭 서브넷만 인터넷 게이트웨이로 가는 경로를 갖고, 프라이빗 서브넷은 VPC 안에서만 통신합니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="320" y="5" width="120" height="36" rx="8" class="svg-box"/><text x="380.0" y="28.0" text-anchor="middle" class="svg-text">인터넷</text><rect x="290" y="62" width="180" height="42" rx="8" class="svg-box-accent"/><text x="380.0" y="88.0" text-anchor="middle" class="svg-text">인터넷 게이트웨이</text><rect x="20" y="120" width="720" height="310" rx="10" class="svg-zone"/><text x="32" y="140" text-anchor="start" class="svg-label">VPC 10.0.0.0/16</text><rect x="35" y="150" width="335" height="268" rx="10" class="svg-zone"/><text x="47" y="170" text-anchor="start" class="svg-label">가용 영역 ap-northeast-2a</text><rect x="390" y="150" width="335" height="268" rx="10" class="svg-zone"/><text x="402" y="170" text-anchor="start" class="svg-label">가용 영역 ap-northeast-2c</text><rect x="50" y="180" width="305" height="105" rx="10" class="svg-zone-public"/><text x="62" y="200" text-anchor="start" class="svg-label">퍼블릭 서브넷 10.0.1.0/24</text><rect x="140" y="220" width="125" height="50" rx="8" class="svg-box-accent"/><text x="202.5" y="241.0" text-anchor="middle" class="svg-text">EC2</text><text x="202.5" y="260.0" text-anchor="middle" class="svg-small">도서 API</text><rect x="50" y="300" width="305" height="105" rx="10" class="svg-zone-private"/><text x="62" y="320" text-anchor="start" class="svg-label">프라이빗 서브넷 10.0.11.0/24</text><rect x="140" y="340" width="125" height="50" rx="8" class="svg-box"/><text x="202.5" y="361.0" text-anchor="middle" class="svg-text">RDS</text><text x="202.5" y="380.0" text-anchor="middle" class="svg-small">주 DB</text><rect x="405" y="180" width="305" height="105" rx="10" class="svg-zone-public"/><text x="417" y="200" text-anchor="start" class="svg-label">퍼블릭 서브넷 10.0.2.0/24</text><text x="557" y="250" text-anchor="middle" class="svg-small">8일차에 ALB가 함께 씁니다</text><rect x="405" y="300" width="305" height="105" rx="10" class="svg-zone-private"/><text x="417" y="320" text-anchor="start" class="svg-label">프라이빗 서브넷 10.0.12.0/24</text><text x="557" y="370" text-anchor="middle" class="svg-small">DB 서브넷 그룹의 두 번째 칸</text><line x1="380" y1="41" x2="380" y2="60" class="svg-line" marker-end="url(#arr)"/><line x1="340" y1="104" x2="230" y2="218" class="svg-line" marker-end="url(#arr)"/><line x1="420" y1="104" x2="640" y2="228" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>실습 VPC의 배치. 퍼블릭 서브넷만 인터넷 게이트웨이로 가는 경로를 갖고, 프라이빗 서브넷은 VPC 안에서만 통신합니다.</figcaption></figure>
+<div class="table-wrap"><table><thead><tr><th>라우팅 테이블</th><th>대상(Destination)</th><th>보낼 곳(Target)</th><th>연결한 서브넷</th></tr></thead><tbody><tr><td>퍼블릭용</td><td><code>10.0.0.0/16</code><br><code>0.0.0.0/0</code></td><td><code>local</code><br>인터넷 게이트웨이</td><td>10.0.1.0/24, 10.0.2.0/24</td></tr><tr><td>프라이빗용</td><td><code>10.0.0.0/16</code></td><td><code>local</code></td><td>10.0.11.0/24, 10.0.12.0/24</td></tr></tbody></table></div>
+
+<h2>NAT 게이트웨이를 쓰지 않는 구성</h2>
+<p>흔한 설계는 서버(EC2)를 프라이빗 서브넷에 두고 NAT 게이트웨이로 밖과 통신하게 하는 것입니다. 하지만 NAT 게이트웨이는 시간당 요금이 비싸므로(S12-P40-04) 이 과정에서는 쓰지 않습니다. 대신 EC2는 퍼블릭 서브넷에 두고, 앞에서 배울 보안 그룹으로 들어오는 연결을 엄격하게 막습니다. 데이터베이스(RDS)는 밖으로 나갈 일이 없으므로 NAT 없이 프라이빗 서브넷에 둡니다.</p>
+<p>RDS는 장애에 대비해 <strong>서로 다른 가용 영역의 서브넷 두 개 이상</strong>으로 이루어진 DB 서브넷 그룹을 요구합니다. 8일차의 ALB도 가용 영역 두 곳의 퍼블릭 서브넷이 필요합니다. 그래서 지금 당장 서버는 하나라도 서브넷은 가용 영역 두 곳에 짝을 맞춰 만듭니다.</p>
+<div class="callout note"><p class="callout-title">기본 VPC</p><p>AWS 계정에는 리전마다 "기본 VPC"가 미리 만들어져 있고, 그 안의 서브넷은 모두 퍼블릭입니다. 연습할 때는 편하지만, 데이터베이스를 숨기는 설계를 할 수 없으므로 이 과정에서는 직접 만든 실습 VPC를 씁니다(7일차 S13-P43).</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p41/s12-p41-05.html"><span class="dir">이전</span>S12-P41-05 정리: IAM</a>
+  <a class="next" href="../../s12/p42/s12-p42-02.html"><span class="dir">다음</span>S12-P42-02 보안 그룹과 네트워크 ACL</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

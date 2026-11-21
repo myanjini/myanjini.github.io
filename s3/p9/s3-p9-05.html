@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P9-05 정리: 설정과 미들웨어 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P9-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P9 설정 관리와 미들웨어</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p9-01.html" style="flex:10" data-type="주요 개념" title="설정과 비밀정보 분리 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p9-02.html" style="flex:15" data-type="실습" title="Settings 클래스 적용 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s3-p9-03.html" style="flex:5" data-type="주요 개념" title="미들웨어와 CORS (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s3-p9-04.html" style="flex:15" data-type="실습" title="CORS와 요청 로깅 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s3-p9-05.html" style="flex:5" data-type="정리" title="정리: 설정과 미들웨어 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S3-P9-05</span></div>
+<h1>정리: 설정과 미들웨어</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>비밀 값과 환경마다 다른 값은 코드에 적지 않고 환경 변수와 <code>.env</code>로 관리합니다. <code>.env</code>는 Git에 올리지 않고 <code>.env.example</code>을 대신 올립니다.</li>
+  <li>pydantic-settings는 환경 변수, <code>.env</code>, 기본값 순으로 값을 찾고, 필수 설정이 빠지면 서버를 시작하지 않습니다.</li>
+  <li>미들웨어는 모든 요청과 응답이 거치는 관문이고, <code>call_next</code> 앞뒤로 할 일을 적습니다.</li>
+  <li>CORS는 브라우저의 규칙이며, 서버는 허용할 출처를 명확히 정해 알려 줍니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">다음 중 Git 저장소에 올리면 <strong>안 되는</strong> 파일은 무엇인가요?</p><label><input type="radio" name="p9q1" value="1"> <span>1. <code>.env.example</code></span></label><label><input type="radio" name="p9q1" value="2"> <span>2. <code>.gitignore</code></span></label><label><input type="radio" name="p9q1" value="3"> <span>3. <code>.env</code></span></label><label><input type="radio" name="p9q1" value="4"> <span>4. <code>app/config.py</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden><code>.env</code>에는 실제 비밀 값이 들어 있습니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q"><code>http://localhost:5173</code>의 화면이 <code>http://127.0.0.1:8000</code>의 API를 호출할 때 CORS 설정이 필요한 이유는 무엇인가요?</p><label><input type="radio" name="p9q2" value="1"> <span>1. 두 주소의 출처가 달라서</span></label><label><input type="radio" name="p9q2" value="2"> <span>2. HTTP를 써서</span></label><label><input type="radio" name="p9q2" value="3"> <span>3. API가 JSON을 돌려줘서</span></label><label><input type="radio" name="p9q2" value="4"> <span>4. 포트 번호가 너무 커서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>주소와 포트가 다르면 다른 출처입니다. 브라우저는 서버가 허용한 출처일 때만 응답을 읽게 합니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">처리 시간 미들웨어에서 <code>await call_next(request)</code> 뒤에 쓴 코드는 언제 실행되나요?</p><label><input type="radio" name="p9q3" value="1"> <span>1. 오류가 날 때만</span></label><label><input type="radio" name="p9q3" value="2"> <span>2. 요청이 경로 함수에 닿기 전</span></label><label><input type="radio" name="p9q3" value="3"> <span>3. 경로 함수가 응답을 만든 뒤</span></label><label><input type="radio" name="p9q3" value="4"> <span>4. 서버가 시작될 때</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden><code>call_next</code>가 경로 함수를 실행하고 응답을 돌려준 뒤에 나머지 코드가 실행됩니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>S3-P10에서는 드디어 데이터베이스를 연결합니다. 관계형 데이터베이스와 SQLAlchemy의 기본을 익히고 도서 테이블을 만듭니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p9/s3-p9-04.html"><span class="dir">이전</span>S3-P9-04 CORS와 요청 로깅</a>
+  <a class="next" href="../../s3/p10/s3-p10-01.html"><span class="dir">다음</span>S3-P10-01 관계형 데이터베이스와 ORM</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

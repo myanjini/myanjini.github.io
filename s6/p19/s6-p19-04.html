@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P19-04 계층 분리의 득과 실 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P19-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P19 계층 분리와 트랜잭션</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p19-01.html" style="flex:10" data-type="주요 개념" title="라우터, 서비스, 저장소 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p19-02.html" style="flex:10" data-type="주요 개념" title="서비스 계층으로 옮기기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p19-03.html" style="flex:20" data-type="실습" title="서비스 계층 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s6-p19-04.html" style="flex:5" data-type="실습" title="계층 분리의 득과 실 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s6-p19-05.html" style="flex:5" data-type="정리" title="정리: 계층 분리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>5분</span><span>S6-P19-04</span></div>
+<h1>계층 분리의 득과 실</h1>
+
+<p class="lead">계층을 나누면 파일이 늘고, 함수 하나를 보려고 여러 파일을 오가야 합니다. 언제 나누는 것이 이득인지 스스로 판단해 봅니다.</p>
+<div class="qa"><p class="question">질문 1. 경로가 3개뿐인 작은 사내 도구를 만든다고 합시다. 이때도 라우터, 서비스, 저장소를 나눠야 할까요? 내 판단과 이유를 적어 보세요.</p><textarea data-save="q1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>정답은 하나가 아닙니다. 판단에 쓸 기준은 다음과 같습니다.</p>
+<ul>
+  <li><strong>같은 규칙을 두 곳 이상에서 쓰나요?</strong> 재고 규칙처럼 여러 기능이 함께 쓰는 규칙이 생기면 서비스로 빼는 이득이 큽니다.</li>
+  <li><strong>테스트를 자동화하나요?</strong> HTTP 없이 규칙만 검사하고 싶다면 서비스가 따로 있는 편이 쉽습니다.</li>
+  <li><strong>여러 사람이 오래 고치나요?</strong> 일하는 자리가 정해져 있으면 어디를 고칠지 찾기 쉽습니다.</li>
+</ul>
+<p>셋 다 아니라면 라우터에 모아 두는 편이 읽기 쉽습니다. 처음부터 완벽한 구조를 만들기보다, 중복이 보이기 시작할 때 나누는 것이 실무에서 흔한 방법입니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 2. 이번 실습에서 저자 라우터(<code>app/routers/authors.py</code>)는 나누지 않았습니다. 지금 상태로 두어도 될까요? 나눠야 하는 순간은 언제일까요?</p><textarea data-save="q2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>지금은 두어도 됩니다. 저자 기능은 다른 기능과 나눠 쓰는 규칙이 없고, 각 함수가 짧습니다. 다만 프로젝트 안에서 구조가 섞여 있으면 처음 보는 사람이 헷갈리므로, 팀에서 "새 코드는 계층 구조로 쓴다"처럼 기준을 정해 둡니다. 저자를 지울 때 도서도 함께 처리해야 하는 등 다른 기능과 얽힌 규칙이 생기는 순간이 나눌 때입니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 3. <code>check_can_modify</code>(본인이나 관리자만 수정)는 라우터와 서비스 중 어디에 두는 것이 맞을까요?</p><textarea data-save="q3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>서비스에 둡니다. "본인이나 관리자만 고칠 수 있다"는 HTTP와 상관없는 업무 규칙이기 때문입니다. 라우터에 두면 같은 수정 기능을 다른 경로(예: 관리자 명령어)에서 부를 때 검사가 빠질 수 있습니다. 반면 "로그인했는가"를 확인하는 <code>CurrentUserDep</code>은 요청 헤더를 읽는 일이라 라우터 쪽 의존성에 남깁니다.</p></div></details></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p19/s6-p19-03.html"><span class="dir">이전</span>S6-P19-03 서비스 계층 적용</a>
+  <a class="next" href="../../s6/p19/s6-p19-05.html"><span class="dir">다음</span>S6-P19-05 정리: 계층 분리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

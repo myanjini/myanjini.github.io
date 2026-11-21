@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P22-04 CRUD 테스트 작성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P22-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 테스트 자동화와 CI</a><span class="sep">/</span><span>S7-P22 pytest와 TestClient</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p22-01.html" style="flex:5" data-type="주요 개념" title="3일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s7-p22-02.html" style="flex:10" data-type="주요 개념" title="테스트가 필요한 이유 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s7-p22-03.html" style="flex:10" data-type="주요 개념" title="첫 API 테스트 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s7-p22-04.html" style="flex:20" data-type="실습" title="CRUD 테스트 작성 (20분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s7-p22-05.html" style="flex:5" data-type="정리" title="정리: 테스트 기초 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S7-P22-04</span></div>
+<h1>CRUD 테스트 작성</h1>
+
+<p class="lead">도서 등록, 조회, 수정, 삭제를 테스트로 적습니다. 다 쓰고 나면 테스트를 두 번 실행해 보는데, 두 번째에 무슨 일이 일어나는지 잘 봐 둡니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>TestClient로 인증이 필요한 CRUD API의 테스트를 작성하고 실행할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>설치와 설정</h3>
+<p><code>pip install pytest</code>를 실행하고, 앞 페이지대로 <code>pytest.ini</code>, <code>tests/__init__.py</code>(빈 파일), <code>tests/test_security.py</code>, <code>tests/test_books.py</code>를 만듭니다. <code>pytest -v</code>로 5개가 통과하는지 확인합니다.</p>
+</li><li><h3>도우미 함수 추가</h3>
+<p>도서 등록, 수정, 삭제는 로그인해야 합니다. 테스트마다 로그인 코드를 반복하지 않도록 도우미 함수를 만듭니다. 지금은 개발용 데이터베이스(<code>books.db</code>)에 있는 user1과 1번 저자를 그대로 씁니다.</p>
+<div class="codeblock"><span class="file">tests/test_books.py</span><pre><code>def login(email: str = "user1@example.com", password: str = "practice-pass-1") -&gt; dict:
+    """로그인해 Authorization 헤더를 만듭니다. 개발용 데이터베이스의 user1을 씁니다."""
+    response = client.post("/auth/token", data={"username": email, "password": password})
+    assert response.status_code == 200
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+
+def create_book(headers: dict, **fields) -&gt; dict:
+    """테스트에 쓸 도서를 등록하고 응답 본문을 돌려줍니다."""
+    data = {"title": "테스트 도서", "author_id": 1, "price": 10000} | fields
+    response = client.post("/books", json=data, headers=headers)
+    assert response.status_code == 201
+    return response.json()</code></pre></div>
+
+<p><code>{...} | fields</code>는 두 딕셔너리를 합치는 문법으로, 기본값에 <code>fields</code>로 받은 값을 덮어씁니다. <code>create_book(headers, title="조회 테스트")</code>처럼 필요한 항목만 바꿔 쓸 수 있습니다.</p>
+</li><li><h3>CRUD 테스트 작성</h3>
+<p>먼저 아래 테스트 이름과 설명만 보고 직접 작성해 봅니다. 막히면 펼쳐 봅니다.</p>
+<div class="table-wrap"><table><thead><tr><th>테스트 이름</th><th>시험할 내용</th></tr></thead><tbody><tr><td><code>test_create_book</code></td><td>ISBN <code>9790000000017</code>, 재고 2로 등록하면 201이고, 응답의 제목, 재고, 저자 번호가 보낸 값과 같다.</td></tr><tr><td><code>test_get_book</code></td><td>등록한 도서를 번호로 조회하면 200이고 제목이 같다.</td></tr><tr><td><code>test_update_book</code></td><td>가격을 20000으로 수정하면 200이고, 다시 조회해도 20000이다.</td></tr><tr><td><code>test_delete_book</code></td><td>삭제하면 204이고, 다시 조회하면 404다.</td></tr></tbody></table></div>
+<details><summary>테스트 코드 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">tests/test_books.py</span><pre><code>def test_create_book():
+    # 준비
+    headers = login()
+    data = {"title": "테스트 도서", "author_id": 1, "price": 15000, "isbn": "9790000000017", "stock": 2}
+    # 실행
+    response = client.post("/books", json=data, headers=headers)
+    # 검증
+    assert response.status_code == 201
+    body = response.json()
+    assert body["title"] == "테스트 도서"
+    assert body["stock"] == 2
+    assert body["author"]["id"] == 1
+    assert body["owner_id"] is not None
+
+
+def test_get_book():
+    book = create_book(login(), title="조회 테스트")
+    response = client.get(f"/books/{book['id']}")
+    assert response.status_code == 200
+    assert response.json()["title"] == "조회 테스트"
+
+
+def test_update_book():
+    headers = login()
+    book = create_book(headers)
+    response = client.patch(f"/books/{book['id']}", json={"price": 20000}, headers=headers)
+    assert response.status_code == 200
+    assert response.json()["price"] == 20000
+    # 다시 조회해도 바뀐 값이 나와야 합니다.
+    assert client.get(f"/books/{book['id']}").json()["price"] == 20000
+
+
+def test_delete_book():
+    headers = login()
+    book = create_book(headers)
+    response = client.delete(f"/books/{book['id']}", headers=headers)
+    assert response.status_code == 204
+    assert client.get(f"/books/{book['id']}").status_code == 404</code></pre></div>
+</div></details>
+</li><li><h3>실행</h3>
+<div class="codeblock term"><pre><code>pytest</code></pre></div>
+
+<p><code>9 passed</code>가 나오면 성공입니다. 서버를 따로 실행하지 않아도 된다는 점을 기억해 두세요.</p>
+</li><li><h3>한 번 더 실행</h3>
+<p>아무것도 고치지 않고 다시 <code>pytest</code>를 실행합니다.</p>
+<div class="codeblock term"><pre><code>tests/test_books.py ...F...                                              [ 77%]
+tests/test_security.py ..                                                [100%]
+...
+&gt;       assert response.status_code == 201
+E       assert 409 == 201
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+...
+FAILED tests/test_books.py::test_create_book - assert 409 == 201
+========================= 1 failed, 8 passed in 1.24s ==========================</code></pre></div>
+
+<p>코드는 그대로인데 결과가 달라졌습니다. 아래 질문에 답해 봅니다.</p>
+<div class="qa"><p class="question">질문. 두 번째 실행에서 <code>test_create_book</code>이 409로 실패한 이유는 무엇일까요? 이 테스트 방식에 어떤 문제가 더 있을까요?</p><textarea data-save="q1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>첫 번째 실행에서 ISBN <code>9790000000017</code>인 도서가 개발용 데이터베이스에 저장되었고, 두 번째 실행에서 같은 ISBN으로 등록하려 해서 중복 409가 났습니다. 테스트 결과가 코드가 아니라 데이터베이스에 무엇이 남아 있는지에 따라 달라진 것입니다.</p><p>문제는 더 있습니다. 실행할 때마다 개발용 데이터베이스에 "테스트 도서"가 쌓입니다. user1이나 1번 저자가 없는 컴퓨터(동료의 PC, CI 서버)에서는 처음부터 실패합니다. <code>test_list_books</code>에서 <code>total</code>이 몇 개일지 미리 알 수 없어 <code>&gt;= 0</code>처럼 느슨하게 검증할 수밖에 없었던 것도 같은 이유입니다. 다음 파트에서 테스트마다 깨끗한 데이터베이스를 쓰게 만들어 해결합니다.</p></div></details></div>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>pytest로 9개 테스트를 실행했고, 서버를 켜지 않아도 된다는 것을 확인했다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>실패한 테스트의 출력에서 실제 값과 기대 값, 줄 번호를 읽을 수 있다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>두 번째 실행이 실패한 이유를 설명할 수 있다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>ModuleNotFoundError: No module named 'app'</code></td><td><code>pytest.ini</code>가 <code>book-api</code> 폴더 바로 아래에 없거나, 다른 폴더에서 실행했습니다.</td></tr><tr><td><code>collected 0 items</code></td><td>파일 이름이나 함수 이름이 <code>test_</code>로 시작하지 않습니다.</td></tr><tr><td><code>login</code>에서 <code>assert 401 == 200</code></td><td>개발용 데이터베이스에 user1이 없거나 비밀번호가 다릅니다. S5-P15에서 만든 계정을 확인합니다.</td></tr><tr><td>처음부터 <code>test_create_book</code>이 409</td><td>이전에 같은 ISBN으로 등록한 적이 있습니다. 다음 파트에서 해결하므로 넘어가도 됩니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p22-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s7/p22/s7-p22-03.html"><span class="dir">이전</span>S7-P22-03 첫 API 테스트</a>
+  <a class="next" href="../../s7/p22/s7-p22-05.html"><span class="dir">다음</span>S7-P22-05 정리: 테스트 기초</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

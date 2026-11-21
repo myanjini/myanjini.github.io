@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P21-04 강사 풀이와 흔한 실수 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P21-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P21 3일차 통합 실습: 도서 대여 기능</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p21-01.html" style="flex:5" data-type="주요 개념" title="과제 안내 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s6-p21-02.html" style="flex:10" data-type="실습" title="대여 모델과 API 설계 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p21-03.html" style="flex:25" data-type="실습" title="대여, 반납 구현 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s6-p21-04.html" style="flex:5" data-type="주요 개념" title="강사 풀이와 흔한 실수 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s6-p21-05.html" style="flex:5" data-type="정리" title="정리: 3일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S6-P21-04</span></div>
+<h1>강사 풀이와 흔한 실수</h1>
+
+<p class="lead">강사 풀이와 내 코드를 비교합니다. 동작이 같다면 이름이나 순서가 조금 달라도 괜찮습니다. 아래 실수가 내 코드에 없는지 꼭 확인합니다.</p>
+
+<h2>강사 풀이</h2>
+<details><summary>app/services/loans.py 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/services/loans.py</span><pre><code>"""대여 서비스"""
+from datetime import datetime, timezone
+
+from sqlalchemy.orm import Session
+
+from app.errors import AppError
+from app.models import Loan, User
+from app.repositories import loans as loan_repo
+from app.services.books import change_stock, find_book
+
+MAX_ACTIVE_LOANS = 3  # 한 사람이 동시에 빌릴 수 있는 권수
+
+
+def borrow(db: Session, user: User, book_id: int) -&gt; Loan:
+    book = find_book(db, book_id)
+    if loan_repo.find_active(db, user.id, book.id) is not None:
+        raise AppError(409, "ALREADY_LOANED", "이미 빌린 도서입니다. 반납한 뒤 다시 빌릴 수 있습니다.")
+    if loan_repo.count_active(db, user.id) &gt;= MAX_ACTIVE_LOANS:
+        raise AppError(409, "LOAN_LIMIT_EXCEEDED", f"한 번에 {MAX_ACTIVE_LOANS}권까지 빌릴 수 있습니다.")
+    if book.stock &lt; 1:
+        raise AppError(409, "OUT_OF_STOCK", "남은 재고가 없습니다.")
+
+    # 재고 감소, 재고 기록, 대여 기록을 하나의 트랜잭션으로 묶습니다.
+    change_stock(db, book, -1, "대여")
+    loan = loan_repo.add(db, Loan(user_id=user.id, book_id=book.id))
+    db.commit()
+    db.refresh(loan)
+    return loan
+
+
+def return_book(db: Session, user: User, loan_id: int) -&gt; Loan:
+    loan = loan_repo.get(db, loan_id)
+    if loan is None:
+        raise AppError(404, "LOAN_NOT_FOUND", f"{loan_id}번 대여 기록을 찾을 수 없습니다.")
+    if loan.user_id != user.id and user.role != "admin":
+        raise AppError(403, "FORBIDDEN", "본인이 빌린 도서만 반납할 수 있습니다.")
+    if loan.returned_at is not None:
+        raise AppError(409, "ALREADY_RETURNED", "이미 반납한 도서입니다.")
+
+    loan.returned_at = datetime.now(timezone.utc)
+    change_stock(db, loan.book, 1, "반납")
+    db.commit()
+    db.refresh(loan)
+    return loan
+
+
+def my_loans(db: Session, user: User) -&gt; list[Loan]:
+    return loan_repo.list_by_user(db, user.id)</code></pre></div>
+</div></details>
+<details><summary>app/repositories/loans.py 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/repositories/loans.py</span><pre><code>"""대여 저장소"""
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session, selectinload
+
+from app.models import Loan
+
+
+def get(db: Session, loan_id: int) -&gt; Loan | None:
+    return db.get(Loan, loan_id)
+
+
+def find_active(db: Session, user_id: int, book_id: int) -&gt; Loan | None:
+    """이 사용자가 이 도서를 빌린 뒤 아직 반납하지 않은 기록을 찾습니다."""
+    return db.scalar(select(Loan).where(
+        Loan.user_id == user_id, Loan.book_id == book_id, Loan.returned_at.is_(None)))
+
+
+def count_active(db: Session, user_id: int) -&gt; int:
+    return db.scalar(select(func.count()).select_from(Loan).where(
+        Loan.user_id == user_id, Loan.returned_at.is_(None)))
+
+
+def exists_for_book(db: Session, book_id: int) -&gt; bool:
+    return db.scalar(select(Loan.id).where(Loan.book_id == book_id).limit(1)) is not None
+
+
+def list_by_user(db: Session, user_id: int) -&gt; list[Loan]:
+    stmt = (select(Loan).options(selectinload(Loan.book))
+            .where(Loan.user_id == user_id).order_by(Loan.id.desc()))
+    return list(db.scalars(stmt).all())
+
+
+def add(db: Session, loan: Loan) -&gt; Loan:
+    db.add(loan)
+    db.flush()
+    return loan</code></pre></div>
+</div></details>
+<details><summary>app/routers/loans.py 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/routers/loans.py</span><pre><code>from fastapi import APIRouter, status
+
+from app.dependencies import CurrentUserDep, SessionDep
+from app.schemas import LoanCreate, LoanRead
+from app.services import loans as loan_service
+
+router = APIRouter(prefix="/loans", tags=["대여"])
+
+
+@router.post("", response_model=LoanRead, status_code=status.HTTP_201_CREATED, summary="도서 대여",
+             responses={401: {"description": "로그인 필요"}, 404: {"description": "도서를 찾을 수 없음"},
+                        409: {"description": "이미 빌림, 대여 한도 초과, 재고 없음"}})
+def borrow_book(db: SessionDep, user: CurrentUserDep, loan_in: LoanCreate):
+    return loan_service.borrow(db, user, loan_in.book_id)
+
+
+@router.get("/me", response_model=list[LoanRead], summary="내 대여 목록")
+def list_my_loans(db: SessionDep, user: CurrentUserDep):
+    return loan_service.my_loans(db, user)
+
+
+@router.post("/{loan_id}/return", response_model=LoanRead, summary="도서 반납",
+             responses={401: {"description": "로그인 필요"}, 403: {"description": "본인 대여가 아님"},
+                        404: {"description": "대여 기록을 찾을 수 없음"}, 409: {"description": "이미 반납함"}})
+def return_book(db: SessionDep, user: CurrentUserDep, loan_id: int):
+    return loan_service.return_book(db, user, loan_id)</code></pre></div>
+</div></details>
+
+<h2>흔한 실수</h2>
+<div class="table-wrap"><table><thead><tr><th>실수</th><th>무슨 일이 생기나요</th><th>고치는 방법</th></tr></thead><tbody><tr><td>트랜잭션 중간에 <code>commit</code></td><td>재고를 줄인 뒤 확정하고, 대여 기록을 추가하다가 실패하면 재고만 줄어든 채 남습니다. 도서가 아무도 빌리지 않았는데 사라집니다.</td><td>모든 변경을 마친 뒤 마지막에 한 번만 <code>commit</code>합니다.</td></tr><tr><td>반납에서 본인 검사 누락</td><td>로그인만 하면 대여 번호만 바꿔 남의 대여를 반납할 수 있습니다. 도서는 사용자에게 있는데 시스템은 반납되었다고 기록합니다.</td><td><code>loan.user_id != user.id</code>이고 관리자가 아니면 403을 냅니다.</td></tr><tr><td>본문으로 <code>user_id</code> 받기</td><td>남의 이름으로 빌릴 수 있습니다.</td><td>빌리는 사람은 토큰의 <code>user.id</code>를 씁니다.</td></tr><tr><td>재고를 직접 바꾸기</td><td><code>book.stock -= 1</code>로 바꾸면 재고 기록이 남지 않고, 음수 검사도 빠집니다.</td><td><code>change_stock</code>을 거칩니다. 규칙을 한곳에 모은 이유입니다.</td></tr><tr><td>검사보다 변경을 먼저</td><td>재고를 줄인 뒤 권수 검사에서 409가 나도 <code>rollback</code> 덕분에 데이터는 괜찮지만, 읽는 사람이 흐름을 따라가기 어렵습니다.</td><td>검사를 모두 마친 뒤 변경합니다.</td></tr></tbody></table></div>
+<div class="codeblock"><span class="file">잘못된 예</span><pre><code>    change_stock(db, book, -1, "대여")
+    db.commit()  # 실수: 여기서 확정하면
+    loan = loan_repo.add(db, Loan(user_id=user.id, book_id=book.id))  # 여기서 실패할 때 재고만 줄어 있습니다.
+    db.commit()</code></pre></div>
+<div class="callout warn"><p class="callout-title">아직 남은 문제: 동시에 빌리면</p><p>재고가 1권인 도서를 두 사람이 정확히 같은 순간에 빌리면, 두 요청 모두 "재고 1"을 확인하고 대여에 성공해, 1권뿐인 책이 두 번 빌려질 수 있습니다. 검사한 시점과 사용한 시점 사이에 상태가 바뀌는 이 문제를 <strong>경쟁 조건</strong>이라고 합니다. 6일차 보안 단원(S11-P36)에서 직접 재현하고 고칩니다.</p></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p21-done</code> 브랜치(3일차 완성 코드)에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p21/s6-p21-03.html"><span class="dir">이전</span>S6-P21-03 대여, 반납 구현</a>
+  <a class="next" href="../../s6/p21/s6-p21-05.html"><span class="dir">다음</span>S6-P21-05 정리: 3일차 마무리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P15-01 2일차 복습 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P15-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P15 인증 기초와 회원가입</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p15-01.html" style="flex:5" data-type="주요 개념" title="2일차 복습 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s5-p15-02.html" style="flex:10" data-type="주요 개념" title="인증, 인가와 비밀번호 해시 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p15-03.html" style="flex:10" data-type="주요 개념" title="User 모델과 회원가입 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p15-04.html" style="flex:20" data-type="실습" title="회원가입 API (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s5-p15-05.html" style="flex:5" data-type="정리" title="정리: 회원가입 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S5-P15-01</span></div>
+<h1>2일차 복습</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>비밀번호를 안전하게 저장하는 회원가입 API를 구현할 수 있습니다.</p></div>
+
+<p class="lead">3일차를 시작하기 전에 2일차에 만든 것을 짧게 돌아봅니다. 오늘은 이 도서 API에 "누가 요청했는가"를 더합니다.</p>
+
+<h2>2일차에 만든 것</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>한 줄 요약</th><th>코드 위치</th></tr></thead><tbody><tr><td>세션</td><td>요청 하나에 세션 하나를 열고, 요청이 끝나면 닫습니다.</td><td><code>get_db</code>, <code>SessionDep</code></td></tr><tr><td>CRUD</td><td><code>add</code>, <code>commit</code>, <code>refresh</code>로 저장하고 <code>select</code>로 조회합니다. 수정은 속성을 바꾼 뒤 <code>commit</code>합니다.</td><td><code>app/routers/books.py</code></td></tr><tr><td>관계</td><td><code>books.author_id</code> 외래키로 저자와 도서를 잇고, <code>selectinload</code>로 N+1 문제를 막습니다.</td><td><code>app/models.py</code></td></tr><tr><td>마이그레이션</td><td>모델을 바꾸면 리비전을 만들고, 열어 본 뒤 <code>alembic upgrade head</code>로 적용합니다.</td><td><code>migrations/versions/</code></td></tr></tbody></table></div>
+
+<h2>지금 도서 API의 문제</h2>
+<p>지금은 주소만 알면 누구나 도서를 등록하고, 고치고, 지울 수 있습니다. 실제 서비스라면 다음 질문에 답할 수 있어야 합니다.</p>
+<ul>
+  <li>이 요청을 보낸 사람은 누구인가요?</li>
+  <li>그 사람은 이 일을 해도 되나요?</li>
+</ul>
+<p>3일차 오전에는 이 두 질문에 답하는 기능을 차례로 만듭니다.</p>
+<figure><svg viewBox="0 0 640 110" role="img" aria-label="3일차 오전의 네 파트. 앞 파트의 결과를 다음 파트에서 그대로 씁니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="20" width="140" height="70" rx="8" class="svg-box"/><text x="80.0" y="51.0" text-anchor="middle" class="svg-text">회원가입</text><text x="80.0" y="71.0" text-anchor="middle" class="svg-small">S5-P15</text><rect x="170" y="20" width="140" height="70" rx="8" class="svg-box"/><text x="240.0" y="51.0" text-anchor="middle" class="svg-text">로그인</text><text x="240.0" y="71.0" text-anchor="middle" class="svg-small">S5-P16</text><rect x="330" y="20" width="140" height="70" rx="8" class="svg-box"/><text x="400.0" y="51.0" text-anchor="middle" class="svg-text">권한 검사</text><text x="400.0" y="71.0" text-anchor="middle" class="svg-small">S5-P17</text><rect x="490" y="20" width="140" height="70" rx="8" class="svg-box-accent"/><text x="560.0" y="51.0" text-anchor="middle" class="svg-text">재발급, 로그아웃</text><text x="560.0" y="71.0" text-anchor="middle" class="svg-small">S5-P18</text><line x1="155" y1="55" x2="165" y2="55" class="svg-line" marker-end="url(#arr)"/><line x1="315" y1="55" x2="325" y2="55" class="svg-line" marker-end="url(#arr)"/><line x1="475" y1="55" x2="485" y2="55" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>3일차 오전의 네 파트. 앞 파트의 결과를 다음 파트에서 그대로 씁니다.</figcaption></figure>
+<div class="callout note"><p class="callout-title">오늘 쓰는 계정</p><p>실습에는 실제 이메일이나 평소 쓰는 비밀번호를 쓰지 않습니다. <code>user1@example.com</code>처럼 가상의 계정과 실습용 비밀번호를 씁니다. <code>example.com</code>은 예시용으로 정해 둔 주소라 실제 메일이 가지 않습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s4/p14/s4-p14-05.html"><span class="dir">이전</span>S4-P14-05 정리: 2일차 마무리</a>
+  <a class="next" href="../../s5/p15/s5-p15-02.html"><span class="dir">다음</span>S5-P15-02 인증, 인가와 비밀번호 해시</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

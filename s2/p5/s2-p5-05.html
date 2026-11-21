@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P5-05 정리: 응답 설계 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P5-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 응답 설계와 프로젝트 구조</a><span class="sep">/</span><span>S2-P5 응답 모델과 상태 코드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p5-01.html" style="flex:10" data-type="주요 개념" title="응답 모델과 데이터 계약 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s2-p5-02.html" style="flex:5" data-type="주요 개념" title="상태 코드 선택하기 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s2-p5-03.html" style="flex:10" data-type="주요 개념" title="응답 모델 적용하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s2-p5-04.html" style="flex:20" data-type="실습" title="수정, 삭제 API 완성 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s2-p5-05.html" style="flex:5" data-type="정리" title="정리: 응답 설계 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S2-P5-05</span></div>
+<h1>정리: 응답 설계</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>입력 모델(<code>BookCreate</code>, <code>BookUpdate</code>)과 출력 모델(<code>BookRead</code>)을 나누면 용도에 맞는 항목만 주고받을 수 있습니다.</li>
+  <li><code>response_model</code>은 응답을 출력 모델 모양으로 걸러 내부 값이 새어 나가지 않게 합니다.</li>
+  <li>생성은 201, 내용 없는 성공은 204, 없는 자원은 404, 상태 충돌은 409를 씁니다.</li>
+  <li>PUT은 전체를 바꾸고, PATCH는 <code>exclude_unset=True</code>로 보낸 항목만 바꿉니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">함수가 <code>cost</code>가 들어 있는 딕셔너리를 돌려줍니다. 응답에서 <code>cost</code>를 빼는 가장 알맞은 방법은 무엇인가요?</p><label><input type="radio" name="p5q1" value="1"> <span>1. 목록에서 <code>cost</code>를 지운다.</span></label><label><input type="radio" name="p5q1" value="2"> <span>2. 함수 안에서 매번 <code>del book["cost"]</code>를 한다.</span></label><label><input type="radio" name="p5q1" value="3"> <span>3. <code>cost</code>가 없는 출력 모델을 만들어 <code>response_model</code>로 지정한다.</span></label><label><input type="radio" name="p5q1" value="4"> <span>4. <code>status_code</code>를 바꾼다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>출력 모델을 정해 두면 FastAPI가 모든 응답을 그 모양으로 걸러 줍니다. 원본 데이터를 지우면 내부에서도 쓸 수 없게 됩니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">도서를 삭제한 뒤 돌려줄 내용이 없습니다. 어떤 상태 코드가 알맞은가요?</p><label><input type="radio" name="p5q2" value="1"> <span>1. 204</span></label><label><input type="radio" name="p5q2" value="2"> <span>2. 404</span></label><label><input type="radio" name="p5q2" value="3"> <span>3. 200</span></label><label><input type="radio" name="p5q2" value="4"> <span>4. 201</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>204 No Content는 성공했지만 본문이 없다는 뜻입니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q"><code>PATCH /books/1</code>에 <code>{"price": 19000}</code>만 보냈습니다. <code>exclude_unset=True</code> 없이 <code>model_dump()</code>를 쓰면 어떻게 되나요?</p><label><input type="radio" name="p5q3" value="1"> <span>1. 아무것도 바뀌지 않는다.</span></label><label><input type="radio" name="p5q3" value="2"> <span>2. 가격만 바뀐다.</span></label><label><input type="radio" name="p5q3" value="3"> <span>3. 보내지 않은 제목, 저자 등이 None으로 덮어써진다.</span></label><label><input type="radio" name="p5q3" value="4"> <span>4. 422 오류가 난다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden><code>BookUpdate</code>의 기본값이 모두 None이므로, 보내지 않은 항목도 None으로 꺼내져 덮어쓰게 됩니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>S2-P6에서는 오류 응답의 모양을 하나로 통일하고, ISBN 중복을 409로 막은 뒤, API 문서를 보기 좋게 다듬습니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s2/p5/s2-p5-04.html"><span class="dir">이전</span>S2-P5-04 수정, 삭제 API 완성</a>
+  <a class="next" href="../../s2/p6/s2-p6-01.html"><span class="dir">다음</span>S2-P6-01 HTTPException과 예외 처리기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

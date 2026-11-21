@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P46-03 RDS 만들고 연결하기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P46-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P46 RDS PostgreSQL 연결</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p46-01.html" style="flex:10" data-type="주요 개념" title="관리형 데이터베이스와 RDS (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p46-02.html" style="flex:10" data-type="주요 개념" title="RDS 생성 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s13-p46-03.html" style="flex:20" data-type="실습" title="RDS 만들고 연결하기 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p46-04.html" style="flex:5" data-type="주요 개념" title="RDS 보안 설정 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p46-05.html" style="flex:5" data-type="정리" title="정리: RDS (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S13-P46-03</span></div>
+<h1>RDS 만들고 연결하기</h1>
+
+<p class="lead">프라이빗 서브넷에 RDS PostgreSQL을 만들고, EC2에서만 접속되는지 확인한 뒤, 도서 API의 데이터베이스를 SQLite에서 RDS로 바꿉니다. RDS가 만들어지는 데 10분쯤 걸리므로, 기다리는 동안 다음 페이지(S13-P46-04)를 읽습니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>인터넷에서 닿지 않는 RDS를 만들고, 도서 API를 SSL로 연결해 마이그레이션과 데이터 저장을 확인할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>마스터 암호 만들기</h3>
+<p>내 PC에서 만듭니다. 이 값은 오늘 오후 Parameter Store에 옮길 때까지 암호 관리자나 안전한 메모에 둡니다. 채팅이나 공유 문서에 붙여 넣지 않습니다.</p>
+<div class="codeblock term"><pre><code>python -c "import secrets; print(secrets.token_urlsafe(24))"
+Qm3...(32자)</code></pre></div>
+</li><li><h3>DB 서브넷 그룹 만들기</h3>
+<p>RDS 콘솔의 <strong>서브넷 그룹</strong>, <strong>DB 서브넷 그룹 생성</strong>을 누릅니다.</p>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>값</th></tr></thead><tbody><tr><td>이름</td><td><code>book-api-db-subnets</code></td></tr><tr><td>설명</td><td>book-api private subnets</td></tr><tr><td>VPC</td><td><code>book-api-vpc</code></td></tr><tr><td>가용 영역</td><td>ap-northeast-2a, ap-northeast-2c</td></tr><tr><td>서브넷</td><td>프라이빗 서브넷 두 개만(10.0.11.0/24, 10.0.12.0/24)</td></tr></tbody></table></div>
+</li><li><h3>RDS 만들기</h3><p><strong>데이터베이스 생성</strong>을 누르고 앞 페이지의 표대로 입력합니다. 태그에 <code>Owner</code>를 넣고 <strong>데이터베이스 생성</strong>을 누릅니다. 상태가 "생성 중"에서 "사용 가능"이 될 때까지 기다리며 S13-P46-04를 읽습니다.</p></li><li><h3>엔드포인트와 설정 확인</h3><div class="codeblock term"><pre><code>aws rds describe-db-instances --db-instance-identifier book-api-db --query "DBInstances[0].[DBInstanceStatus,Endpoint.Address,PubliclyAccessible,StorageEncrypted,DBSubnetGroup.DBSubnetGroupName,EngineVersion]" --output text
+available	book-api-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com	False	True	book-api-db-subnets	18.1</code></pre></div>
+<p>퍼블릭 액세스(<code>PubliclyAccessible</code>)가 False, 암호화(<code>StorageEncrypted</code>)가 True인지 확인합니다. 엔드포인트를 복사해 둡니다.</p></li><li><h3>내 PC에서는 닿지 않는지 확인</h3><div class="codeblock term"><pre><code>nslookup book-api-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com
+...
+Address: 10.0.11.152</code></pre></div>
+<p>엔드포인트 이름은 인터넷에서도 조회되지만, 돌려주는 주소가 사설 IP(10.0.11.x)입니다. 내 PC에서는 이 주소로 갈 길이 없으므로 접속할 수 없습니다. 퍼블릭 액세스를 끈 결과입니다.</p></li><li><h3>EC2에서 psql로 접속</h3>
+<p>Session Manager로 EC2에 접속해 PostgreSQL 클라이언트를 설치하고 접속합니다. <code>sslmode=require</code>는 SSL로 암호화한 연결만 쓰겠다는 뜻입니다.</p>
+<div class="codeblock term"><pre><code>sudo dnf install -y postgresql17
+psql "host=book-api-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com port=5432 dbname=bookapi user=bookapi sslmode=require"
+Password for user bookapi: (마스터 암호 입력, 화면에 보이지 않음)
+psql (17.x, server 18.1)
+SSL connection (protocol: TLSv1.3, cipher: TLS_AES_256_GCM_SHA384, compression: off)
+Type "help" for help.
+
+bookapi=&gt; select current_user, current_database();
+ current_user | current_database
+--------------+------------------
+ bookapi      | bookapi
+(1 row)
+
+bookapi=&gt; \q</code></pre></div>
+
+<p>"SSL connection" 줄이 보이면 암호화된 연결입니다. 이번에는 일부러 <code>sslmode=disable</code>(암호화하지 않음)로 접속해 봅니다. RDS가 SSL이 아닌 연결을 거부하는 것을 확인합니다.</p>
+<div class="codeblock term"><pre><code>psql "host=book-api-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com dbname=bookapi user=bookapi sslmode=disable"
+psql: error: connection to server at "book-api-db.xxxx..." (10.0.11.152), port 5432 failed: FATAL:  no pg_hba.conf entry for host "10.0.1.87", user "bookapi", database "bookapi", no encryption</code></pre></div>
+</li><li><h3>DATABASE_URL 바꾸기</h3>
+<p>설정 파일의 <code>DATABASE_URL</code> 줄을 RDS 주소로 바꿉니다. 주소 끝의 <code>?sslmode=require</code>를 빠뜨리지 않습니다.</p>
+<div class="codeblock term"><pre><code>nano ~/book-api.env</code></pre></div>
+<div class="codeblock"><span class="file">~/book-api.env의 DATABASE_URL 줄</span><pre><code>postgresql+psycopg://bookapi:마스터암호@book-api-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com:5432/bookapi?sslmode=require</code></pre></div>
+
+<p>주소의 각 부분은 S8에서 본 것과 같습니다. <code>postgresql+psycopg</code>(드라이버), <code>bookapi:암호</code>(사용자와 암호), <code>엔드포인트:5432</code>(서버와 포트), <code>/bookapi</code>(데이터베이스 이름), <code>?sslmode=require</code>(연결 옵션)입니다.</p>
+</li><li><h3>마이그레이션 적용</h3>
+<p>RDS의 데이터베이스는 비어 있으므로 테이블을 만듭니다. 앱 컨테이너를 바꾸기 전에, 같은 이미지로 일회용 컨테이너를 띄워 마이그레이션만 실행합니다.</p>
+<div class="codeblock term"><pre><code>docker run --rm --env-file ~/book-api.env book-api alembic upgrade head
+INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+INFO  [alembic.runtime.migration] Will assume transactional DDL.
+INFO  [alembic.runtime.migration] Running upgrade  -&gt; 0c8fecfaba35, create authors and books
+...
+INFO  [alembic.runtime.migration] Running upgrade 238c2bf6cf4b -&gt; 142ae5dfcb3f, unique active loan</code></pre></div>
+<p><code>Context impl PostgresqlImpl</code>이 보이면 SQLite가 아니라 PostgreSQL에 적용된 것입니다.</p></li><li><h3>앱 컨테이너 교체</h3>
+<p>설정은 컨테이너를 만들 때 읽히므로, 기존 컨테이너를 지우고 새로 만듭니다. SQLite 볼륨(<code>book-data</code>)은 더 쓰지 않으므로 빼고, 표지 이미지 볼륨은 그대로 둡니다.</p>
+<div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>docker rm -f book-api
+docker run -d --name book-api -p 8000:8000 --env-file ~/book-api.env \
+  -v book-uploads:/app/uploads --restart unless-stopped book-api
+curl -s localhost:8000/health
+{"status":"ok","database":"ok"}</code></pre></div>
+
+<p>내 PC의 <code>/docs</code>에서 회원가입을 하고, EC2의 psql로 RDS에 저장되었는지 확인합니다.</p>
+<div class="codeblock term"><pre><code>psql "host=book-api-db.xxxxxxxxxxxx.ap-northeast-2.rds.amazonaws.com dbname=bookapi user=bookapi sslmode=require" -c "select email from users"
+       email
+-------------------
+ user2@example.com
+(1 row)</code></pre></div>
+<p>SQLite에 넣었던 데이터는 RDS로 옮겨지지 않습니다. 실습이므로 새로 가입합니다. 실제 서비스라면 데이터를 옮기는 작업(마이그레이션 계획)이 따로 필요합니다.</p></li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>RDS 엔드포인트</td><td><input data-save="rdsep" aria-label="내 결과"></td></tr><tr><td>PubliclyAccessible / StorageEncrypted</td><td><input data-save="rdspub" aria-label="내 결과"></td></tr><tr><td>psql의 SSL connection 줄</td><td><input data-save="rdsssl" aria-label="내 결과"></td></tr><tr><td>sslmode=disable 접속 결과</td><td><input data-save="rdsnossl" aria-label="내 결과"></td></tr></tbody></table></div>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p46c1"> <span>DB 서브넷 그룹에 프라이빗 서브넷 2개만 있다.</span></label></li><li><label><input type="checkbox" data-save="p46c2"> <span>RDS의 퍼블릭 액세스가 꺼져 있고, 보안 그룹은 book-api-db-sg 하나다.</span></label></li><li><label><input type="checkbox" data-save="p46c3"> <span>EC2에서 SSL로 접속되고, 암호화하지 않은 접속은 거부된다.</span></label></li><li><label><input type="checkbox" data-save="p46c4"> <span>DATABASE_URL을 RDS로 바꾸고 마이그레이션을 적용했다.</span></label></li><li><label><input type="checkbox" data-save="p46c5"> <span>앱에서 가입한 사용자가 RDS의 users 테이블에 있다.</span></label></li></ul>
+<details><summary>연결이 안 될 때</summary><div class="answer"><div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td>psql이 한참 기다리다 시간 초과</td><td>보안 그룹 문제입니다. book-api-db-sg의 출처가 book-api-sg인지, EC2에 book-api-sg가 붙었는지 확인합니다.</td></tr><tr><td><code>password authentication failed</code></td><td>암호가 다릅니다. 콘솔의 "수정"에서 마스터 암호를 새로 정할 수 있습니다.</td></tr><tr><td><code>database "bookapi" does not exist</code></td><td>초기 데이터베이스 이름을 비웠습니다. psql로 <code>dbname=postgres</code>에 접속해 <code>CREATE DATABASE bookapi;</code>를 실행합니다.</td></tr><tr><td>앱 로그에 <code>invalid literal for int()</code></td><td>암호나 주소에 <code>:</code>, <code>@</code>, <code>/</code> 같은 문자가 있어 DATABASE_URL이 잘못 나뉘었습니다. 영문자와 숫자, <code>-</code>, <code>_</code>만 쓴 암호로 바꿉니다.</td></tr></tbody></table></div>
+</div></details>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p46/s13-p46-02.html"><span class="dir">이전</span>S13-P46-02 RDS 생성 과정 보기</a>
+  <a class="next" href="../../s13/p46/s13-p46-04.html"><span class="dir">다음</span>S13-P46-04 RDS 보안 설정</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

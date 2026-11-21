@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P27-04 운영 설정 점검 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P27-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P27 Docker Compose로 API와 PostgreSQL 실행하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p27-01.html" style="flex:10" data-type="주요 개념" title="다중 컨테이너와 Compose (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p27-02.html" style="flex:10" data-type="주요 개념" title="compose.yaml 작성 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p27-03.html" style="flex:20" data-type="실습" title="PostgreSQL로 전환 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s8-p27-04.html" style="flex:5" data-type="주요 개념" title="운영 설정 점검 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s8-p27-05.html" style="flex:5" data-type="정리" title="정리: Compose (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S8-P27-04</span></div>
+<h1>운영 설정 점검</h1>
+
+<p class="lead">컨테이너를 실제로 운영할 때 기본으로 챙기는 설정 세 가지를 정리합니다.</p>
+
+<h2>헬스 체크와 자동 재시작</h2>
+<p>db처럼 api에도 상태 확인을 붙이고, 멈추면 다시 시작하도록 합니다. 슬림 이미지에는 <code>curl</code>이 없으므로 Python으로 <code>/health</code>를 호출합니다.</p>
+<div class="codeblock"><span class="file">compose.yaml</span><pre><code>  api:
+    build: .
+    restart: unless-stopped  # 멈추면 다시 시작합니다(직접 멈춘 경우는 제외).
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://bookapi:${POSTGRES_PASSWORD}@db:5432/bookapi
+      SECRET_KEY: ${SECRET_KEY}
+      LOG_LEVEL: INFO
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>설정</th><th>하는 일</th></tr></thead><tbody><tr><td><code>restart: unless-stopped</code></td><td>프로그램이 비정상 종료되거나 Docker가 다시 시작되면 컨테이너를 다시 시작합니다. 직접 <code>stop</code>한 경우에는 다시 시작하지 않습니다. db에도 같은 줄을 넣습니다.</td></tr><tr><td><code>healthcheck</code></td><td>30초마다 <code>/health</code>를 부르고, 3번 연속 실패하면 <code>unhealthy</code>로 표시합니다. 8일차 로드 밸런서도 같은 방식으로 서버 상태를 확인합니다.</td></tr></tbody></table></div>
+
+<p>적용 후 <code>docker compose up -d</code>를 하고 30초쯤 뒤 <code>docker compose ps</code>를 보면 api에도 <code>(healthy)</code>가 붙습니다. 지금의 <code>/health</code>는 데이터베이스를 확인하지 않는데, S8-P28-04에서 보강합니다.</p>
+
+<h2>로그 확인</h2>
+<div class="table-wrap"><table><thead><tr><th>명령</th><th>하는 일</th></tr></thead><tbody><tr><td><code>docker compose logs api</code></td><td>api 컨테이너의 출력 전체</td></tr><tr><td><code>docker compose logs -f api</code></td><td>새로 나오는 출력을 계속 보여 줍니다. <code>Ctrl+C</code>로 멈춥니다.</td></tr><tr><td><code>docker compose logs --since 10m api</code></td><td>최근 10분 동안의 출력</td></tr></tbody></table></div>
+
+<h2>데이터 볼륨 백업</h2>
+<p>볼륨은 컨테이너를 지워도 남지만, 볼륨을 실수로 지우거나 디스크가 고장 나면 사라집니다. 정기적으로 백업합니다. <code>pg_dump</code>는 데이터베이스를 SQL 파일로 내보내는 PostgreSQL 도구입니다.</p>
+<div class="codeblock term"><pre><code>docker compose exec db pg_dump -U bookapi -d bookapi -f /tmp/backup.sql
+docker compose cp db:/tmp/backup.sql ./backup.sql</code></pre></div>
+
+<p>컨테이너 안에 파일을 만든 뒤 <code>docker compose cp</code>로 내 PC에 복사합니다. 출력을 <code>&gt;</code>로 바로 받는 방법은 Windows PowerShell에서 글자 인코딩이 바뀌어 복원할 때 깨질 수 있어서 이 방법을 씁니다. 백업 파일에는 사용자 정보와 비밀번호 해시가 들어 있으므로 Git에 올리지 않고 안전한 곳에 보관합니다. 복원은 반대로 파일을 컨테이너에 복사한 뒤 <code>psql -U bookapi -d bookapi -f /tmp/backup.sql</code>로 실행합니다. 7일차 RDS는 자동 백업을 제공합니다.</p>
+<details><summary>운영 설정을 모두 넣은 compose.yaml 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">compose.yaml</span><pre><code>services:
+  db:
+    image: postgres:18
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bookapi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # .env에서 읽어 옵니다.
+      POSTGRES_DB: bookapi
+    volumes:
+      - db-data:/var/lib/postgresql  # 데이터를 컨테이너 밖 볼륨에 저장합니다.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bookapi -d bookapi"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build: .
+    restart: unless-stopped  # 멈추면 다시 시작합니다(직접 멈춘 경우는 제외).
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://bookapi:${POSTGRES_PASSWORD}@db:5432/bookapi
+      SECRET_KEY: ${SECRET_KEY}
+      LOG_LEVEL: INFO
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  db-data:
+  uploads:</code></pre></div>
+</div></details>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p27/s8-p27-03.html"><span class="dir">이전</span>S8-P27-03 PostgreSQL로 전환</a>
+  <a class="next" href="../../s8/p27/s8-p27-05.html"><span class="dir">다음</span>S8-P27-05 정리: Compose</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

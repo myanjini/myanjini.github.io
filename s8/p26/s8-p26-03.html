@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P26-03 이미지 빌드와 실행 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P26-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P26 Docker로 API 컨테이너화하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p26-01.html" style="flex:10" data-type="주요 개념" title="컨테이너의 개념 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p26-02.html" style="flex:10" data-type="주요 개념" title="Dockerfile 작성 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p26-03.html" style="flex:25" data-type="실습" title="이미지 빌드와 실행 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s8-p26-04.html" style="flex:5" data-type="정리" title="정리: 컨테이너화 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S8-P26-03</span></div>
+<h1>이미지 빌드와 실행</h1>
+
+<p class="lead">도서 API 이미지를 만들고 컨테이너로 실행합니다. 환경 변수를 넘기는 방법, 컨테이너 안에서 명령을 실행하는 방법, 레이어 캐시까지 직접 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>Dockerfile로 이미지를 만들고, 포트와 환경 변수를 지정해 컨테이너를 실행할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>Docker 확인</h3>
+<p>Docker Desktop을 실행하고, 터미널에서 확인합니다. <code>Server:</code> 부분까지 나오면 준비된 것입니다.</p>
+<div class="codeblock term"><pre><code>docker version</code></pre></div>
+
+<p>로컬에서 실행 중인 <code>uvicorn</code>이 있으면 끕니다. 같은 8000번 포트를 쓰기 때문입니다.</p>
+</li><li><h3>패키지 목록 갱신</h3>
+<p>이미지는 <code>requirements.txt</code>로만 패키지를 설치합니다. 오전 CI 실습 뒤에 설치한 것이 있다면 갱신합니다.</p>
+<div class="codeblock term"><pre><code>pip freeze &gt; requirements.txt</code></pre></div>
+</li><li><h3>Dockerfile과 .dockerignore 만들기</h3>
+<p>앞 페이지의 두 파일을 <code>book-api</code> 폴더에 만듭니다.</p>
+</li><li><h3>이미지 만들기</h3>
+<div class="codeblock term"><pre><code>docker build -t book-api .
+docker images book-api</code></pre></div>
+
+<p><code>-t book-api</code>는 이미지 이름, 마지막 <code>.</code>은 "이 폴더의 Dockerfile과 파일로 만든다"는 뜻입니다. 처음에는 베이스 이미지와 패키지를 내려받느라 몇 분 걸립니다.</p>
+</li><li><h3>비밀 키 없이 실행해 보기</h3>
+<div class="codeblock term"><pre><code>docker run --rm book-api
+...
+pydantic_core._pydantic_core.ValidationError: 1 validation error for Settings
+secret_key
+  Field required [type=missing, input_value={}, input_type=dict]</code></pre></div>
+
+<p>이미지에는 <code>.env</code>가 없으므로 <code>SECRET_KEY</code>를 찾지 못하고 바로 멈춥니다. 2일차에 기본값을 두지 않은 덕분에, 비밀 키 없이 실행되는 사고를 막았습니다. <code>--rm</code>은 멈춘 컨테이너를 바로 지우라는 뜻입니다.</p>
+</li><li><h3>환경 변수와 포트를 지정해 실행</h3>
+<p><code>비밀키</code> 자리에 S3-P9에서 만든 비밀 키를 넣습니다. 한 줄로 입력합니다.</p>
+<div class="codeblock term"><pre><code>docker run -d --name book-api -p 8000:8000 -e SECRET_KEY=비밀키 -e DATABASE_URL=sqlite:///./data/books.db book-api</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>옵션</th><th>뜻</th></tr></thead><tbody><tr><td><code>-d</code></td><td>뒤에서 실행하고 터미널을 돌려줍니다.</td></tr><tr><td><code>--name book-api</code></td><td>컨테이너 이름. 이후 명령에서 이 이름으로 가리킵니다.</td></tr><tr><td><code>-p 8000:8000</code></td><td>내 PC의 8000번 포트로 오는 연결을 컨테이너의 8000번 포트로 넘깁니다(내 PC:컨테이너).</td></tr><tr><td><code>-e 이름=값</code></td><td>컨테이너에 환경 변수를 넘깁니다. 설정 클래스가 이 값을 읽습니다.</td></tr><tr><td><code>DATABASE_URL</code></td><td>SQLite 파일을 <code>appuser</code>가 쓸 수 있는 <code>data</code> 폴더에 만듭니다.</td></tr></tbody></table></div>
+
+<p>브라우저에서 <code>http://127.0.0.1:8000/health</code>를 열면 <code>{"status":"ok"}</code>가 보입니다. <code>docker ps</code>로 실행 중인 컨테이너도 확인합니다.</p>
+</li><li><h3>오류를 로그로 찾고 컨테이너 안에서 고치기</h3>
+<p><code>http://127.0.0.1:8000/books</code>를 열면 <code>Internal Server Error</code>가 나옵니다. 컨테이너의 출력을 봅니다.</p>
+<div class="codeblock term"><pre><code>docker logs book-api
+...
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such table: books</code></pre></div>
+
+<p>컨테이너 안의 데이터베이스는 새로 만들어져 테이블이 없습니다. <code>docker exec</code>로 실행 중인 컨테이너 안에서 마이그레이션을 실행합니다.</p>
+<div class="codeblock term"><pre><code>docker exec book-api alembic upgrade head
+docker exec book-api id</code></pre></div>
+
+<p>다시 <code>/books</code>를 열면 <code>{"items":[],"total":0,...}</code>가 나옵니다. 두 번째 명령은 <code>uid=1000(appuser)</code>처럼 관리자가 아닌 사용자로 실행 중임을 보여 줍니다.</p>
+</li><li><h3>레이어 캐시 확인</h3>
+<p><code>app/main.py</code> 맨 아래에 주석 한 줄(<code># 캐시 확인</code>)을 추가하고 다시 빌드합니다.</p>
+<div class="codeblock term"><pre><code>docker build -t book-api .
+...
+ =&gt; CACHED [3/6] COPY requirements.txt .
+ =&gt; CACHED [4/6] RUN pip install --no-cache-dir -r requirements.txt
+ =&gt; [5/6] COPY . .</code></pre></div>
+
+<p>패키지 설치는 <code>CACHED</code>로 건너뛰고 코드 복사부터 다시 해서 몇 초 만에 끝납니다. 확인했으면 주석을 지웁니다.</p>
+</li><li><h3>정리</h3>
+<div class="codeblock term"><pre><code>docker stop book-api
+docker rm book-api</code></pre></div>
+
+<p>컨테이너를 지우면 안에서 만든 <code>data/books.db</code>도 함께 사라집니다. 데이터를 남기는 방법은 다음 파트에서 배웁니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>docker build로 book-api 이미지를 만들었다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>SECRET_KEY 없이 실행하면 멈추고, -e로 넘기면 실행된다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>docker logs로 오류를 찾고 docker exec로 마이그레이션을 실행했다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>코드만 고쳐 다시 빌드하면 pip install 단계가 CACHED로 나온다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>error during connect</code>, <code>Is the docker daemon running?</code></td><td>Docker Desktop이 실행되지 않았습니다. 실행하고 고래 아이콘이 멈출 때까지 기다립니다.</td></tr><tr><td><code>port is already allocated</code></td><td>8000번 포트를 다른 프로그램(로컬 uvicorn, 이전 컨테이너)이 쓰고 있습니다. 끄거나 <code>-p 8001:8000</code>처럼 바꿉니다.</td></tr><tr><td>빌드 중 <code>No matching distribution found for pywin32</code></td><td>Windows 전용 패키지가 <code>requirements.txt</code>에 들어갔습니다. 그 줄을 지웁니다.</td></tr><tr><td><code>Conflict. The container name "/book-api" is already in use</code></td><td>같은 이름의 컨테이너가 남아 있습니다. <code>docker rm -f book-api</code> 뒤 다시 실행합니다.</td></tr><tr><td><code>unable to open database file</code></td><td><code>DATABASE_URL</code>을 빼서 쓰기 권한이 없는 <code>/app</code>에 파일을 만들려 했습니다. <code>./data/books.db</code>로 지정합니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p26-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p26/s8-p26-02.html"><span class="dir">이전</span>S8-P26-02 Dockerfile 작성</a>
+  <a class="next" href="../../s8/p26/s8-p26-04.html"><span class="dir">다음</span>S8-P26-04 정리: 컨테이너화</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

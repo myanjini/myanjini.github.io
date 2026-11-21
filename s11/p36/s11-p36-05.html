@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P36-05 정리: 시간 및 상태 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P36-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P36 시간 및 상태와 코드오류</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p36-01.html" style="flex:5" data-type="주요 개념" title="5일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p36-02.html" style="flex:10" data-type="주요 개념" title="시간 및 상태와 코드오류 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s11-p36-03.html" style="flex:10" data-type="주요 개념" title="동시 대여 경쟁 조건 재현 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s11-p36-04.html" style="flex:20" data-type="실습" title="경쟁 조건 해결 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s11-p36-05.html" style="flex:5" data-type="정리" title="정리: 시간 및 상태 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S11-P36-05</span></div>
+<h1>정리: 시간 및 상태</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>보안약점</th><th>핵심</th><th>도서 API</th></tr></thead><tbody><tr><td>검사 시점과 사용 시점의 경쟁 조건</td><td>확인과 변경 사이에 다른 요청이 끼어듭니다.</td><td>조건부 UPDATE(재고), 부분 유일 인덱스(대여)</td></tr><tr><td>종료되지 않는 반복</td><td>반복과 대기에는 횟수와 시간의 상한을 둡니다.</td><td><code>limit</code> 100 이하, 외부 요청의 <code>timeout</code></td></tr><tr><td>None 처리</td><td>없을 수 있는 값은 쓰기 전에 확인합니다.</td><td><code>find_book</code>의 404</td></tr><tr><td>자원 해제</td><td>예외가 나도 닫히게 <code>finally</code>와 <code>with</code>를 씁니다.</td><td><code>get_db</code>, 파일 저장</td></tr></tbody></table></div>
+
+<p>경쟁 조건을 막는 열쇠는 "애플리케이션에서 확인하고 애플리케이션에서 계산"하던 일을 데이터베이스에 맡기는 것입니다. 애플리케이션의 검사는 빠른 안내용으로 남기고, 최종 판단은 데이터베이스의 조건과 제약이 합니다.</p>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q"><code>book.stock -= 1</code> 뒤에 commit하는 코드가 동시 요청에서 문제가 되는 이유는 무엇인가요?</p><label><input type="radio" name="p36q1" value="1"> <span>1. commit을 두 번 해서</span></label><label><input type="radio" name="p36q1" value="2"> <span>2. SQLAlchemy가 UPDATE를 보내지 않아서</span></label><label><input type="radio" name="p36q1" value="3"> <span>3. 메모리에 읽어 둔 값으로 계산한 결과(숫자)를 저장해 다른 요청의 변경을 덮어서</span></label><label><input type="radio" name="p36q1" value="4"> <span>4. PostgreSQL이 동시 요청을 지원하지 않아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>실제 문장은 <code>SET stock=0</code>처럼 숫자를 저장합니다. 계산식(<code>stock - 1</code>)을 데이터베이스에 보내야 합니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">조건부 UPDATE가 성공했는지는 무엇으로 알 수 있나요?</p><label><input type="radio" name="p36q2" value="1"> <span>1. 바뀐 행의 수(rowcount)가 1인지</span></label><label><input type="radio" name="p36q2" value="2"> <span>2. commit이 끝났는지</span></label><label><input type="radio" name="p36q2" value="3"> <span>3. 응답 시간이 짧은지</span></label><label><input type="radio" name="p36q2" value="4"> <span>4. 예외가 나지 않았는지</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>조건에 맞지 않으면 예외 없이 0개의 행을 바꿉니다. 그래서 바뀐 행의 수를 꼭 확인합니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">대여 테이블에 (user_id, book_id) 전체가 아니라 부분 유일 인덱스를 쓴 이유는 무엇인가요?</p><label><input type="radio" name="p36q3" value="1"> <span>1. IntegrityError가 나지 않게 하려고</span></label><label><input type="radio" name="p36q3" value="2"> <span>2. 인덱스가 작아서 빠르게 만들려고</span></label><label><input type="radio" name="p36q3" value="3"> <span>3. 반납한 책을 다시 빌리는 것은 허용해야 해서</span></label><label><input type="radio" name="p36q3" value="4"> <span>4. SQLite가 일반 유일 인덱스를 지원하지 않아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>반납하지 않은(returned_at이 비어 있는) 대여에만 "한 건" 규칙을 적용합니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>다음 파트에서는 코드에 숨어 있는 위험한 함수(eval, pickle, yaml.load)를 알아보고, 사람 대신 코드와 패키지를 훑어 주는 자동 점검 도구 bandit과 pip-audit을 도서 API에 돌려 봅니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p36/s11-p36-04.html"><span class="dir">이전</span>S11-P36-04 경쟁 조건 해결</a>
+  <a class="next" href="../../s11/p37/s11-p37-01.html"><span class="dir">다음</span>S11-P37-01 API 오용과 자동 점검의 역할</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P10-04 Book 모델 만들기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P10-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P10 SQLAlchemy ORM 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p10-01.html" style="flex:10" data-type="주요 개념" title="관계형 데이터베이스와 ORM (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p10-02.html" style="flex:10" data-type="주요 개념" title="SQLAlchemy 2.0 핵심 구성 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s3-p10-03.html" style="flex:10" data-type="주요 개념" title="모델 정의와 테이블 생성 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p10-04.html" style="flex:15" data-type="실습" title="Book 모델 만들기 (15분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s3-p10-05.html" style="flex:5" data-type="정리" title="정리: ORM 기초 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S3-P10-04</span></div>
+<h1>Book 모델 만들기</h1>
+
+<p class="lead">SQLAlchemy를 설치하고 Book 모델을 만들어, 서버를 실행하면 데이터베이스 파일과 테이블이 생기는지 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>SQLAlchemy 모델을 정의하고 SQLite 데이터베이스에 테이블을 만들 수 있습니다.</p></div>
+<ol class="steps"><li><h3>SQLAlchemy 설치</h3>
+<div class="codeblock term"><pre><code>pip install sqlalchemy</code></pre></div>
+
+<p>설치한 뒤에는 패키지 목록도 갱신해 둡니다. 다른 사람이 같은 환경을 만들 때 이 파일을 씁니다.</p>
+<div class="codeblock term"><pre><code>pip freeze &gt; requirements.txt</code></pre></div>
+</li><li><h3>database.py와 models.py 작성</h3>
+<p>앞 페이지의 두 파일을 <code>app</code> 폴더에 만듭니다.</p>
+</li><li><h3>main.py에 테이블 만들기 추가</h3>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>from app import models  # noqa: F401  모델을 불러와야 테이블 목록에 등록됩니다.
+from app.config import settings
+from app.database import Base, engine
+from app.errors import AppError
+from app.routers import books
+
+# 아직 없는 테이블을 만듭니다. 2일차 오후(S4-P14)에 Alembic으로 바꿉니다.
+Base.metadata.create_all(bind=engine)</code></pre></div>
+</li><li><h3>서버 실행과 파일 확인</h3>
+<div class="codeblock term"><pre><code>fastapi dev app/main.py</code></pre></div>
+
+<p><code>book-api</code> 폴더에 <code>books.db</code> 파일이 생겼는지 VSCode 탐색기에서 확인합니다.</p>
+</li><li><h3>테이블 들여다보기</h3>
+<p>새 터미널을 열어 가상환경을 켠 뒤, Python으로 테이블 구조를 출력합니다.</p>
+<div class="codeblock term"><pre><code>python -c "import sqlite3; print(sqlite3.connect('books.db').execute('select sql from sqlite_master').fetchall())"</code></pre></div>
+
+<p><code>CREATE TABLE books (...)</code>가 출력되면 성공입니다. 화면으로 보고 싶다면 VSCode 확장 <strong>SQLite Viewer</strong>를 설치해 <code>books.db</code>를 클릭하거나, <strong>DB Browser for SQLite</strong> 프로그램으로 파일을 엽니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>sqlalchemy를 설치하고 requirements.txt를 갱신했다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>서버를 실행하면 books.db가 생긴다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>books 테이블에 id, title, author, price, isbn 열이 있다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>.gitignore에 *.db가 있어 데이터베이스 파일이 Git에 올라가지 않는다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>books.db</code>가 <code>app</code> 폴더 안에 생김</td><td>서버를 <code>app</code> 폴더에서 실행했습니다. <code>./books.db</code>는 명령을 실행한 폴더 기준이므로 <code>book-api</code>에서 실행합니다.</td></tr><tr><td>테이블 목록이 비어 있음</td><td><code>from app import models</code>를 빠뜨렸거나 <code>create_all</code>보다 아래에 두었습니다.</td></tr><tr><td><code>No module named 'sqlalchemy'</code></td><td>가상환경이 꺼진 상태에서 설치했습니다. <code>(.venv)</code>를 확인하고 다시 설치합니다.</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p10/s3-p10-03.html"><span class="dir">이전</span>S3-P10-03 모델 정의와 테이블 생성</a>
+  <a class="next" href="../../s3/p10/s3-p10-05.html"><span class="dir">다음</span>S3-P10-05 정리: ORM 기초</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

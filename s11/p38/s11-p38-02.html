@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P38-02 보안약점 진단 1 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P38-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P38 보안약점 진단 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p38-01.html" style="flex:5" data-type="주요 개념" title="진단 과제 안내 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p38-02.html" style="flex:20" data-type="실습" title="보안약점 진단 1 (20분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s11-p38-03.html" style="flex:15" data-type="실습" title="보안약점 진단 2 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s11-p38-04.html" style="flex:5" data-type="실습" title="진단 결과 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s11-p38-05.html" style="flex:5" data-type="정리" title="정리: 진단 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S11-P38-02</span></div>
+<h1>보안약점 진단 1</h1>
+
+<p class="lead">먼저 지금까지 가장 많이 다룬 두 유형, 입력데이터 검증 및 표현과 보안기능부터 진단합니다. 아래 질문은 어디를 봐야 하는지 알려 주는 길잡이입니다. 답을 알려 주지는 않으므로, 질문에 해당하는 코드를 찾아 직접 판단합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>입력이 들어오는 곳과 보안 결정을 내리는 곳을 찾아, 약점과 그 근거를 진단표에 적을 수 있습니다.</p></div>
+
+<h2>서버 띄우기</h2>
+<div class="codeblock term"><pre><code>cd security-lab
+uvicorn app:app --reload</code></pre></div>
+
+<p>브라우저에서 <code>http://127.0.0.1:8000/docs</code>를 열고, 회원가입과 로그인을 해 둡니다. 로그인 응답의 <code>access_token</code>을 복사해 두면 다른 요청의 <code>Authorization</code> 헤더에 <code>Bearer 토큰</code> 형식으로 넣을 수 있습니다. 시험용 공지도 두세 개 만들어 둡니다.</p>
+
+<h2>입력데이터 검증 및 표현</h2>
+<p>요령은 "사용자가 보낸 값이 어디까지 흘러가는가"를 따라가는 것입니다. 경로 매개변수, 쿼리 매개변수, 요청 본문, 헤더, 업로드한 파일의 이름과 내용이 모두 사용자가 보낸 값입니다.</p>
+<ul class="checklist"><li><label><input type="checkbox" data-save="d11"> <span>사용자가 보낸 값이 SQL 문장에 들어가는 곳이 있나요? 값이 들어가나요, 문장의 일부(열 이름, 숫자)로 들어가나요?</span></label></li><li><label><input type="checkbox" data-save="d12"> <span>사용자가 보낸 값이 파일 경로의 일부가 되는 곳이 있나요? 업로드와 다운로드를 모두 보세요.</span></label></li><li><label><input type="checkbox" data-save="d13"> <span>사용자가 보낸 값이 운영체제 명령에 들어가는 곳이 있나요?</span></label></li><li><label><input type="checkbox" data-save="d14"> <span>올릴 수 있는 파일의 종류와 크기에 제한이 있나요?</span></label></li><li><label><input type="checkbox" data-save="d15"> <span>서버가 사용자가 준 주소로 대신 요청을 보내는 곳이 있나요? 어떤 주소든 보낼 수 있나요?</span></label></li><li><label><input type="checkbox" data-save="d16"> <span>보안 결정(관리자인지, 본인인지)에 사용자가 마음대로 바꿀 수 있는 값을 쓰는 곳이 있나요?</span></label></li></ul>
+<details><summary>확인해 볼 요청 예시</summary><div class="answer">
+<p>아래 요청은 약점이 있는지 확인하는 데 쓸 수 있는 입력입니다. 결과를 보고 무슨 일이 일어났는지 직접 해석합니다.</p>
+<div class="codeblock term"><pre><code>GET /notices?q=%' UNION SELECT id, username, password_hash FROM users --
+GET /notices?sort=likes DESC
+GET /files/%2e%2e%2fboard.db
+POST /admin/notices/1/pin   (헤더 X-Role: admin)</code></pre></div>
+<p><code>/files/../board.db</code>처럼 쓰면 브라우저와 HTTP 클라이언트가 <code>..</code>를 먼저 정리해 버립니다. 그래서 <code>.</code>과 <code>/</code>를 <code>%2e</code>, <code>%2f</code>로 바꿔 보냅니다.</p></div></details>
+
+<h2>보안기능</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="d21"> <span>비밀번호는 어떤 방법으로 저장하나요? 솔트가 있나요?</span></label></li><li><label><input type="checkbox" data-save="d22"> <span>비밀번호 규칙이 있나요? 아주 짧은 비밀번호로 가입해 보세요.</span></label></li><li><label><input type="checkbox" data-save="d23"> <span>로그인을 계속 틀려도 막히지 않나요?</span></label></li><li><label><input type="checkbox" data-save="d24"> <span>비밀 키나 비밀번호가 코드에 적혀 있나요?</span></label></li><li><label><input type="checkbox" data-save="d25"> <span>추측되면 안 되는 값(인증 번호, 토큰)을 무엇으로 만드나요?</span></label></li><li><label><input type="checkbox" data-save="d26"> <span>로그인이 필요한 기능 가운데 로그인 검사가 빠진 곳이 있나요? 기능마다 "로그인 없이 써도 되는 기능인가"를 따져 보세요.</span></label></li><li><label><input type="checkbox" data-save="d27"> <span>로그인은 확인하지만 "그 사용자에게 권한이 있는지"는 확인하지 않는 곳이 있나요? 다른 계정으로 로그인해 남의 공지를 건드려 보세요.</span></label></li></ul>
+<div class="table-wrap"><table><thead><tr><th>영역</th><th>찾은 약점 수</th><th>가장 위험하다고 본 약점</th></tr></thead><tbody><tr><td>입력데이터 검증 및 표현</td><td><input data-save="cnt1" aria-label="내 결과"></td><td><input data-save="top1" aria-label="내 결과"></td></tr><tr><td>보안기능</td><td><input data-save="cnt2" aria-label="내 결과"></td><td><input data-save="top2" aria-label="내 결과"></td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">막힐 때</p><p>한 곳에서 5분 넘게 막히면 일단 "의심"으로 적어 두고 다음으로 넘어갑니다. S11-P38-04의 점검 질문에서 다시 볼 수 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p38/s11-p38-01.html"><span class="dir">이전</span>S11-P38-01 진단 과제 안내</a>
+  <a class="next" href="../../s11/p38/s11-p38-03.html"><span class="dir">다음</span>S11-P38-03 보안약점 진단 2</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

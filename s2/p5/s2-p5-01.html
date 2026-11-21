@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P5-01 응답 모델과 데이터 계약 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P5-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 응답 설계와 프로젝트 구조</a><span class="sep">/</span><span>S2-P5 응답 모델과 상태 코드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p5-01.html" style="flex:10" data-type="주요 개념" title="응답 모델과 데이터 계약 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s2-p5-02.html" style="flex:5" data-type="주요 개념" title="상태 코드 선택하기 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s2-p5-03.html" style="flex:10" data-type="주요 개념" title="응답 모델 적용하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s2-p5-04.html" style="flex:20" data-type="실습" title="수정, 삭제 API 완성 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s2-p5-05.html" style="flex:5" data-type="정리" title="정리: 응답 설계 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S2-P5-01</span></div>
+<h1>응답 모델과 데이터 계약</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>입력 모델과 출력 모델을 분리하고 상황에 맞는 상태 코드를 반환할 수 있습니다.</p></div>
+
+<p class="lead">지금까지는 목록에 들어 있는 딕셔너리를 그대로 돌려주었습니다. 편하지만, 밖으로 나가면 안 되는 값까지 함께 나갈 수 있습니다. 응답의 모양을 미리 정해 두는 방법을 배웁니다.</p>
+
+<h2>내부 값이 새어 나가는 문제</h2>
+<p>서점에서 도서마다 매입가(<code>cost</code>)를 관리한다고 해 봅시다. 매입가는 내부에서만 쓰는 값이라 손님이 보면 안 됩니다. 그런데 목록에 매입가를 추가하고 지금처럼 딕셔너리를 그대로 돌려주면, 응답에도 매입가가 그대로 나갑니다.</p>
+<div class="codeblock"><pre><code>{
+  "id": 1,
+  "title": "파이썬 첫걸음",
+  "author": "김하늘",
+  "price": 18000,
+  "isbn": "9791100000011",
+  "cost": 12000
+}</code></pre></div>
+
+<p>코드를 고칠 때마다 "이 값이 응답에 나가도 되나?"를 사람이 일일이 확인하기는 어렵습니다. 그래서 응답에 들어갈 항목을 모델로 정해 두고, 그 밖의 값은 자동으로 빠지게 만듭니다.</p>
+
+<h2>데이터 계약</h2>
+<p>API를 쓰는 쪽과 만드는 쪽이 "이 요청에는 이런 모양의 응답이 온다"고 약속하는 것을 <strong>데이터 계약</strong>이라고 합니다. 응답 모양이 정해져 있으면 화면을 만드는 개발자는 문서만 보고 작업할 수 있고, 서버 코드가 바뀌어도 약속한 모양은 지켜집니다.</p>
+
+<h2>입력 모델과 출력 모델을 나눕니다</h2>
+<p>같은 도서라도 받을 때와 돌려줄 때 필요한 항목이 다릅니다. 새 도서를 등록할 때 클라이언트는 번호(<code>id</code>)를 보내지 않습니다. 번호는 서버가 정하기 때문입니다. 반대로 돌려줄 때는 번호가 꼭 있어야 합니다. 그래서 용도별로 모델을 따로 만듭니다.</p>
+<div class="table-wrap"><table><thead><tr><th>모델</th><th>용도</th><th>특징</th></tr></thead><tbody><tr><td><code>BookCreate</code></td><td>등록(POST), 전체 수정(PUT) 요청</td><td><code>id</code>가 없습니다. 클라이언트가 보내는 값만 있습니다.</td></tr><tr><td><code>BookUpdate</code></td><td>일부 수정(PATCH) 요청</td><td>모든 항목이 선택입니다. 바꿀 항목만 보냅니다.</td></tr><tr><td><code>BookRead</code></td><td>응답</td><td><code>id</code>가 있고, <code>cost</code>처럼 감출 값은 없습니다.</td></tr></tbody></table></div>
+
+<h2>response_model이 하는 일</h2>
+<div class="codeblock"><pre><code>class BookRead(BaseModel):
+    id: int
+    title: str
+    author: str
+    price: int
+    isbn: str | None = None
+
+
+@app.get("/books/{book_id}", response_model=BookRead)
+def get_book(book_id: int):
+    return find_book(book_id)    # cost가 들어 있는 딕셔너리를 돌려줘도</code></pre></div>
+
+<p>경로 데코레이터에 <code>response_model=BookRead</code>를 적으면, 함수가 돌려준 값을 FastAPI가 <code>BookRead</code>의 모양으로 다시 걸러서 보냅니다. <code>BookRead</code>에 없는 <code>cost</code>는 응답에서 빠집니다.</p>
+<p>반대로 <code>BookRead</code>에 꼭 있어야 하는 값(예: <code>title</code>)이 돌려준 값에 없으면, 클라이언트 잘못이 아니라 서버 코드의 잘못이므로 500 오류가 납니다. 응답 모델은 서버가 약속을 어기지 않게 막아 주는 장치이기도 합니다.</p>
+<div class="callout note"><p class="callout-title">앞으로 다시 만날 장면</p><p>3일차에 회원 기능을 만들면 비밀번호 해시라는 값이 생깁니다. 이 값도 같은 방법으로 응답에서 빼고, 5일차 개발 보안 단원에서 응답 필드를 최소화하는 원칙으로 다시 점검합니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p4/s1-p4-05.html"><span class="dir">이전</span>S1-P4-05 정리: 요청 검증</a>
+  <a class="next" href="../../s2/p5/s2-p5-02.html"><span class="dir">다음</span>S2-P5-02 상태 코드 선택하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

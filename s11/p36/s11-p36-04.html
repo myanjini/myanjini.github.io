@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P36-04 경쟁 조건 해결 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P36-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P36 시간 및 상태와 코드오류</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p36-01.html" style="flex:5" data-type="주요 개념" title="5일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p36-02.html" style="flex:10" data-type="주요 개념" title="시간 및 상태와 코드오류 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s11-p36-03.html" style="flex:10" data-type="주요 개념" title="동시 대여 경쟁 조건 재현 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s11-p36-04.html" style="flex:20" data-type="실습" title="경쟁 조건 해결 (20분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s11-p36-05.html" style="flex:5" data-type="정리" title="정리: 시간 및 상태 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S11-P36-04</span></div>
+<h1>경쟁 조건 해결</h1>
+
+<p class="lead">재고 확인과 변경을 데이터베이스의 문장 하나로 합치고, 같은 사용자의 중복 대여는 유일 제약으로 막습니다. 실습용 지연을 그대로 둔 채 다시 시험해, 틈이 있어도 결과가 맞는지 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>조건부 UPDATE와 유일 제약으로 경쟁 조건을 없애고, 동시 요청과 테스트로 확인할 수 있습니다.</p></div>
+
+<h2>두 가지 방법</h2>
+<div class="table-wrap"><table><thead><tr><th>방법</th><th>어떻게 막나요</th><th>이번에 쓰는 곳</th></tr></thead><tbody><tr><td>조건부 UPDATE</td><td>"재고가 충분할 때만 줄여라"를 문장 하나로 보냅니다. 데이터베이스는 한 행을 바꾸는 동안 다른 요청이 같은 행을 바꾸지 못하게 잠시 잠급니다.</td><td>재고 감소</td></tr><tr><td>유일 제약</td><td>같은 값의 행이 두 개 생기지 못하게 데이터베이스가 막습니다. 애플리케이션의 검사를 빠져나가도 마지막에 걸립니다.</td><td>같은 사용자가 같은 책을 두 번 빌리는 것</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">다른 방법: 행 잠금</p><p><code>select(Book).with_for_update()</code>로 읽으면 트랜잭션이 끝날 때까지 그 행을 다른 요청이 읽어서 바꾸지 못하게 잠급니다(비관적 잠금). 확인할 내용이 복잡해 문장 하나로 합치기 어려울 때 씁니다. 재고처럼 조건이 단순하면 조건부 UPDATE가 더 짧고 빠릅니다.</p></div>
+<ol class="steps"><li><h3>저장소: 조건부 UPDATE</h3>
+<p><code>app/repositories/books.py</code>의 가져오기에 <code>update</code>를 추가하고, 맨 아래에 함수를 덧붙입니다.</p>
+<div class="codeblock"><span class="file">app/repositories/books.py</span><pre><code>from sqlalchemy import func, select, update</code></pre></div>
+<div class="codeblock"><span class="file">app/repositories/books.py</span><pre><code>def add_to_stock(db: Session, book_id: int, change: int) -&gt; bool:
+    """재고를 데이터베이스 안에서 계산해 바꿉니다. 결과가 0보다 작아지면 바꾸지 않고 False를 돌려줍니다."""
+    stmt = (
+        update(Book)
+        .where(Book.id == book_id, Book.stock + change &gt;= 0)  # 조건을 만족할 때만 바꿉니다.
+        .values(stock=Book.stock + change)                    # 지금 값에 더하는 계산을 데이터베이스가 합니다.
+        .execution_options(synchronize_session=False)
+    )
+    return db.execute(stmt).rowcount == 1  # 바뀐 행이 1개면 성공, 0개면 조건을 만족하지 못한 것</code></pre></div>
+
+<p>핵심은 두 줄입니다. <code>where</code>에 "계산 결과가 0 이상일 때"라는 조건을 넣고, <code>values</code>에는 숫자가 아니라 <code>Book.stock + change</code>라는 계산식을 넣습니다. 데이터베이스에 가는 문장은 <code>UPDATE books SET stock = stock - 1 WHERE id = 7 AND stock - 1 &gt;= 0</code>입니다. 10개의 요청이 동시에 와도 데이터베이스는 한 행을 한 번에 하나씩 바꾸므로, 첫 요청이 재고를 0으로 만든 뒤에 오는 요청은 조건에 맞지 않아 아무 행도 바꾸지 못합니다. <code>rowcount</code>는 바뀐 행의 수입니다.</p>
+<p><code>synchronize_session=False</code>는 "메모리에 있는 Book 객체를 고치려고 애쓰지 말라"는 설정입니다. 객체의 재고 값은 다음 단계에서 필요할 때 다시 읽습니다.</p>
+</li><li><h3>서비스: change_stock 바꾸기</h3>
+<div class="codeblock"><span class="file">app/services/books.py</span><pre><code>def change_stock(db: Session, book: Book, change: int, reason: str) -&gt; None:
+    """재고를 바꾸고 기록을 남깁니다. 확정(commit)은 이 함수를 부른 쪽에서 합니다."""
+    if not book_repo.add_to_stock(db, book.id, change):
+        db.refresh(book)  # 지금 데이터베이스의 재고를 다시 읽어 메시지에 씁니다.
+        raise AppError(409, "INSUFFICIENT_STOCK", f"재고가 부족합니다. 현재 재고는 {book.stock}권입니다.")
+    book_repo.add_stock_log(db, book, change, reason)</code></pre></div>
+
+<p>재고를 줄이지 못했을 때만 <code>db.refresh(book)</code>로 지금 재고를 다시 읽어 오류 메시지에 씁니다. 입고(+), 대여(-1), 반납(+1)이 모두 이 함수를 거치므로 한 곳만 고치면 됩니다. 대여 서비스의 <code>book.stock &lt; 1</code> 검사는 지우지 않습니다. 재고가 0인 것이 뻔할 때 빨리 409를 돌려주는 1차 검사이고, 진짜 보호는 이제 조건부 UPDATE가 맡습니다.</p>
+</li><li><h3>모델: 반납하지 않은 대여는 한 건만</h3>
+<p>같은 사용자가 같은 책 대여를 두 번 동시에 보내면, 두 요청 모두 <code>find_active</code> 검사("이미 빌렸나요?")를 통과합니다. 재고가 넉넉하면 조건부 UPDATE도 둘 다 성공합니다. 이 경우는 데이터베이스의 유일 제약으로 막습니다.</p>
+<p>그런데 반납한 뒤 다시 빌리는 것은 허용해야 하므로 (user_id, book_id) 전체에 유일 제약을 걸 수는 없습니다. 조건을 만족하는 행에만 적용하는 <strong>부분 유일 인덱스</strong>를 씁니다. SQLite와 PostgreSQL 모두 지원합니다.</p>
+<div class="codeblock"><span class="file">app/models.py</span><pre><code>from sqlalchemy import ForeignKey, Index, String, func, text</code></pre></div>
+<div class="codeblock"><span class="file">app/models.py</span><pre><code>class Loan(Base):
+    __tablename__ = "loans"
+
+    # 같은 사용자가 같은 도서를 반납하지 않은 채 두 번 빌릴 수 없게 데이터베이스가 막습니다.
+    # 반납하지 않은(returned_at이 비어 있는) 행에만 적용하는 부분 유일 인덱스입니다.
+    __table_args__ = (
+        Index("uq_loans_active_user_book", "user_id", "book_id", unique=True,
+              sqlite_where=text("returned_at IS NULL"), postgresql_where=text("returned_at IS NULL")),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ...</code></pre></div>
+<div class="codeblock term"><pre><code>alembic revision --autogenerate -m "unique active loan"
+...
+INFO  [alembic.autogenerate.compare.indexes] Detected added index 'uq_loans_active_user_book' on '('user_id', 'book_id')'</code></pre></div>
+
+<p>만들어진 리비전 파일의 <code>upgrade</code>를 열어 <code>sqlite_where</code>와 <code>postgresql_where</code>가 들어 있는지 확인합니다. 조건이 빠지면 반납한 책을 다시 빌릴 수 없게 됩니다.</p>
+<div class="codeblock"><span class="file">migrations/versions/xxxx_unique_active_loan.py(upgrade 부분)</span><pre><code>with op.batch_alter_table('loans', schema=None) as batch_op:
+    batch_op.create_index('uq_loans_active_user_book', ['user_id', 'book_id'], unique=True,
+                          sqlite_where=sa.text('returned_at IS NULL'),
+                          postgresql_where=sa.text('returned_at IS NULL'))</code></pre></div>
+<div class="codeblock term"><pre><code>alembic upgrade head</code></pre></div>
+<div class="callout warn"><p class="callout-title">이미 중복된 데이터가 있다면</p><p>앞 페이지의 재현은 서로 다른 10명이 빌린 것이므로 이 인덱스와 충돌하지 않습니다. 운영 중인 데이터베이스에 이미 같은 사용자의 중복 대여가 있다면 인덱스 만들기가 실패합니다. 그때는 중복 행을 먼저 정리하는 리비전을 따로 만든 뒤 인덱스를 만듭니다.</p></div>
+</li><li><h3>서비스: 유일 제약 위반을 409로</h3>
+<p>유일 제약에 걸리면 SQLAlchemy가 <code>IntegrityError</code>를 냅니다. 그대로 두면 500 오류가 되므로, 대여 서비스에서 잡아 "이미 빌린 도서" 409로 바꿉니다. 가져오기에 <code>from sqlalchemy.exc import IntegrityError</code>를 추가합니다.</p>
+<div class="codeblock"><span class="file">app/services/loans.py(borrow 함수 안)</span><pre><code>    change_stock(db, book, -1, "대여")  # 다른 요청이 먼저 마지막 재고를 가져갔다면 여기서 409가 납니다.
+    try:
+        loan = loan_repo.add(db, Loan(user_id=user.id, book_id=book.id))
+    except IntegrityError:  # 같은 사용자의 동시 요청이 먼저 대여를 기록한 경우
+        db.rollback()
+        raise AppError(409, "ALREADY_LOANED", "이미 빌린 도서입니다. 반납한 뒤 다시 빌릴 수 있습니다.")</code></pre></div>
+
+<p><code>db.rollback()</code>은 실패한 트랜잭션을 되돌립니다. 바로 앞에서 줄인 재고도 함께 원래대로 돌아갑니다. 재고 감소, 재고 기록, 대여 기록을 하나의 트랜잭션으로 묶어 둔 덕분입니다(S6-P21).</p>
+</li><li><h3>지연을 둔 채로 다시 시험</h3>
+<p>실습용 <code>time.sleep(0.2)</code>는 아직 지우지 않습니다. 틈이 있어도 결과가 맞아야 진짜로 고친 것입니다. 이미지를 다시 만들고 마이그레이션을 적용한 뒤, 재고 1권짜리 도서를 새로 등록해 시험합니다(아래 예는 8번).</p>
+<div class="codeblock term"><pre><code>docker compose up -d --build
+docker compose run --rm api alembic upgrade head
+python tools/race_test.py 8
+응답 상태: [409, 409, 201, 409, 409, 409, 409, 409, 409, 409]
+대여 성공(201): 1
+남은 재고: 0</code></pre></div>
+
+<p>어느 요청이 성공할지는 실행할 때마다 다릅니다. 성공이 정확히 1건이면 됩니다. 재고 기록도 입고 1건과 대여 1건만 남습니다.</p>
+<div class="codeblock term"><pre><code>docker compose exec db psql -U bookapi -d bookapi -c "select change, reason from stock_logs where book_id=8 order by id"
+ change | reason
+--------+--------
+      1 | 입고
+     -1 | 대여</code></pre></div>
+
+<p>같은 사용자의 동시 대여도 시험합니다. 재고가 5권인 도서를 하나 만들고, Python 대화형 셸에서 한 사용자의 토큰으로 요청 5개를 동시에 보냅니다.</p>
+<div class="codeblock"><span class="file">같은 사용자의 동시 대여(Python 셸)</span><pre><code>from concurrent.futures import ThreadPoolExecutor
+import httpx
+headers = {"Authorization": "Bearer 내_토큰"}
+send = lambda _: httpx.post("http://127.0.0.1:8000/loans", json={"book_id": 9}, headers=headers).status_code
+print(list(ThreadPoolExecutor(5).map(send, range(5))))</code></pre></div>
+<div class="codeblock term"><pre><code>[201, 409, 409, 409, 409]</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>시험</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>서로 다른 10명, 재고 1권</td><td>201이 1건, 남은 재고 0</td><td><input data-save="fix1" aria-label="내 결과"></td></tr><tr><td>같은 사용자 5번, 재고 5권</td><td>201이 1건, 나머지 409, 남은 재고 4</td><td><input data-save="fix2" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>지연 지우기와 회귀 테스트</h3>
+<p><code>app/services/loans.py</code>에서 <code>import time</code>과 <code>time.sleep(0.2)</code> 줄을 지웁니다. 그리고 다시는 이 문제가 생기지 않도록 테스트를 남깁니다. pytest에서 스레드로 진짜 동시 요청을 만들기는 어렵고, 테스트용 SQLite에서는 결과가 다르게 나옵니다. 그래서 "동시에 들어온 늦은 요청"을 순서대로 흉내 냅니다. 재고가 1일 때 읽어 둔 객체를 손에 쥐고 있다가, 다른 요청이 먼저 빌린 뒤에 그 낡은 객체로 재고를 줄여 봅니다.</p>
+<div class="codeblock"><span class="file">tests/test_race.py</span><pre><code>"""동시성 문제가 다시 생기지 않는지 확인하는 테스트"""
+import pytest
+from sqlalchemy.exc import IntegrityError
+
+from app.errors import AppError
+from app.models import Book, Loan
+from app.services.books import change_stock
+from tests.helpers import create_book
+
+
+def test_stale_stock_cannot_be_oversold(client, db_session, make_user, author_id):
+    user1 = make_user("user1@example.com")
+    user2 = make_user("user2@example.com")
+    book = create_book(client, user1, author_id, stock=1)
+
+    stale = db_session.get(Book, book["id"])  # 재고가 1권일 때 읽어 둔 객체: 늦게 도착한 요청을 흉내 냅니다.
+    assert stale.stock == 1
+    assert client.post("/loans", json={"book_id": book["id"]}, headers=user2).status_code == 201  # 다른 요청이 먼저 빌림
+
+    with pytest.raises(AppError) as error:
+        change_stock(db_session, stale, -1, "대여")  # 낡은 값(1)을 믿고 재고를 줄이려 합니다.
+    assert error.value.code == "INSUFFICIENT_STOCK"
+    db_session.rollback()
+    assert client.get(f"/books/{book['id']}").json()["stock"] == 0
+
+
+def test_only_one_active_loan_per_user_and_book(client, db_session, auth_headers, author_id):
+    book = create_book(client, auth_headers, author_id, stock=5)
+    assert client.post("/loans", json={"book_id": book["id"]}, headers=auth_headers).status_code == 201
+    user_id = client.get("/auth/me", headers=auth_headers).json()["id"]
+
+    db_session.add(Loan(user_id=user_id, book_id=book["id"]))  # 서비스의 검사를 건너뛰고 같은 대여를 한 번 더 넣어 봅니다.
+    with pytest.raises(IntegrityError):
+        db_session.commit()
+    db_session.rollback()</code></pre></div>
+
+<p>고치기 전 코드로 실행하면 두 테스트 모두 실패합니다. 낡은 값(1)을 믿고 재고를 줄이는 데 성공하고, 같은 대여가 두 번 들어가기 때문입니다.</p>
+<div class="codeblock term"><pre><code>pytest tests/test_race.py
+FAILED tests/test_race.py::test_stale_stock_cannot_be_oversold - Failed: DID NOT RAISE &lt;class 'app.errors.AppError'&gt;
+FAILED tests/test_race.py::test_only_one_active_loan_per_user_and_book - Failed: DID NOT RAISE &lt;class 'sqlalchemy.exc.IntegrityError'&gt;</code></pre></div>
+<p>고친 뒤에는 전체 테스트가 모두 통과해야 합니다.</p><div class="codeblock term"><pre><code>pytest
+...
+61 passed</code></pre></div>
+</li></ol>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p36c1"> <span>재고 1권을 10명이 동시에 빌리면 1명만 성공한다(지연을 둔 상태에서).</span></label></li><li><label><input type="checkbox" data-save="p36c2"> <span>같은 사용자가 같은 책을 동시에 여러 번 빌려도 1건만 성공하고 나머지는 409다.</span></label></li><li><label><input type="checkbox" data-save="p36c3"> <span>반납한 책을 다시 빌릴 수 있다(부분 유일 인덱스의 조건 확인).</span></label></li><li><label><input type="checkbox" data-save="p36c4"> <span>실습용 time.sleep을 지웠다.</span></label></li><li><label><input type="checkbox" data-save="p36c5"> <span>tests/test_race.py를 포함한 전체 테스트가 통과한다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p36-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p36/s11-p36-03.html"><span class="dir">이전</span>S11-P36-03 동시 대여 경쟁 조건 재현</a>
+  <a class="next" href="../../s11/p36/s11-p36-05.html"><span class="dir">다음</span>S11-P36-05 정리: 시간 및 상태</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

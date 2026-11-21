@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P17-01 현재 사용자 의존성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P17-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P17 보호된 API와 권한 검사</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p17-01.html" style="flex:5" data-type="주요 개념" title="현재 사용자 의존성 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s5-p17-02.html" style="flex:10" data-type="주요 개념" title="보호된 API 적용 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p17-03.html" style="flex:25" data-type="실습" title="소유자와 관리자 권한 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s5-p17-04.html" style="flex:5" data-type="실습" title="권한 표 만들기 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s5-p17-05.html" style="flex:5" data-type="정리" title="정리: 권한 검사 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S5-P17-01</span></div>
+<h1>현재 사용자 의존성</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>현재 사용자 의존성으로 API를 보호하고 소유자와 역할에 따라 권한을 검사할 수 있습니다.</p></div>
+
+<p class="lead">보호된 API마다 "토큰을 꺼내고, 검증하고, 사용자를 찾는" 코드를 반복해 쓸 수는 없습니다. 2일차에 배운 의존성으로 이 일을 한곳에 모읍니다.</p>
+
+<h2>토큰 검증 함수</h2>
+<div class="codeblock"><span class="file">app/security.py</span><pre><code>def decode_access_token(token: str) -&gt; int | None:
+    """토큰이 올바르면 사용자 번호를, 아니면 None을 돌려줍니다."""
+    try:
+        payload = jwt.decode(
+            token,
+            settings.secret_key,
+            algorithms=[ALGORITHM],              # 이 방식으로 서명한 토큰만 받습니다.
+            options={"require": ["exp", "sub"]},  # 만료 시각과 사용자 번호가 꼭 있어야 합니다.
+        )
+    except jwt.InvalidTokenError:  # 서명이 틀렸거나, 만료되었거나, 형식이 깨진 경우
+        return None
+    return int(payload["sub"])</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>옵션</th><th>하는 일</th></tr></thead><tbody><tr><td><code>algorithms=[ALGORITHM]</code></td><td>우리가 정한 HS256으로 서명한 토큰만 받습니다. 헤더의 <code>alg</code>를 바꿔 서명 검사를 피하려는 토큰을 막습니다.</td></tr><tr><td><code>options={"require": [...]}</code></td><td><code>exp</code>나 <code>sub</code>가 없는 토큰을 거부합니다. 만료 시각이 없으면 영원히 쓸 수 있는 토큰이 되기 때문입니다.</td></tr><tr><td><code>except jwt.InvalidTokenError</code></td><td>서명 불일치, 만료, 형식 오류를 모두 이 한 가지 예외로 잡습니다. 만료 검사는 <code>jwt.decode</code>가 알아서 합니다.</td></tr></tbody></table></div>
+
+<h2>현재 사용자 의존성</h2>
+<div class="codeblock"><span class="file">app/dependencies.py</span><pre><code># 요청의 Authorization 헤더에서 "Bearer 토큰"의 토큰 부분을 꺼내 줍니다.
+# tokenUrl은 Swagger UI의 Authorize 창이 로그인할 때 부를 주소입니다.
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
+TokenDep = Annotated[str | None, Depends(oauth2_scheme)]
+
+BEARER = {"WWW-Authenticate": "Bearer"}
+
+
+def get_current_user(db: SessionDep, token: TokenDep) -&gt; User:
+    """토큰을 검사해 지금 요청을 보낸 사용자를 돌려줍니다."""
+    if token is None:
+        raise AppError(401, "NOT_AUTHENTICATED", "로그인이 필요합니다.", headers=BEARER)
+    user_id = decode_access_token(token)
+    if user_id is None:
+        raise AppError(401, "INVALID_TOKEN", "토큰이 유효하지 않거나 만료되었습니다.", headers=BEARER)
+    user = db.get(User, user_id)
+    if user is None:  # 토큰은 올바르지만 그사이 탈퇴한 사용자
+        raise AppError(401, "INVALID_TOKEN", "토큰이 유효하지 않거나 만료되었습니다.", headers=BEARER)
+    return user
+
+
+CurrentUserDep = Annotated[User, Depends(get_current_user)]</code></pre></div>
+
+<p><code>OAuth2PasswordBearer</code>는 기본적으로 헤더가 없으면 스스로 401을 보내는데, 그 응답은 <code>{"detail": "Not authenticated"}</code> 모양이라 우리 API의 <code>{"code", "message"}</code> 형식과 다릅니다. 그래서 <code>auto_error=False</code>로 토큰이 없을 때 <code>None</code>만 받고, 오류는 직접 만듭니다.</p>
+<div class="table-wrap"><table><thead><tr><th>상황</th><th>응답</th></tr></thead><tbody><tr><td><code>Authorization</code> 헤더가 없음</td><td>401, <code>NOT_AUTHENTICATED</code>, 로그인이 필요합니다.</td></tr><tr><td>서명이 틀림, 만료됨, 형식이 깨짐</td><td>401, <code>INVALID_TOKEN</code></td></tr><tr><td>토큰은 올바르지만 그 사용자가 없음</td><td>401, <code>INVALID_TOKEN</code></td></tr><tr><td>모두 통과</td><td><code>User</code> 객체를 돌려줍니다.</td></tr></tbody></table></div>
+
+<p>토큰에는 사용자 번호만 들어 있으므로, 요청마다 데이터베이스에서 사용자를 다시 읽습니다. 번거로워 보이지만 장점이 있습니다. 관리자로 바꾸거나 탈퇴 처리한 결과가 토큰을 새로 받지 않아도 다음 요청부터 바로 반영됩니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p16/s5-p16-05.html"><span class="dir">이전</span>S5-P16-05 정리: 토큰 발급</a>
+  <a class="next" href="../../s5/p17/s5-p17-02.html"><span class="dir">다음</span>S5-P17-02 보호된 API 적용</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

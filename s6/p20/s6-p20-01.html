@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P20-01 파일 업로드와 저장 전략 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P20-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P20 파일 업로드와 백그라운드 작업</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p20-01.html" style="flex:10" data-type="주요 개념" title="파일 업로드와 저장 전략 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p20-02.html" style="flex:10" data-type="주요 개념" title="표지 이미지 업로드 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p20-03.html" style="flex:15" data-type="실습" title="업로드 API 구현 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s6-p20-04.html" style="flex:10" data-type="실습" title="응답 뒤에 실행하는 작업 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s6-p20-05.html" style="flex:5" data-type="정리" title="정리: 파일과 백그라운드 작업 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S6-P20-01</span></div>
+<h1>파일 업로드와 저장 전략</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>파일 업로드 API를 안전하게 구현하고 응답 뒤에 실행할 작업을 등록할 수 있습니다.</p></div>
+
+<p class="lead">지금까지는 요청 본문이 모두 JSON이었습니다. 이미지 같은 파일은 다른 형식으로 보내고, 받은 파일은 검사한 뒤 안전한 이름으로 저장해야 합니다.</p>
+
+<h2>파일을 보내는 형식: multipart</h2>
+<p>JSON은 글자만 담을 수 있어 이미지 같은 이진 데이터를 그대로 넣을 수 없습니다. 파일은 <strong>multipart/form-data</strong> 형식으로 보냅니다. 본문을 여러 칸(part)으로 나눠 칸마다 이름과 내용을 담는 형식으로, 웹 페이지의 파일 첨부 버튼이 쓰는 방식입니다. 로그인 폼을 읽을 때 쓴 python-multipart가 이 형식도 읽습니다.</p>
+<p>FastAPI에서는 매개변수 타입을 <code>UploadFile</code>로 적으면 됩니다.</p>
+<div class="table-wrap"><table><thead><tr><th>속성</th><th>내용</th><th>믿어도 되나요</th></tr></thead><tbody><tr><td><code>file.filename</code></td><td>올린 사람 컴퓨터의 파일 이름. 예: <code>my cover.PNG</code></td><td>아니요. 보내는 쪽이 마음대로 정합니다.</td></tr><tr><td><code>file.content_type</code></td><td>보내는 쪽이 밝힌 형식. 예: <code>image/png</code></td><td>아니요. 보내는 쪽이 마음대로 정합니다.</td></tr><tr><td><code>file.size</code></td><td>받은 파일의 크기(바이트)</td><td>서버가 받은 만큼 센 값입니다.</td></tr><tr><td><code>file.file</code></td><td>파일 내용을 읽는 객체. <code>read()</code>로 읽습니다.</td><td>내용 자체입니다.</td></tr></tbody></table></div>
+
+<h2>받기 전에 검사할 것</h2>
+<div class="table-wrap"><table><thead><tr><th>검사</th><th>방법</th><th>실패하면</th></tr></thead><tbody><tr><td>형식</td><td>확장자를 허용 목록(<code>.jpg</code>, <code>.jpeg</code>, <code>.png</code>)과 비교합니다. 금지 목록이 아니라 허용 목록을 씁니다.</td><td>415 Unsupported Media Type</td></tr><tr><td>크기</td><td>한도(2MB)보다 1바이트 더 읽어 보고, 더 읽혔으면 거절합니다.</td><td>413 Content Too Large</td></tr><tr><td>빈 파일</td><td>읽은 내용이 비었는지 봅니다.</td><td>422</td></tr></tbody></table></div>
+
+<p>허용 목록을 쓰는 이유는 막아야 할 형식을 빠짐없이 나열하기가 불가능하기 때문입니다. 크기 검사에서 파일 전체를 읽지 않는 이유는, 누군가 1GB 파일을 보내면 그만큼 메모리를 쓰게 되기 때문입니다.</p>
+<div class="callout warn"><p class="callout-title">확장자 검사만으로는 부족합니다</p><p>확장자는 파일 이름만 바꾸면 위조할 수 있습니다. 실행 파일의 이름을 <code>cover.png</code>로 바꿔 올리면 확장자 검사는 통과합니다. 파일 내용의 첫 부분을 보고 정말 이미지인지 확인하는 방법은 5일차 보안 단원(S9-P31)에서 추가합니다.</p></div>
+
+<h2>저장 전략</h2>
+<p><strong>파일 이름은 서버가 새로 짓습니다.</strong> 올린 사람이 정한 이름을 그대로 쓰면 문제가 생깁니다.</p>
+<ul>
+  <li>두 사람이 <code>cover.png</code>를 올리면 뒤 파일이 앞 파일을 덮어씁니다.</li>
+  <li><code>../../app/main.py</code>처럼 경로 문자가 든 이름으로 다른 폴더의 파일을 덮어쓰려는 공격이 가능합니다.</li>
+  <li>한글, 공백, 특수 문자가 든 이름은 주소로 쓰기 불편합니다.</li>
+</ul>
+<p>그래서 <code>uuid.uuid4().hex</code>로 겹칠 일이 사실상 없는 32글자 무작위 이름을 만들고, 검사를 통과한 확장자만 붙입니다. 예: <code>5f0cb34f05924fb9914a647c1ea66874.png</code></p>
+<p><strong>데이터베이스에는 파일 내용이 아니라 주소만 저장합니다.</strong> 파일은 <code>uploads/covers</code> 폴더에 두고, 도서 행에는 <code>/covers/5f0c...png</code> 같은 주소만 넣습니다. 큰 데이터를 데이터베이스에 넣으면 백업과 조회가 느려지기 때문입니다.</p>
+<p><strong>업로드 폴더는 Git에 올리지 않습니다.</strong> 사용자가 올린 파일은 코드가 아니므로 <code>.gitignore</code>에 넣습니다. 서버를 여러 대로 늘리면 서버마다 폴더가 달라지는 문제가 생기는데, 8일차에는 이 폴더를 AWS S3로 옮깁니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p19/s6-p19-05.html"><span class="dir">이전</span>S6-P19-05 정리: 계층 분리</a>
+  <a class="next" href="../../s6/p20/s6-p20-02.html"><span class="dir">다음</span>S6-P20-02 표지 이미지 업로드 보기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

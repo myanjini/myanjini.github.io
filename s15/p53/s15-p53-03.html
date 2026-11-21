@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P53-03 내 저장소에 배포 자동화 적용 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P53-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P53 GitHub Actions로 배포 자동화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p53-01.html" style="flex:10" data-type="주요 개념" title="배포 파이프라인 설계 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p53-02.html" style="flex:10" data-type="주요 개념" title="배포 워크플로 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p53-03.html" style="flex:25" data-type="실습" title="내 저장소에 배포 자동화 적용 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s15-p53-04.html" style="flex:5" data-type="정리" title="정리: 배포 자동화 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S15-P53-03</span></div>
+<h1>내 저장소에 배포 자동화 적용</h1>
+
+<p class="lead">내 저장소에 배포 자동화를 적용합니다. OIDC 공급자와 배포 역할을 만들고, 워크플로를 추가해 푸시하면 테스트부터 배포까지 자동으로 진행되는지 확인합니다. 일부러 테스트를 깨뜨려 배포가 멈추는 것도 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>OIDC 역할과 배포 워크플로를 구성하고, 푸시로 자동 배포와 실패 시 중단을 확인할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>OIDC 공급자 확인 또는 추가</h3>
+<p>IAM 콘솔의 <strong>자격 증명 공급자</strong>에 <code>token.actions.githubusercontent.com</code>이 있는지 봅니다. 공급자는 계정에 하나만 만들 수 있으므로, 같은 계정의 다른 학생이나 강사가 이미 만들었다면 그대로 씁니다. 없으면 <strong>공급자 추가</strong>에서 다음과 같이 만듭니다.</p>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>값</th></tr></thead><tbody><tr><td>공급자 유형</td><td>OpenID Connect</td></tr><tr><td>공급자 URL</td><td><code>https://token.actions.githubusercontent.com</code></td></tr><tr><td>대상</td><td><code>sts.amazonaws.com</code></td></tr></tbody></table></div>
+</li><li><h3>배포 역할 만들기</h3>
+<p>IAM의 <strong>역할 생성</strong>에서 신뢰할 수 있는 엔터티 유형으로 <strong>웹 자격 증명</strong>을 고르고, 공급자 <code>token.actions.githubusercontent.com</code>, 대상 <code>sts.amazonaws.com</code>, GitHub 조직(내 아이디), 저장소(<code>book-api</code>), 브랜치(<code>main</code>)를 입력합니다. 권한은 건너뛰고, 이름은 <code>book-api-github-deploy</code>(공용 계정이면 식별자를 붙임), 태그 Owner를 넣어 만듭니다. 만든 뒤 <strong>신뢰 관계</strong> 탭이 앞 페이지의 신뢰 정책처럼 <code>sub</code>가 <code>repo:내아이디/book-api:ref:refs/heads/main</code>인지 확인하고, 인라인 정책 <code>book-api-deploy</code>를 추가합니다. 계정 ID와 인스턴스 ID를 내 값으로 바꿉니다.</p>
+</li><li><h3>저장소 변수 등록</h3>
+<p>GitHub 저장소의 <strong>Settings</strong>, <strong>Secrets and variables</strong>, <strong>Actions</strong>, <strong>Variables</strong> 탭에서 세 값을 등록합니다. 모두 비밀 값이 아닙니다.</p>
+<div class="table-wrap"><table><thead><tr><th>이름</th><th>값의 예</th></tr></thead><tbody><tr><td><code>AWS_DEPLOY_ROLE_ARN</code></td><td><code>arn:aws:iam::123456789012:role/book-api-github-deploy</code></td></tr><tr><td><code>EC2_INSTANCE_ID</code></td><td><code>i-0123456789abcdef0</code></td></tr><tr><td><code>ALB_DNS_NAME</code></td><td><code>book-api-alb-1234567890.ap-northeast-2.elb.amazonaws.com</code></td></tr></tbody></table></div>
+</li><li><h3>워크플로 추가하고 푸시</h3>
+<p><code>test.yml</code>의 <code>on</code> 부분을 바꾸고, <code>deploy.yml</code>을 앞 페이지 그대로 만듭니다. ECR 저장소 이름이 <code>book-api</code>가 아니면 <code>ECR_REPOSITORY</code> 값을 바꿉니다.</p>
+<div class="codeblock term"><pre><code>git add .github/workflows
+git commit -m "배포 자동화"
+git push</code></pre></div>
+
+<p>GitHub의 <strong>Actions</strong> 탭에서 <code>deploy</code> 실행을 엽니다. <code>test</code> 작업이 끝나면 <code>deploy</code> 작업이 시작되고, 각 단계를 눌러 출력을 볼 수 있습니다. 배포 단계의 출력에는 서버에서 실행한 명령의 결과(이미지 받기, 마이그레이션, 컨테이너 교체)가 그대로 찍힙니다.</p>
+</li><li><h3>배포 결과 확인</h3><div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>cat ~/book-api/.env
+IMAGE=123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/book-api:git-9c2e5d1
+COVER_BUCKET=book-api-covers-student07-7f3k
+
+docker compose -f compose.prod.yaml ps --format "{{.Image}}  {{.Status}}"
+123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/book-api:git-9c2e5d1  Up 2 minutes (healthy)</code></pre></div>
+<p>서버의 이미지 태그가 방금 푸시한 커밋과 같아야 합니다. Systems Manager 콘솔의 <strong>Run Command</strong>, <strong>명령 기록</strong>에서도 "deploy 9c2e5d1" 명령과 그 출력을 볼 수 있습니다.</p></li><li><h3>실패하면 멈추는지 확인</h3>
+<p>새 브랜치에서 일부러 테스트 하나를 깨뜨려 풀 리퀘스트를 만들면, <code>test</code>만 실행되고 배포는 시작조차 하지 않습니다. main에 실수로 깨진 코드가 들어가는 경우도 확인합니다. 아래처럼 테스트를 깨뜨려 main에 푸시합니다.</p>
+<div class="codeblock term"><pre><code># tests/test_books.py의 테스트 하나에서 기대값을 일부러 틀리게 바꾼 뒤
+git commit -am "실패 확인용(되돌릴 예정)"
+git push</code></pre></div>
+
+<p>Actions에서 <code>test</code>가 빨간색으로 실패하고, <code>deploy</code> 작업은 "건너뜀"으로 표시됩니다. 서버의 이미지 태그는 바뀌지 않았습니다. 확인했으면 바로 되돌립니다.</p>
+<div class="codeblock term"><pre><code>git revert --no-edit HEAD
+git push</code></pre></div>
+<p>되돌린 커밋으로 다시 배포가 실행됩니다. 실패 원인을 찾을 때는 빨간 단계를 눌러 마지막 출력부터 읽습니다.</p></li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>배포 역할의 신뢰 정책 sub</td><td><input data-save="sub" aria-label="내 결과"></td></tr><tr><td>성공한 배포 실행의 이미지 태그</td><td><input data-save="deploytag" aria-label="내 결과"></td></tr><tr><td>테스트를 깨뜨렸을 때 deploy 작업의 상태</td><td><input data-save="skipped" aria-label="내 결과"></td></tr></tbody></table></div>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p53c1"> <span>저장소 Secrets에 AWS 액세스 키가 없다.</span></label></li><li><label><input type="checkbox" data-save="p53c2"> <span>배포 역할의 신뢰 정책이 내 저장소의 main 브랜치로만 좁혀져 있다.</span></label></li><li><label><input type="checkbox" data-save="p53c3"> <span>푸시하면 test, deploy 순서로 실행되고 서버의 이미지가 git-커밋 태그로 바뀐다.</span></label></li><li><label><input type="checkbox" data-save="p53c4"> <span>배포 확인 단계가 ALB의 /health로 성공했다.</span></label></li><li><label><input type="checkbox" data-save="p53c5"> <span>테스트가 실패하면 deploy가 건너뛰어지고, 서버는 그대로다.</span></label></li></ul>
+<details><summary>배포가 실패할 때</summary><div class="answer"><div class="table-wrap"><table><thead><tr><th>실패한 단계와 메시지</th><th>원인과 해결</th></tr></thead><tbody><tr><td>AWS 자격 증명: <code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code></td><td>신뢰 정책의 <code>sub</code>(아이디, 저장소 이름, 브랜치)가 실제와 다르거나, 워크플로에 <code>id-token: write</code>가 없습니다.</td></tr><tr><td>이미지 푸시: <code>not authorized to perform: ecr:InitiateLayerUpload</code></td><td>배포 정책의 ECR 저장소 ARN을 확인합니다.</td></tr><tr><td>이미지 푸시: <code>tag invalid ... already exists</code></td><td>같은 커밋을 다시 배포했습니다. 태그 변경 불가라서 그렇습니다. 새 커밋을 만들거나 이미 있는 이미지로 서버만 갱신합니다.</td></tr><tr><td>배포: <code>AccessDeniedException ... ssm:SendCommand</code></td><td>배포 정책의 인스턴스 ID를 확인합니다.</td></tr><tr><td>배포: 결과 <code>Failed</code></td><td>출력에 서버에서 실패한 명령과 메시지가 있습니다. 대부분 <code>.env</code> 경로나 Compose 파일 이름 문제입니다.</td></tr><tr><td>확인: <code>curl: (22) ... 502</code></td><td>새 컨테이너가 정상으로 뜨지 않았습니다. CloudWatch Logs에서 그 시각의 로그를 봅니다.</td></tr></tbody></table></div>
+</div></details>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p53/s15-p53-02.html"><span class="dir">이전</span>S15-P53-02 배포 워크플로 보기</a>
+  <a class="next" href="../../s15/p53/s15-p53-04.html"><span class="dir">다음</span>S15-P53-04 정리: 배포 자동화</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

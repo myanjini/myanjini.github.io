@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P44-03 EC2 만들고 접속하기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P44-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P44 EC2 시작과 접속</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p44-01.html" style="flex:10" data-type="주요 개념" title="EC2 핵심 개념 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p44-02.html" style="flex:10" data-type="주요 개념" title="인스턴스 시작 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s13-p44-03.html" style="flex:20" data-type="실습" title="EC2 만들고 접속하기 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p44-04.html" style="flex:5" data-type="주요 개념" title="SSH와 Session Manager 비교 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p44-05.html" style="flex:5" data-type="정리" title="정리: EC2 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S13-P44-03</span></div>
+<h1>EC2 만들고 접속하기</h1>
+
+<p class="lead">앞 페이지의 표대로 EC2 서버를 만들고, Session Manager로 접속해 서버의 기본 상태를 점검합니다. IAM 역할과 IMDSv2가 제대로 동작하는지도 서버 안에서 직접 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>IAM 역할을 붙인 EC2를 만들고, SSH 키 없이 Session Manager로 접속해 서버 상태를 확인할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>인스턴스 시작</h3><p>EC2 콘솔에서 <strong>인스턴스 시작</strong>을 누르고 앞 페이지의 표대로 입력합니다. 오른쪽 요약에서 VPC, 보안 그룹, IAM 역할을 확인하고 <strong>인스턴스 시작</strong>을 누릅니다.</p></li><li><h3>실행 확인</h3>
+<p>인스턴스 목록에서 상태가 "실행 중"이 되고, 상태 검사가 모두 통과할 때까지 2~3분 기다립니다. CLI로도 확인할 수 있습니다.</p>
+<div class="codeblock term"><pre><code>aws ec2 describe-instances --filters Name=tag:Name,Values=book-api-server Name=instance-state-name,Values=running --query "Reservations[].Instances[].[InstanceId,InstanceType,PublicIpAddress,IamInstanceProfile.Arn]" --output text
+i-0123456789abcdef0	t3.micro	3.35.120.45	arn:aws:iam::123456789012:instance-profile/book-api-ec2-role</code></pre></div>
+</li><li><h3>Session Manager로 접속</h3>
+<p>인스턴스를 고르고 <strong>연결</strong>, <strong>Session Manager</strong> 탭, <strong>연결</strong>을 누르면 브라우저에 터미널이 열립니다. "연결" 버튼이 비활성이면 SSM 에이전트가 등록될 때까지 2~5분 더 기다린 뒤 새로 고칩니다.</p>
+<p>Session Manager는 기본으로 <code>sh</code> 셸로, <code>/usr/bin</code> 폴더에서 시작합니다. 익숙한 <code>bash</code>로 바꾸고 홈 폴더로 이동합니다.</p>
+<div class="codeblock term"><pre><code>sh-5.2$ bash
+[ssm-user@ip-10-0-1-87 bin]$ cd ~
+[ssm-user@ip-10-0-1-87 ~]$ whoami
+ssm-user</code></pre></div>
+<p><code>ssm-user</code>는 Session Manager가 만든 운영체제 사용자로, 비밀번호 없이 <code>sudo</code>(관리자 권한으로 실행)를 쓸 수 있습니다. 프롬프트의 <code>ip-10-0-1-87</code>은 서버의 사설 IP(10.0.1.87)입니다. 퍼블릭 서브넷 10.0.1.0/24 안의 주소인지 확인합니다.</p></li><li><h3>서버 기본 상태 점검</h3><div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>cat /etc/os-release | head -2
+NAME="Amazon Linux"
+VERSION="2023"
+
+nproc; free -m | head -2
+2
+               total        used        free      shared  buff/cache   available
+Mem:             916         180         512           0         222         600
+
+df -h /
+Filesystem        Size  Used Avail Use% Mounted on
+/dev/nvme0n1p1    8.0G  1.6G  6.4G  20% /
+
+curl -s https://checkip.amazonaws.com
+3.35.120.45</code></pre></div>
+<p>마지막 명령은 서버가 인터넷으로 나갈 수 있는지와, 바깥에서 보이는 서버의 공용 IP를 함께 확인합니다. 콘솔에 보이는 퍼블릭 IP와 같아야 합니다.</p></li><li><h3>IAM 역할과 IMDSv2 확인</h3><div class="codeblock term"><pre><code>aws sts get-caller-identity --query Arn --output text
+arn:aws:sts::123456789012:assumed-role/book-api-ec2-role/i-0123456789abcdef0
+
+curl -s -o /dev/null -w "%{http_code}\n" http://169.254.169.254/latest/meta-data/
+401
+
+TOKEN=$(curl -s -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 60")
+curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/iam/security-credentials/
+book-api-ec2-role</code></pre></div>
+
+<p>서버 안의 AWS CLI는 액세스 키 없이도 역할(<code>assumed-role/book-api-ec2-role</code>)로 요청합니다. 토큰 없이 메타데이터를 조회하면 401(인증 필요)이 돌아오고, <code>PUT</code>으로 토큰을 받은 뒤에야 역할 이름이 보입니다. URL만 바꿔 <code>GET</code>을 보내게 하는 SSRF로는 자격 증명을 꺼내기 어렵다는 것을 확인했습니다.</p>
+</li><li><h3>권한 범위 확인</h3><div class="codeblock term"><pre><code>aws s3 ls
+An error occurred (AccessDenied) when calling the ListBuckets operation: User: arn:aws:sts::123456789012:assumed-role/book-api-ec2-role/i-0123456789abcdef0 is not authorized to perform: s3:ListAllMyBuckets ...</code></pre></div>
+<p>역할에 S3 권한을 주지 않았으므로 거부됩니다. 최소 권한이 서버 안에서도 지켜지고 있습니다. S3 권한은 8일차에 필요한 만큼만 더합니다.</p></li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>인스턴스 ID</td><td><input data-save="iid" aria-label="내 결과"></td></tr><tr><td>퍼블릭 IP</td><td><input data-save="pubip" aria-label="내 결과"></td></tr><tr><td>사설 IP</td><td><input data-save="privip" aria-label="내 결과"></td></tr><tr><td>get-caller-identity의 역할 이름</td><td><input data-save="ec2role" aria-label="내 결과"></td></tr></tbody></table></div>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p44c1"> <span>SSH 키 없이 Session Manager로 접속했다.</span></label></li><li><label><input type="checkbox" data-save="p44c2"> <span>서버의 사설 IP가 퍼블릭 서브넷(10.0.1.x)에 있다.</span></label></li><li><label><input type="checkbox" data-save="p44c3"> <span>서버에서 인터넷으로 나갈 수 있다(checkip 응답).</span></label></li><li><label><input type="checkbox" data-save="p44c4"> <span>서버의 AWS CLI가 book-api-ec2-role로 요청한다.</span></label></li><li><label><input type="checkbox" data-save="p44c5"> <span>토큰 없는 메타데이터 요청이 401이다.</span></label></li></ul>
+<details><summary>Session Manager에 연결되지 않을 때</summary><div class="answer"><div class="table-wrap"><table><thead><tr><th>확인할 것</th><th>고치는 방법</th></tr></thead><tbody><tr><td>인스턴스에 IAM 역할이 붙었나요?</td><td>인스턴스 선택, 작업, 보안, IAM 역할 수정에서 <code>book-api-ec2-role</code>을 고르고, 몇 분 기다립니다.</td></tr><tr><td>퍼블릭 IP가 있나요?</td><td>없으면 서버가 Systems Manager로 나갈 수 없습니다. 인스턴스를 종료하고 "퍼블릭 IP 자동 할당: 활성화"로 다시 만듭니다.</td></tr><tr><td>퍼블릭 서브넷에 만들었나요?</td><td>서브넷의 라우팅 테이블에 인터넷 게이트웨이 경로가 있는지 확인합니다.</td></tr><tr><td>보안 그룹의 아웃바운드를 지웠나요?</td><td>아웃바운드에 HTTPS 443(또는 모든 트래픽)이 있어야 합니다.</td></tr><tr><td>만든 지 5분이 안 됐나요?</td><td>Systems Manager 콘솔의 "Fleet Manager"에 인스턴스가 나타날 때까지 기다립니다.</td></tr></tbody></table></div>
+</div></details>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p44/s13-p44-02.html"><span class="dir">이전</span>S13-P44-02 인스턴스 시작 과정 보기</a>
+  <a class="next" href="../../s13/p44/s13-p44-04.html"><span class="dir">다음</span>S13-P44-04 SSH와 Session Manager 비교</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P49-04 배포 결과 자기 점검 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P49-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 안전한 배포 구성</a><span class="sep">/</span><span>S14-P49 운영 배포 완성</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p49-01.html" style="flex:5" data-type="주요 개념" title="운영 배포 구성 점검 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s14-p49-02.html" style="flex:10" data-type="주요 개념" title="운영용 Compose 설정 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s14-p49-03.html" style="flex:25" data-type="실습" title="도서 API 배포 완성 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s14-p49-04.html" style="flex:5" data-type="실습" title="배포 결과 자기 점검 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s14-p49-05.html" style="flex:5" data-type="정리" title="정리: 7일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>5분</span><span>S14-P49-04</span></div>
+<h1>배포 결과 자기 점검</h1>
+
+<p class="lead">배포가 "동작한다"와 "안전하게 배포되었다"는 다릅니다. 아래 질문에 직접 명령을 실행해 답해 보고, 예시 답안과 비교합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>점검 질문으로 배포 상태를 확인하고, 문제가 있으면 바로 고칠 수 있습니다.</p></div>
+<div class="qa"><p class="question">질문 1. 비밀 값이 코드, 이미지, 서버 파일, 컨테이너 설정 어디에도 남아 있지 않은가요? 어떻게 확인하나요?</p><textarea data-save="a1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>네 곳을 봅니다.</p><div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code># 코드(내 PC): 저장소 전체 기록에서 찾기
+git log -p | grep -c -i -E "secret_key=.{20,}|postgresql\+psycopg://bookapi:[^$]"
+0
+# 이미지(서버): 빌드 기록과 환경 변수
+docker history --no-trunc IMAGE주소 | grep -c -i secret
+0
+# 서버 파일
+cat ~/book-api/.env
+IMAGE=...
+# 컨테이너 설정
+docker inspect book-api-api-1 --format "{{json .Config.Env}}"</code></pre></div>
+<p>모두 비밀 값이 없어야 합니다. <code>git log -p</code>에서 나온다면 과거 커밋에 남은 것이므로, 그 값은 이미 새었다고 보고 교체합니다(S14-P47-04).</p></div></details></div>
+<div class="qa"><p class="question">질문 2. 인터넷에서 이 서버에 닿을 수 있는 포트는 무엇인가요? 누구에게 열려 있나요?</p><textarea data-save="a2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>book-api-sg의 인바운드 규칙에 있는 TCP 8000, 내 IP/32 하나뿐이어야 합니다. 22번은 없습니다. 휴대폰의 모바일 데이터로 접속해 막히는지 확인합니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 3. RDS에 인터넷이나 다른 자원에서 닿을 수 있나요?</p><textarea data-save="a3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>아니요. 프라이빗 서브넷, 퍼블릭 액세스 꺼짐, 보안 그룹은 book-api-sg에서 오는 5432만 허용합니다. <code>aws rds describe-db-instances</code>의 <code>PubliclyAccessible</code>이 False인지 다시 봅니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 4. API 문서와 오류 응답이 내부 정보를 보여 주지 않나요?</p><textarea data-save="a4" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p><code>/docs</code>, <code>/redoc</code>, <code>/openapi.json</code>이 404이고, 잘못된 요청의 422 응답에 입력 값이 되돌아오지 않으며, 500 응답에는 오류 코드와 요청 ID만 있어야 합니다(S10-P35). 응답 헤더에 <code>server: uvicorn</code>이 없는지도 봅니다(<code>curl -I</code>).</p></div></details></div>
+<div class="qa"><p class="question">질문 5. 지금 서버에서 도는 코드가 정확히 어느 커밋인지 말할 수 있나요?</p><textarea data-save="a5" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p><code>.env</code>의 이미지 태그(1.0.0)와 ECR에서 같은 digest를 가리키는 커밋 태그(git-4f2c9a1)로 알 수 있습니다. <code>latest</code>를 썼다면 답하기 어렵습니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 6. 서버가 재부팅되거나 컨테이너가 죽으면 누가 다시 살리나요? 앱이 응답하지 않는 상태는 어떻게 알아채나요?</p><textarea data-save="a6" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>Docker 서비스의 자동 시작과 컨테이너 재시작 정책이 다시 살립니다. 응답하지 않는 상태는 healthcheck가 <code>unhealthy</code>로 표시하지만, 지금은 아무도 그 표시를 보지 않습니다. 8일차에 CloudWatch 경보와 ALB의 상태 검사로 알림을 받게 합니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 7. 로그는 어디에 있고, 로그에 비밀 값이나 개인정보가 찍히지 않나요?</p><textarea data-save="a7" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p><code>docker compose -f compose.prod.yaml logs api</code>로 볼 수 있고, Docker가 서버 디스크에 최대 30MB까지 보관합니다. S10에서 만든 마스킹 덕분에 이메일과 토큰이 가려져야 합니다. 서버가 사라지면 로그도 사라지므로 8일차에 CloudWatch Logs로 보냅니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 8. 업로드한 표지 이미지는 어디에 저장되나요? 이 서버를 지우면 어떻게 되나요?</p><textarea data-save="a8" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>서버의 Docker 볼륨(<code>uploads</code>)에 있으므로 서버를 지우면 함께 사라집니다. 서버를 두 대로 늘리면 서로 다른 파일을 갖게 됩니다. 8일차에 S3로 옮깁니다.</p></div></details></div>
+<div class="table-wrap"><table><thead><tr><th>점검 결과</th><th>내 답</th></tr></thead><tbody><tr><td>"아니요"나 "모르겠다"가 나온 질문</td><td><input data-save="chk1" aria-label="내 결과"></td></tr><tr><td>바로 고친 것</td><td><input data-save="chk2" aria-label="내 결과"></td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p49/s14-p49-03.html"><span class="dir">이전</span>S14-P49-03 도서 API 배포 완성</a>
+  <a class="next" href="../../s14/p49/s14-p49-05.html"><span class="dir">다음</span>S14-P49-05 정리: 7일차 마무리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

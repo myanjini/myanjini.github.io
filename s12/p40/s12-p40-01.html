@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P40-01 클라우드 컴퓨팅 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P40-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P40 클라우드와 AWS 개요</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p40-01.html" style="flex:10" data-type="주요 개념" title="클라우드 컴퓨팅 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p40-02.html" style="flex:10" data-type="주요 개념" title="AWS 글로벌 인프라와 주요 서비스 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p40-03.html" style="flex:15" data-type="실습" title="실습 계정과 콘솔 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s12-p40-04.html" style="flex:10" data-type="주요 개념" title="과금 구조와 비용 관리 원칙 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s12-p40-05.html" style="flex:5" data-type="정리" title="정리: AWS 개요 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S12-P40-01</span></div>
+<h1>클라우드 컴퓨팅</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>클라우드 서비스 모델과 AWS 글로벌 인프라, 과금 구조를 설명할 수 있습니다.</p></div>
+
+<p class="lead">지금까지 도서 API는 내 컴퓨터와 Docker 컨테이너 안에서만 돌았습니다. 다른 사람이 쓰게 하려면 하루 종일 켜져 있고 인터넷에서 닿는 서버가 필요합니다. 오늘 오후부터는 그 서버를 클라우드에서 빌려 쓰는 방법을 배웁니다.</p>
+
+<h2>클라우드 컴퓨팅이란</h2>
+<p>예전에는 서비스를 열려면 서버 컴퓨터를 사서 전산실에 놓고, 전기와 네트워크를 연결하고, 고장 나면 직접 고쳤습니다. 이런 방식을 <strong>온프레미스</strong>(on-premises, 내 건물 안에 둔다는 뜻)라고 합니다. <strong>클라우드 컴퓨팅</strong>은 서버, 저장 공간, 데이터베이스 같은 컴퓨팅 자원을 인터넷을 통해 필요한 만큼 빌려 쓰고, 쓴 만큼 돈을 내는 방식입니다. 발전소를 짓지 않고 전기를 쓴 만큼 요금을 내는 것과 비슷합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>특징</th><th>뜻</th><th>이 과정에서 겪는 일</th></tr></thead><tbody><tr><td>주문형 셀프 서비스</td><td>누구에게 요청하지 않고 콘솔이나 명령으로 바로 자원을 만듭니다.</td><td>몇 분 만에 서버(EC2)와 데이터베이스(RDS)를 만듭니다.</td></tr><tr><td>탄력성</td><td>필요할 때 늘리고, 필요 없으면 줄이거나 지웁니다.</td><td>실습이 끝나면 자원을 지워 비용을 멈춥니다.</td></tr><tr><td>사용한 만큼 과금</td><td>켜 둔 시간, 저장한 용량, 보낸 데이터만큼 요금을 냅니다.</td><td>켜 두기만 해도 요금이 나가므로 정리 습관이 중요합니다(S12-P40-04).</td></tr><tr><td>관리형 서비스</td><td>운영 작업 일부를 클라우드 회사가 대신 합니다.</td><td>RDS는 백업과 데이터베이스 엔진 패치를 AWS가 맡습니다.</td></tr></tbody></table></div>
+
+<h2>IaaS, PaaS, SaaS</h2>
+<p>클라우드 서비스는 "어디까지 빌려 쓰고 어디부터 내가 관리하는가"에 따라 세 가지로 나눕니다. 아래로 갈수록 내가 신경 쓸 부분이 줄어드는 대신 마음대로 바꿀 수 있는 부분도 줄어듭니다.</p>
+<div class="table-wrap"><table><thead><tr><th>모델</th><th>빌려 쓰는 것</th><th>내가 관리하는 것</th><th>예</th></tr></thead><tbody><tr><td>IaaS(Infrastructure as a Service)</td><td>서버, 저장 장치, 네트워크</td><td>운영체제, 설치 프로그램, 애플리케이션, 데이터</td><td>Amazon EC2(가상 서버)</td></tr><tr><td>PaaS(Platform as a Service)</td><td>운영체제와 실행 환경까지</td><td>애플리케이션 코드와 데이터, 설정</td><td>AWS Elastic Beanstalk, Amazon RDS(데이터베이스 운영 환경)</td></tr><tr><td>SaaS(Software as a Service)</td><td>완성된 소프트웨어</td><td>내 계정과 데이터</td><td>웹 메일, 온라인 문서 도구</td></tr></tbody></table></div>
+
+<p>이 과정은 EC2라는 IaaS 위에 Docker로 도서 API를 직접 올리고, 데이터베이스는 관리형 서비스인 RDS를 씁니다. 서버 설정을 직접 해 보며 배포가 어떻게 이루어지는지 이해하기에 좋은 조합입니다.</p>
+
+<h2>공동 책임 모델</h2>
+<p>클라우드를 쓰면 보안은 누가 책임질까요? AWS는 이를 <strong>공동 책임 모델</strong>로 설명합니다. AWS는 "클라우드 자체의 보안"(데이터 센터 건물, 하드웨어, 가상화 기술, 관리형 서비스의 기반)을 책임지고, 고객은 "클라우드 안에서의 보안"(내가 만든 서버의 운영체제, 열어 둔 포트, 준 권한, 저장한 데이터, 내 코드)을 책임집니다.</p>
+<div class="table-wrap"><table><thead><tr><th>누가</th><th>EC2(IaaS)에서</th><th>RDS(관리형)에서</th></tr></thead><tbody><tr><td>AWS</td><td>물리 서버, 네트워크 장비, 가상화</td><td>물리 서버, 운영체제와 데이터베이스 엔진의 패치, 자동 백업 기능</td></tr><tr><td>나(고객)</td><td>운영체제 업데이트, Docker와 애플리케이션, 보안 그룹, IAM 역할</td><td>누가 접속할 수 있는지(보안 그룹, 퍼블릭 접근 여부), DB 계정과 비밀번호, 암호화 설정, 데이터</td></tr></tbody></table></div>
+
+<p>5일차와 6일차 오전에 고친 SQL 삽입, 부적절한 인가, 비밀 키 관리는 모두 "나"의 몫입니다. AWS가 아무리 튼튼한 데이터 센터를 갖고 있어도 내 코드의 약점이나 너무 넓게 연 방화벽은 막아 주지 않습니다. 앞으로 배울 IAM과 보안 그룹은 이 "나의 몫"을 다루는 도구입니다.</p>
+<div class="quiz" data-answer="4"><p class="q">EC2에서 도서 API를 운영할 때, 운영체제의 보안 업데이트를 적용할 책임은 누구에게 있나요?</p><label><input type="radio" name="p40q0" value="1"> <span>1. 운영체제를 만든 회사</span></label><label><input type="radio" name="p40q0" value="2"> <span>2. 아무도 없다</span></label><label><input type="radio" name="p40q0" value="3"> <span>3. AWS</span></label><label><input type="radio" name="p40q0" value="4"> <span>4. 고객(나)</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>EC2는 IaaS이므로 운영체제부터 위는 고객이 관리합니다. RDS처럼 관리형 서비스라면 엔진 패치를 AWS가 맡습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p39/s11-p39-05.html"><span class="dir">이전</span>S11-P39-05 정리: 개발 보안 마무리</a>
+  <a class="next" href="../../s12/p40/s12-p40-02.html"><span class="dir">다음</span>S12-P40-02 AWS 글로벌 인프라와 주요 서비스</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

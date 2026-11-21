@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P16-04 로그인 API 구현 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P16-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P16 OAuth2 Password Flow와 JWT</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p16-01.html" style="flex:10" data-type="주요 개념" title="JWT의 구조 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s5-p16-02.html" style="flex:5" data-type="주요 개념" title="OAuth2 Password Flow (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s5-p16-03.html" style="flex:10" data-type="주요 개념" title="로그인과 토큰 발급 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p16-04.html" style="flex:20" data-type="실습" title="로그인 API 구현 (20분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s5-p16-05.html" style="flex:5" data-type="정리" title="정리: 토큰 발급 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S5-P16-04</span></div>
+<h1>로그인 API 구현</h1>
+
+<p class="lead">로그인 API를 만들고, 받은 토큰을 직접 풀어 보며 JWT가 정말 앞에서 배운 구조인지 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>로그인 시 JWT를 발급하고, 토큰의 내용과 서명 검증을 직접 확인할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>설치하고 설정 추가</h3>
+<p>서버를 끄고 <code>pip install pyjwt</code>를 실행합니다. <code>app/config.py</code>에 <code>access_token_expire_minutes</code>를 추가하고, <code>.env.example</code>에도 한 줄을 더해 다른 사람이 이 설정이 있다는 것을 알 수 있게 합니다.</p>
+<div class="codeblock"><span class="file">.env.example</span><pre><code>ACCESS_TOKEN_EXPIRE_MINUTES=30</code></pre></div>
+
+<p><code>.env</code>에는 적지 않아도 됩니다. 값이 없으면 기본값 30이 쓰입니다.</p>
+</li><li><h3>AppError에 headers 추가</h3>
+<p>앞 페이지대로 <code>app/errors.py</code>와 <code>app/main.py</code>의 오류 처리기를 고칩니다.</p>
+</li><li><h3>security.py에 토큰 함수 추가</h3>
+<details><summary>app/security.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/security.py</span><pre><code>from datetime import datetime, timedelta, timezone
+
+import jwt
+from pwdlib import PasswordHash
+
+from app.config import settings
+
+# 지금 권장되는 알고리즘(Argon2)으로 비밀번호 해시를 만드는 도구입니다.
+password_hash = PasswordHash.recommended()
+
+# 없는 이메일로 로그인할 때 비교용으로 쓰는 가짜 해시입니다.
+DUMMY_HASH = password_hash.hash("dummy-password")
+
+
+def hash_password(password: str) -&gt; str:
+    """비밀번호를 해시로 바꿉니다. 같은 비밀번호도 호출할 때마다 다른 결과가 나옵니다."""
+    return password_hash.hash(password)
+
+
+def verify_password(password: str, hashed: str) -&gt; bool:
+    """입력한 비밀번호가 저장된 해시와 맞는지 확인합니다."""
+    return password_hash.verify(password, hashed)
+
+
+ALGORITHM = "HS256"  # 비밀 키 하나로 서명하고 검증하는 방식
+
+
+def create_access_token(user_id: int) -&gt; str:
+    """사용자 번호와 만료 시각을 담아 서명한 JWT를 만듭니다."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    payload = {"sub": str(user_id), "exp": expire}
+    return jwt.encode(payload, settings.secret_key, algorithm=ALGORITHM)</code></pre></div>
+</div></details>
+</li><li><h3>Token 스키마와 로그인 API 추가</h3>
+<p><code>app/schemas.py</code>의 <code>UserRead</code> 아래에 <code>Token</code>을 추가하고, <code>app/routers/auth.py</code>를 아래 전체 코드로 바꿉니다.</p>
+<details><summary>app/routers/auth.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/routers/auth.py</span><pre><code>from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.dependencies import SessionDep
+from app.errors import AppError
+from app.models import User
+from app.schemas import Token, UserCreate, UserRead
+from app.security import DUMMY_HASH, create_access_token, hash_password, verify_password
+
+router = APIRouter(prefix="/auth", tags=["인증"])
+
+
+@router.post("/signup", response_model=UserRead, status_code=status.HTTP_201_CREATED, summary="회원가입",
+             responses={409: {"description": "이미 가입된 이메일"}})
+def signup(db: SessionDep, user_in: UserCreate):
+    email = user_in.email.lower()  # 대문자로 적어도 같은 이메일로 봅니다.
+    if db.scalar(select(User).where(User.email == email)) is not None:
+        raise AppError(409, "DUPLICATE_EMAIL", "이미 가입된 이메일입니다.")
+    user = User(email=email, hashed_password=hash_password(user_in.password))
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+# 401 응답에는 어떤 방식으로 인증해야 하는지 알려 주는 헤더를 붙입니다.
+BEARER = {"WWW-Authenticate": "Bearer"}
+
+
+def authenticate(db: Session, email: str, password: str) -&gt; User | None:
+    """이메일과 비밀번호가 맞으면 사용자를, 틀리면 None을 돌려줍니다."""
+    user = db.scalar(select(User).where(User.email == email.lower()))
+    if user is None:
+        verify_password(password, DUMMY_HASH)  # 없는 이메일도 비슷한 시간이 걸리게 합니다.
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    return user
+
+
+@router.post("/token", response_model=Token, summary="로그인(토큰 발급)",
+             responses={401: {"description": "이메일 또는 비밀번호가 틀림"}})
+def login(db: SessionDep, form: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    # OAuth2 규칙상 입력 칸 이름은 username입니다. 이 앱에서는 이메일을 넣습니다.
+    user = authenticate(db, form.username, form.password)
+    if user is None:
+        raise AppError(401, "INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다.", headers=BEARER)
+    return {"access_token": create_access_token(user.id), "token_type": "bearer"}</code></pre></div>
+</div></details>
+</li><li><h3>Swagger UI로 로그인</h3>
+<p>서버를 실행하고 <code>POST /auth/token</code>을 펼칩니다. 요청 본문이 JSON 칸이 아니라 <code>username</code>, <code>password</code> 같은 입력 칸으로 나오는 것이 폼 형식입니다. <code>grant_type</code>, <code>scope</code>, <code>client_id</code>, <code>client_secret</code>은 표준에 있는 선택 항목이라 비워 둡니다.</p>
+<div class="table-wrap"><table><thead><tr><th>입력</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>username <code>user1@example.com</code>, password <code>practice-pass-1</code></td><td>200, <code>access_token</code>과 <code>"token_type": "bearer"</code></td><td><input data-save="t1" aria-label="내 결과"></td></tr><tr><td>username <code>user1@example.com</code>, password <code>wrong-pass</code></td><td>401, <code>INVALID_CREDENTIALS</code>, 응답 헤더에 <code>www-authenticate: Bearer</code></td><td><input data-save="t2" aria-label="내 결과"></td></tr><tr><td>username <code>nobody@example.com</code>, password <code>wrong-pass</code></td><td>위와 똑같은 401 응답</td><td><input data-save="t3" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>첫 번째 응답의 <code>access_token</code> 값을 복사해 둡니다.</p>
+</li><li><h3>JSON으로 보내면 어떻게 되는지 확인</h3>
+<p>로그인 API가 폼만 받는다는 것을 curl로 확인합니다. 새 터미널을 열어 실행합니다(PowerShell이라면 <code>curl.exe</code>).</p>
+<div class="codeblock term"><pre><code>curl -i -X POST http://127.0.0.1:8000/auth/token -d "username=user1@example.com&amp;password=practice-pass-1"
+curl -i -X POST http://127.0.0.1:8000/auth/token -H "Content-Type: application/json" -d "{\"username\": \"user1@example.com\", \"password\": \"practice-pass-1\"}"</code></pre></div>
+
+<p><code>-d</code>만 쓰면 curl은 폼 형식으로 보내므로 첫 번째는 200입니다. 두 번째는 JSON이라 FastAPI가 폼에서 <code>username</code>을 찾지 못해 422(<code>Field required</code>)를 돌려줍니다. 웹 화면을 만드는 사람에게 "로그인은 폼으로 보내야 한다"고 알려 줘야 하는 이유입니다.</p>
+</li><li><h3>토큰 풀어 보기</h3>
+<p>서버를 실행한 터미널이 아닌 다른 터미널에서, 가상환경을 켜고 <code>book-api</code> 폴더에서 <code>python</code>을 실행합니다. <code>토큰</code> 자리에 복사한 값을 붙여 넣습니다.</p>
+<div class="codeblock term"><pre><code>&gt;&gt;&gt; import jwt
+&gt;&gt;&gt; token = "토큰"
+&gt;&gt;&gt; jwt.get_unverified_header(token)
+{'alg': 'HS256', 'typ': 'JWT'}
+&gt;&gt;&gt; payload = jwt.decode(token, options={"verify_signature": False})
+&gt;&gt;&gt; payload
+{'sub': '1', 'exp': 1795237482}
+&gt;&gt;&gt; from datetime import datetime
+&gt;&gt;&gt; datetime.fromtimestamp(payload["exp"])</code></pre></div>
+
+<p>비밀 키 없이도 내용을 읽을 수 있습니다. 마지막 줄은 만료 시각을 내 컴퓨터의 시간으로 보여 주는데, 로그인한 시각에서 30분 뒤여야 합니다. <code>exp</code> 숫자는 로그인한 시각에 따라 다릅니다.</p>
+</li><li><h3>서명 검증해 보기</h3>
+<div class="codeblock term"><pre><code>&gt;&gt;&gt; from app.config import settings
+&gt;&gt;&gt; jwt.decode(token, settings.secret_key, algorithms=["HS256"])
+{'sub': '1', 'exp': 1795237482}
+&gt;&gt;&gt; jwt.decode(token, "this-is-not-the-server-secret-key-0123", algorithms=["HS256"])
+jwt.exceptions.InvalidSignatureError: Signature verification failed</code></pre></div>
+
+<p>서버의 비밀 키로는 검증이 통과하고, 다른 키로는 <code>InvalidSignatureError</code>가 납니다. 다음 파트에서는 이 검증을 보호된 API 앞에 세웁니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>올바른 이메일과 비밀번호로 로그인하면 access_token을 받는다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>비밀번호가 틀린 경우와 이메일이 없는 경우의 응답이 똑같다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>토큰의 페이로드에 sub와 exp만 들어 있다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>다른 비밀 키로 검증하면 InvalidSignatureError가 난다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>InsecureKeyLengthWarning: The HMAC key is 9 bytes long</code></td><td><code>.env</code>의 <code>SECRET_KEY</code>가 <code>change-me</code> 그대로입니다. S3-P9의 명령으로 만든 값으로 바꾸고 서버를 다시 시작합니다.</td></tr><tr><td><code>Form data requires "python-multipart" to be installed</code></td><td><code>fastapi[standard]</code>를 설치하지 않았습니다. <code>pip install python-multipart</code>를 실행합니다.</td></tr><tr><td><code>AttributeError: module 'jwt' has no attribute 'encode'</code></td><td>PyJWT가 아닌 이름이 비슷한 다른 패키지(<code>jwt</code>)를 설치했습니다. <code>pip uninstall jwt</code> 뒤 <code>pip install pyjwt</code>를 실행합니다.</td></tr><tr><td>올바른 비밀번호인데 401</td><td>가입할 때와 다른 이메일 철자이거나, S5-P15 실습 전에 만든 데이터베이스를 쓰고 있습니다. <code>POST /auth/signup</code>으로 다시 가입해 봅니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p16-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p16/s5-p16-03.html"><span class="dir">이전</span>S5-P16-03 로그인과 토큰 발급</a>
+  <a class="next" href="../../s5/p16/s5-p16-05.html"><span class="dir">다음</span>S5-P16-05 정리: 토큰 발급</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

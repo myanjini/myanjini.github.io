@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P7-01 단일 파일의 한계 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P7-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 응답 설계와 프로젝트 구조</a><span class="sep">/</span><span>S2-P7 APIRouter로 프로젝트 구조화하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p7-01.html" style="flex:5" data-type="주요 개념" title="단일 파일의 한계 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s2-p7-02.html" style="flex:10" data-type="주요 개념" title="폴더 구조와 역할 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s2-p7-03.html" style="flex:10" data-type="주요 개념" title="라우터 분리하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s2-p7-04.html" style="flex:20" data-type="실습" title="도서 API 구조화 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s2-p7-05.html" style="flex:5" data-type="정리" title="정리: 1일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S2-P7-01</span></div>
+<h1>단일 파일의 한계</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>APIRouter로 기능별 라우터를 분리하고 패키지 구조를 설계할 수 있습니다.</p></div>
+
+<p class="lead"><code>main.py</code> 한 파일이 150줄을 넘었습니다. 지금은 괜찮아 보여도, 앞으로 저자, 회원, 대여 기능이 더해지면 문제가 커집니다.</p>
+<h2>한 파일에 모든 코드가 있으면</h2>
+<div class="table-wrap"><table><thead><tr><th>문제</th><th>실제로 겪는 일</th></tr></thead><tbody><tr><td>찾기 어렵습니다</td><td>도서 등록 코드를 고치려는데 모델, 오류 처리, 다른 API 사이를 계속 위아래로 스크롤해야 합니다.</td></tr><tr><td>함께 고치기 어렵습니다</td><td>두 사람이 같은 파일의 다른 기능을 고치면 Git에서 충돌이 자주 납니다.</td></tr><tr><td>영향 범위가 넓어집니다</td><td>한 기능을 고쳤는데 같은 파일의 다른 기능이 망가지기 쉽고, 어디까지 확인해야 할지 알기 어렵습니다.</td></tr><tr><td>재사용이 어렵습니다</td><td>모델이나 오류 클래스를 다른 기능에서 쓰려면 결국 같은 파일에 또 코드를 붙이게 됩니다.</td></tr></tbody></table></div>
+
+<p>해결 방법은 <strong>역할에 따라 파일을 나누는 것</strong>입니다. 데이터 모양(모델), 오류, 기능별 API를 각자의 파일에 두면, 고칠 곳을 바로 찾을 수 있고 한 파일을 고쳐도 다른 파일은 영향을 덜 받습니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s2/p6/s2-p6-05.html"><span class="dir">이전</span>S2-P6-05 정리: 오류 처리와 문서화</a>
+  <a class="next" href="../../s2/p7/s2-p7-02.html"><span class="dir">다음</span>S2-P7-02 폴더 구조와 역할</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

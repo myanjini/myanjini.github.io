@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P53-02 배포 워크플로 보기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P53-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P53 GitHub Actions로 배포 자동화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p53-01.html" style="flex:10" data-type="주요 개념" title="배포 파이프라인 설계 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p53-02.html" style="flex:10" data-type="주요 개념" title="배포 워크플로 보기 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p53-03.html" style="flex:25" data-type="실습" title="내 저장소에 배포 자동화 적용 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s15-p53-04.html" style="flex:5" data-type="정리" title="정리: 배포 자동화 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S15-P53-02</span></div>
+<h1>배포 워크플로 보기</h1>
+
+<p class="lead">배포 워크플로 파일과 배포 역할의 권한 정책을 읽어 봅니다. 기존 테스트 워크플로는 다시 쓰고, 새 파일 <code>deploy.yml</code>을 만듭니다.</p>
+
+<h2>테스트 워크플로를 불러 쓰기</h2>
+<p><code>test.yml</code>에 <code>workflow_call</code>을 더하면 다른 워크플로가 이것을 한 단계처럼 불러 쓸 수 있습니다. main에 푸시할 때는 <code>deploy.yml</code>이 테스트를 부르므로, <code>test.yml</code> 자체는 풀 리퀘스트에서만 실행되게 바꿉니다. 그러지 않으면 푸시할 때 테스트가 두 번 돕니다.</p>
+<div class="codeblock"><span class="file">.github/workflows/test.yml의 on 부분</span><pre><code>on:
+  pull_request:
+    branches: [main]
+  workflow_call:  # 배포 워크플로(deploy.yml)가 이 워크플로를 불러 씁니다. main 푸시 때는 거기서 실행됩니다.</code></pre></div>
+
+<h2>배포 워크플로</h2>
+<div class="codeblock"><span class="file">.github/workflows/deploy.yml</span><pre><code>name: deploy
+
+# main에 푸시하면 테스트를 거쳐 EC2까지 배포합니다. Actions 화면에서 직접 실행할 수도 있습니다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write  # GitHub가 이 실행을 증명하는 OIDC 토큰을 발급할 수 있게 합니다.
+
+concurrency:
+  group: deploy           # 배포는 한 번에 하나씩만 실행합니다.
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: book-api
+
+jobs:
+  test:
+    uses: ./.github/workflows/test.yml  # 테스트와 보안 점검(test.yml)을 그대로 다시 씁니다.
+
+  deploy:
+    needs: test  # 테스트가 통과해야 시작합니다.
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 내려받기
+        uses: actions/checkout@v7
+
+      - name: AWS 자격 증명 받기(OIDC, 액세스 키 없음)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: ECR 로그인
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: 이미지 빌드와 푸시
+        run: |
+          IMAGE=${{ steps.ecr.outputs.registry }}/$ECR_REPOSITORY:git-${GITHUB_SHA::7}
+          docker build -t "$IMAGE" .
+          docker push "$IMAGE"
+          echo "IMAGE=$IMAGE" &gt;&gt; "$GITHUB_ENV"
+
+      - name: EC2에 배포(Systems Manager Run Command)
+        env:
+          INSTANCE_ID: ${{ vars.EC2_INSTANCE_ID }}
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          cat &gt; commands.json &lt;&lt;EOF
+          {"commands": [
+            "set -e",
+            "cd /home/ssm-user/book-api",
+            "aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY",
+            "sed -i 's|^IMAGE=.*|IMAGE=$IMAGE|' .env",
+            "docker compose -f compose.prod.yaml pull",
+            "docker compose -f compose.prod.yaml run --rm api alembic upgrade head",
+            "docker compose -f compose.prod.yaml up -d",
+            "docker image prune -f"
+          ]}
+          EOF
+          COMMAND_ID=$(aws ssm send-command --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript --comment "deploy ${GITHUB_SHA::7}" \
+            --parameters file://commands.json --query Command.CommandId --output text)
+          echo "명령 ID: $COMMAND_ID"
+          for i in $(seq 1 60); do  # 최대 5분 동안 5초마다 결과를 확인합니다.
+            sleep 5
+            STATUS=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+              --query Status --output text 2&gt;/dev/null || echo Pending)
+            case "$STATUS" in Pending|InProgress|Delayed) continue ;; *) break ;; esac
+          done
+          aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+            --query "[StandardOutputContent, StandardErrorContent]" --output text
+          echo "결과: $STATUS"
+          test "$STATUS" = "Success"
+
+      - name: 배포 확인(ALB로 /health 호출)
+        run: curl -fsS --retry 12 --retry-delay 10 --retry-all-errors "http://${{ vars.ALB_DNS_NAME }}/health"</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>부분</th><th>뜻</th></tr></thead><tbody><tr><td><code>permissions: id-token: write</code></td><td>이 실행이 OIDC 토큰을 발급받을 수 있게 합니다. <code>contents: read</code>로 저장소는 읽기만 합니다.</td></tr><tr><td><code>concurrency: deploy</code></td><td>푸시가 연달아 와도 배포는 하나씩 차례로 실행합니다.</td></tr><tr><td><code>uses: ./.github/workflows/test.yml</code></td><td>테스트와 보안 점검을 그대로 실행합니다. <code>needs: test</code>로 통과해야 배포를 시작합니다.</td></tr><tr><td><code>configure-aws-credentials</code></td><td>OIDC 토큰으로 배포 역할을 맡아 임시 자격 증명을 받습니다.</td></tr><tr><td><code>amazon-ecr-login</code></td><td>ECR에 로그인하고 레지스트리 주소를 <code>steps.ecr.outputs.registry</code>로 알려 줍니다.</td></tr><tr><td><code>git-${GITHUB_SHA::7}</code></td><td>커밋 해시 앞 7자로 태그를 붙입니다. 어떤 커밋이 배포되었는지 이미지 이름으로 알 수 있습니다.</td></tr><tr><td><code>commands.json</code></td><td>서버에서 실행할 명령 목록입니다. <code>set -e</code>로 하나라도 실패하면 거기서 멈춥니다. 마이그레이션이 실패하면 컨테이너를 교체하지 않습니다.</td></tr><tr><td><code>aws ssm send-command</code></td><td>Run Command로 EC2에 명령을 보냅니다. SSH나 열린 포트 없이, Session Manager와 같은 SSM 에이전트가 받아 root 권한으로 실행합니다.</td></tr><tr><td>결과 확인 반복문</td><td>최대 5분 동안 5초마다 명령 상태를 보고, 출력과 오류를 실행 기록에 남깁니다. <code>Success</code>가 아니면 실패로 끝납니다.</td></tr><tr><td><code>curl --retry</code></td><td>새 컨테이너가 뜨고 ALB가 정상으로 볼 때까지 10초 간격으로 최대 12번 시도합니다.</td></tr></tbody></table></div>
+
+<h2>배포 역할의 권한</h2>
+<div class="codeblock"><span class="file">배포 역할의 인라인 정책 book-api-deploy</span><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EcrLogin",
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    },
+    {
+      "Sid": "EcrPushBookApi",
+      "Effect": "Allow",
+      "Action": [
+        "ecr:BatchCheckLayerAvailability",
+        "ecr:InitiateLayerUpload",
+        "ecr:UploadLayerPart",
+        "ecr:CompleteLayerUpload",
+        "ecr:PutImage",
+        "ecr:BatchGetImage"
+      ],
+      "Resource": "arn:aws:ecr:ap-northeast-2:123456789012:repository/book-api"
+    },
+    {
+      "Sid": "RunDeployCommandOnBookApiServer",
+      "Effect": "Allow",
+      "Action": "ssm:SendCommand",
+      "Resource": [
+        "arn:aws:ec2:ap-northeast-2:123456789012:instance/i-0123456789abcdef0",
+        "arn:aws:ssm:ap-northeast-2::document/AWS-RunShellScript"
+      ]
+    },
+    {
+      "Sid": "ReadCommandResult",
+      "Effect": "Allow",
+      "Action": "ssm:GetCommandInvocation",
+      "Resource": "*"
+    }
+  ]
+}</code></pre></div>
+
+<p>ECR 로그인(<code>GetAuthorizationToken</code>)은 자원을 지정할 수 없어 <code>*</code>이지만, 실제로 올리는 권한은 <code>book-api</code> 저장소 하나로 좁혔습니다. Run Command는 이 인스턴스 하나와 <code>AWS-RunShellScript</code> 문서에만 허용합니다. 이 역할로는 다른 서버에 명령을 보내거나, 이미지를 지우거나, 비밀 값을 읽을 수 없습니다.</p>
+<div class="callout note"><p class="callout-title">서버 쪽 권한은 이미 있습니다</p><p>Run Command는 서버의 SSM 에이전트가 받으므로, EC2 역할의 <code>AmazonSSMManagedInstanceCore</code>로 충분합니다. 서버에서 ECR에 로그인하고 이미지를 받는 권한도 S12에서 붙였습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p53/s15-p53-01.html"><span class="dir">이전</span>S15-P53-01 배포 파이프라인 설계</a>
+  <a class="next" href="../../s15/p53/s15-p53-03.html"><span class="dir">다음</span>S15-P53-03 내 저장소에 배포 자동화 적용</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

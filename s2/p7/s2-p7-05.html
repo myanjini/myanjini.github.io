@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P7-05 정리: 1일차 마무리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P7-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 응답 설계와 프로젝트 구조</a><span class="sep">/</span><span>S2-P7 APIRouter로 프로젝트 구조화하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p7-01.html" style="flex:5" data-type="주요 개념" title="단일 파일의 한계 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s2-p7-02.html" style="flex:10" data-type="주요 개념" title="폴더 구조와 역할 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s2-p7-03.html" style="flex:10" data-type="주요 개념" title="라우터 분리하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s2-p7-04.html" style="flex:20" data-type="실습" title="도서 API 구조화 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s2-p7-05.html" style="flex:5" data-type="정리" title="정리: 1일차 마무리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S2-P7-05</span></div>
+<h1>정리: 1일차 마무리</h1>
+
+<h2>1일차 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>배운 것</th><th>코드에서 어디에 있나요</th></tr></thead><tbody><tr><td>REST: 자원은 명사 URI, 동작은 메서드</td><td><code>/books</code>, <code>/books/{book_id}</code>에 GET, POST, PUT, PATCH, DELETE</td></tr><tr><td>경로와 쿼리 파라미터, 타입 검증</td><td><code>book_id: int</code>, <code>author: str | None = None</code></td></tr><tr><td>요청 본문 검증</td><td><code>app/schemas.py</code>의 <code>BookCreate</code>, <code>BookUpdate</code></td></tr><tr><td>응답 모델과 상태 코드</td><td><code>response_model=BookRead</code>, 201, 204</td></tr><tr><td>공통 오류 형식</td><td><code>app/errors.py</code>와 <code>app/main.py</code>의 예외 처리기</td></tr><tr><td>기능별 파일 분리</td><td><code>app/routers/books.py</code>와 <code>include_router</code></td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q"><code>APIRouter(prefix="/books")</code>에서 <code>@router.get("/{book_id}")</code>로 만든 API의 실제 주소는 무엇인가요?</p><label><input type="radio" name="p7q1" value="1"> <span>1. <code>/books/{book_id}</code></span></label><label><input type="radio" name="p7q1" value="2"> <span>2. <code>/books/books/{book_id}</code></span></label><label><input type="radio" name="p7q1" value="3"> <span>3. <code>/router/{book_id}</code></span></label><label><input type="radio" name="p7q1" value="4"> <span>4. <code>/{book_id}</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>prefix가 라우터 안 모든 주소 앞에 붙습니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">라우터 파일을 만들었는데 문서에 도서 API가 보이지 않습니다. 가장 먼저 확인할 것은 무엇인가요?</p><label><input type="radio" name="p7q2" value="1"> <span>1. 상태 코드를 지정했는지</span></label><label><input type="radio" name="p7q2" value="2"> <span>2. 예외 처리기를 등록했는지</span></label><label><input type="radio" name="p7q2" value="3"> <span>3. <code>app.include_router(...)</code>로 연결했는지</span></label><label><input type="radio" name="p7q2" value="4"> <span>4. 가상환경을 켰는지</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>라우터는 앱에 연결해야 동작합니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q"><code>fastapi dev app/main.py</code>를 어느 폴더에서 실행해야 하나요?</p><label><input type="radio" name="p7q3" value="1"> <span>1. <code>book-api</code> 폴더</span></label><label><input type="radio" name="p7q3" value="2"> <span>2. 어디서든 상관없다</span></label><label><input type="radio" name="p7q3" value="3"> <span>3. <code>app</code> 폴더 안</span></label><label><input type="radio" name="p7q3" value="4"> <span>4. <code>app/routers</code> 폴더 안</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>가장 바깥 폴더에서 실행해야 Python이 <code>app</code> 패키지를 찾을 수 있습니다.</p></div>
+
+<h2>2일차 예고</h2>
+<p>지금은 서버를 다시 시작하면 등록한 도서가 모두 사라집니다. 2일차에는 반복되는 코드를 의존성으로 묶고, 설정을 파일로 분리한 뒤, 데이터베이스를 연결해 데이터가 사라지지 않게 만듭니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s2/p7/s2-p7-04.html"><span class="dir">이전</span>S2-P7-04 도서 API 구조화</a>
+  <a class="next" href="../../s3/p8/s3-p8-01.html"><span class="dir">다음</span>S3-P8-01 1일차 복습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

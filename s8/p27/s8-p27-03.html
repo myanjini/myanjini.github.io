@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P27-03 PostgreSQL로 전환 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P27-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P27 Docker Compose로 API와 PostgreSQL 실행하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p27-01.html" style="flex:10" data-type="주요 개념" title="다중 컨테이너와 Compose (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p27-02.html" style="flex:10" data-type="주요 개념" title="compose.yaml 작성 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p27-03.html" style="flex:20" data-type="실습" title="PostgreSQL로 전환 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s8-p27-04.html" style="flex:5" data-type="주요 개념" title="운영 설정 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s8-p27-05.html" style="flex:5" data-type="정리" title="정리: Compose (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S8-P27-03</span></div>
+<h1>PostgreSQL로 전환</h1>
+
+<p class="lead">API와 PostgreSQL을 Compose로 함께 실행하고, 마이그레이션을 PostgreSQL에 적용합니다. 컨테이너를 지웠다 다시 만들어도 데이터가 남는지 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>Docker Compose로 API와 PostgreSQL을 실행하고, 컨테이너에서 마이그레이션을 적용할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>드라이버 설치와 설정 변경</h3>
+<div class="codeblock term"><pre><code>pip install "psycopg[binary]"
+pip freeze &gt; requirements.txt</code></pre></div>
+
+<p><code>app/config.py</code>에 <code>extra="ignore"</code>를 추가하고, <code>.env</code>에 <code>POSTGRES_PASSWORD</code>를 추가합니다(앞 페이지). <code>pytest</code>를 실행해 여전히 모두 통과하는지 확인합니다.</p>
+</li><li><h3>compose.yaml 만들기</h3>
+<p>앞 페이지의 <code>compose.yaml</code>을 <code>book-api</code> 폴더에 만듭니다. 앞 파트의 <code>book-api</code> 컨테이너가 남아 있다면 지웁니다(<code>docker rm -f book-api</code>).</p>
+</li><li><h3>실행</h3>
+<div class="codeblock term"><pre><code>docker compose up -d --build
+docker compose ps</code></pre></div>
+
+<p><code>--build</code>는 이미지를 새로 만든 뒤 실행하라는 뜻입니다. <code>docker compose ps</code>에서 두 컨테이너가 모두 <code>Up</code>이고 db에 <code>(healthy)</code>가 붙어 있으면 됩니다. Compose는 컨테이너 이름을 <code>폴더이름-서비스이름-번호</code>로 붙입니다.</p>
+<div class="codeblock term"><pre><code>NAME             IMAGE          COMMAND                  SERVICE   STATUS                   PORTS
+book-api-api-1   book-api-api   "uvicorn app.main:ap…"   api       Up Less than a second    0.0.0.0:8000-&gt;8000/tcp
+book-api-db-1    postgres:18    "docker-entrypoint.s…"   db        Up 5 seconds (healthy)   5432/tcp</code></pre></div>
+</li><li><h3>PostgreSQL에 마이그레이션 적용</h3>
+<div class="codeblock term"><pre><code>docker compose run --rm api alembic upgrade head
+...
+INFO  [alembic.runtime.migration] Running upgrade  -&gt; 0c8fecfaba35, create authors and books
+INFO  [alembic.runtime.migration] Running upgrade 0c8fecfaba35 -&gt; 6609552f735e, create users
+INFO  [alembic.runtime.migration] Running upgrade 6609552f735e -&gt; 75c10e653c84, add owner_id to books
+...
+INFO  [alembic.runtime.migration] Running upgrade b52ac449e359 -&gt; 2bece52fa7b7, create loans</code></pre></div>
+
+<p><code>docker compose run --rm api</code>는 api 서비스와 같은 설정으로 일회용 컨테이너를 만들어 명령 하나만 실행하고 지웁니다. SQLite에서 만든 리비전 7개가 PostgreSQL에도 차례로 적용됩니다. 리비전 번호는 내 파일과 다릅니다. 테이블을 직접 확인합니다.</p>
+<div class="codeblock term"><pre><code>docker compose exec db psql -U bookapi -d bookapi -c '\dt'</code></pre></div>
+
+<p><code>authors</code>, <code>books</code>, <code>users</code>, <code>refresh_tokens</code>, <code>stock_logs</code>, <code>loans</code>, <code>alembic_version</code>이 보이면 성공입니다. PowerShell에서 따옴표 때문에 오류가 나면 <code>docker compose exec db psql -U bookapi -d bookapi</code>로 들어가 <code>\dt</code>를 입력하고 <code>\q</code>로 나옵니다.</p>
+</li><li><h3>동작 확인</h3>
+<p>새 PostgreSQL은 비어 있습니다. 로컬 SQLite의 데이터는 옮겨 오지 않습니다. Swagger UI(<code>http://127.0.0.1:8000/docs</code>)에서 다음 순서로 확인합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>할 일</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>1</td><td>user1, user2 가입</td><td>201</td><td><input data-save="p1" aria-label="내 결과"></td></tr><tr><td>2</td><td><code>docker compose exec api python -m app.make_admin user2@example.com</code></td><td>관리자로 바꿨습니다.</td><td><input data-save="p2" aria-label="내 결과"></td></tr><tr><td>3</td><td>user2로 로그인해 저자 등록</td><td>201</td><td><input data-save="p3" aria-label="내 결과"></td></tr><tr><td>4</td><td>user1로 로그인해 재고 2권인 도서 등록</td><td>201</td><td><input data-save="p4" aria-label="내 결과"></td></tr><tr><td>5</td><td>user1이 그 도서 대여, 반납</td><td>201, 200</td><td><input data-save="p5" aria-label="내 결과"></td></tr><tr><td>6</td><td>user1이 표지 이미지 업로드 후 주소 열기</td><td>이미지가 보임</td><td><input data-save="p6" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>데이터가 남는지 확인</h3>
+<div class="codeblock term"><pre><code>docker compose down
+docker compose up -d</code></pre></div>
+
+<p><code>down</code>은 컨테이너와 네트워크를 지우지만 볼륨은 남깁니다. 다시 올린 뒤 <code>GET /books</code>에 등록한 도서가 있고, 표지 주소도 그대로 열리면 성공입니다. <code>docker volume ls</code>로 <code>book-api_db-data</code>와 <code>book-api_uploads</code>를 확인합니다.</p>
+<div class="callout warn"><p class="callout-title">docker compose down -v</p><p><code>-v</code>를 붙이면 볼륨까지 지워 데이터베이스와 업로드 파일이 모두 사라집니다. 처음부터 다시 시작하고 싶을 때만 씁니다.</p></div>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>docker compose up으로 api와 db가 함께 실행되고 db가 healthy다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>컨테이너에서 마이그레이션을 실행해 PostgreSQL에 테이블 7개가 생겼다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>회원가입부터 대여, 업로드까지 PostgreSQL에서도 동작한다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>down 뒤 up해도 데이터와 표지 파일이 남아 있다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>password authentication failed for user "bookapi"</code></td><td>처음 실행한 뒤 <code>.env</code>의 <code>POSTGRES_PASSWORD</code>를 바꿨습니다. 비밀번호는 볼륨을 처음 만들 때만 정해집니다. 실습 중이라면 <code>docker compose down -v</code>로 볼륨을 지우고 다시 올립니다.</td></tr><tr><td><code>relation "books" does not exist</code></td><td>마이그레이션을 적용하지 않았습니다.</td></tr><tr><td>db가 계속 <code>Restarting</code>이거나 볼륨 관련 오류</td><td>볼륨 경로를 <code>/var/lib/postgresql/data</code>로 적었는지 확인합니다. 18판은 <code>/var/lib/postgresql</code>입니다.</td></tr><tr><td><code>The "POSTGRES_PASSWORD" variable is not set</code></td><td><code>.env</code>에 값을 넣지 않았거나, <code>book-api</code> 폴더가 아닌 곳에서 명령을 실행했습니다.</td></tr><tr><td><code>No module named 'psycopg'</code></td><td><code>requirements.txt</code>를 갱신하지 않고 빌드했습니다. 갱신 후 <code>docker compose up -d --build</code></td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p27-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p27/s8-p27-02.html"><span class="dir">이전</span>S8-P27-02 compose.yaml 작성</a>
+  <a class="next" href="../../s8/p27/s8-p27-04.html"><span class="dir">다음</span>S8-P27-04 운영 설정 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

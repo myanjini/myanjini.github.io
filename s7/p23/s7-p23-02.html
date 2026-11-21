@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P23-02 테스트용 DB 연결 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P23-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 테스트 자동화와 CI</a><span class="sep">/</span><span>S7-P23 테스트 DB와 fixture</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p23-01.html" style="flex:10" data-type="주요 개념" title="fixture와 테스트 격리 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s7-p23-02.html" style="flex:10" data-type="주요 개념" title="테스트용 DB 연결 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s7-p23-03.html" style="flex:25" data-type="실습" title="테스트 환경 구성 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s7-p23-04.html" style="flex:5" data-type="정리" title="정리: 테스트 격리 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S7-P23-02</span></div>
+<h1>테스트용 DB 연결</h1>
+
+<p class="lead">앱은 <code>get_db</code>로 개발용 데이터베이스에 연결합니다. 테스트할 때만 이 연결을 테스트 전용 데이터베이스로 바꿔 끼우는 방법을 강사 화면으로 봅니다.</p>
+
+<h2>의존성 바꿔 끼우기</h2>
+<p>FastAPI 앱에는 <code>app.dependency_overrides</code>라는 딕셔너리가 있습니다. 여기에 <code>{원래 의존성: 대신 쓸 함수}</code>를 넣으면, 모든 경로 함수가 원래 의존성 대신 그 함수를 씁니다. 코드를 한 줄도 고치지 않고 데이터베이스만 바꿀 수 있는 것은 2일차에 세션을 <code>Depends(get_db)</code>로 받게 만들어 두었기 때문입니다.</p>
+<div class="codeblock"><pre><code>app.dependency_overrides[get_db] = override_get_db  # 이제 get_db 대신 override_get_db가 불립니다.
+...
+app.dependency_overrides.clear()                     # 테스트가 끝나면 원래대로</code></pre></div>
+
+<h2>메모리 SQLite</h2>
+<p>주소를 <code>sqlite://</code>로만 적으면 파일 없이 메모리 안에만 데이터베이스를 만듭니다. 빠르고, 테스트가 끝나면 흔적이 남지 않습니다. 다만 메모리 데이터베이스는 연결마다 따로 생기므로, <code>StaticPool</code>로 연결을 하나만 만들어 모든 세션이 같은 데이터베이스를 보게 합니다.</p>
+<div class="codeblock"><pre><code>engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)</code></pre></div>
+<div class="callout note"><p class="callout-title">Alembic 대신 create_all을 쓰는 이유</p><p>테스트에서는 모델로 바로 테이블을 만드는 <code>Base.metadata.create_all</code>을 씁니다. 테스트마다 리비전을 처음부터 적용하면 느리기 때문입니다. 대신 리비전과 모델이 어긋나는 실수는 테스트가 잡지 못하므로, 리비전을 만든 뒤에는 2일차처럼 직접 열어 보는 습관을 계속 지킵니다.</p></div>
+
+<h2>테스트 전용 설정</h2>
+<p><code>.env</code>는 Git에 올리지 않으므로 다른 사람의 컴퓨터나 CI 서버에는 없습니다. 그러면 <code>SECRET_KEY</code>가 없어 앱을 불러오는 순간 오류가 납니다. 그래서 conftest.py 맨 위에서 앱을 불러오기 <strong>전에</strong> 환경 변수로 테스트용 키를 넣습니다. 환경 변수는 <code>.env</code>보다 먼저 쓰이므로 내 컴퓨터에서도 같은 키로 테스트합니다. 이 키는 테스트에서만 쓰이므로 코드에 적어도 괜찮습니다.</p>
+
+<h2>conftest.py 전체</h2>
+<div class="codeblock"><span class="file">tests/conftest.py</span><pre><code>import os
+
+# app을 불러오기 전에 테스트용 비밀 키를 넣습니다. 환경 변수는 .env보다 먼저 쓰입니다.
+# .env가 없는 CI 서버에서도 테스트가 돌아가게 하려는 것입니다.
+os.environ["SECRET_KEY"] = "test-secret-key-only-for-pytest-0123456789"
+
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
+
+from app.database import Base, get_db
+from app.main import app
+from app.models import Author
+
+# 메모리 안에만 만드는 SQLite. 파일이 생기지 않고, 연결을 하나만 써서 테이블을 함께 봅니다.
+engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+TestingSessionLocal = sessionmaker(bind=engine, autoflush=False)
+
+
+@pytest.fixture
+def db_session():
+    """테스트마다 빈 테이블을 만들고, 테스트가 끝나면 모두 지웁니다."""
+    Base.metadata.create_all(bind=engine)
+    session = TestingSessionLocal()
+    yield session
+    session.close()
+    Base.metadata.drop_all(bind=engine)
+
+
+@pytest.fixture
+def client(db_session):
+    """테스트용 데이터베이스를 쓰는 TestClient"""
+
+    def override_get_db():
+        session = TestingSessionLocal()
+        try:
+            yield session
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = override_get_db  # get_db 대신 이 함수를 쓰게 합니다.
+    yield TestClient(app)
+    app.dependency_overrides.clear()  # 다른 테스트에 영향을 주지 않도록 원래대로 돌립니다.
+
+
+@pytest.fixture
+def author_id(db_session):
+    """테스트용 저자. API를 거치지 않고 데이터베이스에 바로 넣습니다."""
+    author = Author(name="테스트 저자")
+    db_session.add(author)
+    db_session.commit()
+    return author.id
+
+
+@pytest.fixture
+def auth_headers(client):
+    """가입하고 로그인한 사용자의 Authorization 헤더"""
+    client.post("/auth/signup", json={"email": "tester@example.com", "password": "test-pass-123"})
+    response = client.post("/auth/token", data={"username": "tester@example.com", "password": "test-pass-123"})
+    return {"Authorization": f"Bearer {response.json()['access_token']}"}</code></pre></div>
+
+<h2>fixture가 쌓이는 모습</h2>
+<figure><svg viewBox="0 0 640 270" role="img" aria-label="test_create_book(client, auth_headers, author_id). pytest가 오른쪽부터 차례로 만들고, 테스트가 끝나면 거꾸로 정리합니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="20" width="170" height="60" rx="8" class="svg-box-accent"/><text x="95.0" y="46.0" text-anchor="middle" class="svg-text">test_create_book</text><text x="95.0" y="66.0" text-anchor="middle" class="svg-small">테스트</text><rect x="250" y="20" width="140" height="60" rx="8" class="svg-box"/><text x="320.0" y="46.0" text-anchor="middle" class="svg-text">client</text><text x="320.0" y="66.0" text-anchor="middle" class="svg-small">TestClient</text><rect x="250" y="110" width="140" height="60" rx="8" class="svg-box"/><text x="320.0" y="136.0" text-anchor="middle" class="svg-text">auth_headers</text><text x="320.0" y="156.0" text-anchor="middle" class="svg-small">로그인 헤더</text><rect x="250" y="200" width="140" height="60" rx="8" class="svg-box"/><text x="320.0" y="226.0" text-anchor="middle" class="svg-text">author_id</text><text x="320.0" y="246.0" text-anchor="middle" class="svg-small">저자 번호</text><rect x="470" y="110" width="160" height="60" rx="8" class="svg-box"/><text x="550.0" y="136.0" text-anchor="middle" class="svg-text">db_session</text><text x="550.0" y="156.0" text-anchor="middle" class="svg-small">빈 테이블 생성</text><line x1="185" y1="50" x2="245" y2="50" class="svg-line" marker-end="url(#arr)"/><line x1="185" y1="60" x2="245" y2="135" class="svg-line" marker-end="url(#arr)"/><line x1="185" y1="70" x2="245" y2="225" class="svg-line" marker-end="url(#arr)"/><line x1="395" y1="50" x2="465" y2="125" class="svg-line" marker-end="url(#arr)"/><line x1="320" y1="105" x2="320" y2="85" class="svg-line" marker-end="url(#arr)"/><line x1="395" y1="230" x2="465" y2="155" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>test_create_book(client, auth_headers, author_id). pytest가 오른쪽부터 차례로 만들고, 테스트가 끝나면 거꾸로 정리합니다.</figcaption></figure>
+
+<p><code>db_session</code>은 한 테스트 안에서 한 번만 만들어집니다. 여러 fixture가 같은 fixture를 받아도 같은 것을 나눠 씁니다. 테스트가 끝나면 <code>db_session</code>의 <code>yield</code> 뒤가 실행되어 모든 테이블을 지우므로, 다음 테스트는 다시 빈 데이터베이스에서 시작합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s7/p23/s7-p23-01.html"><span class="dir">이전</span>S7-P23-01 fixture와 테스트 격리</a>
+  <a class="next" href="../../s7/p23/s7-p23-03.html"><span class="dir">다음</span>S7-P23-03 테스트 환경 구성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

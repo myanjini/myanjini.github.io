@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P44-05 정리: EC2 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P44-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P44 EC2 시작과 접속</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p44-01.html" style="flex:10" data-type="주요 개념" title="EC2 핵심 개념 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p44-02.html" style="flex:10" data-type="주요 개념" title="인스턴스 시작 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s13-p44-03.html" style="flex:20" data-type="실습" title="EC2 만들고 접속하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p44-04.html" style="flex:5" data-type="주요 개념" title="SSH와 Session Manager 비교 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p44-05.html" style="flex:5" data-type="정리" title="정리: EC2 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S13-P44-05</span></div>
+<h1>정리: EC2</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>핵심</th></tr></thead><tbody><tr><td>EC2 구성</td><td>AMI(Amazon Linux 2023), 인스턴스 유형(t3.micro, x86_64), EBS 8GiB, 퍼블릭 IP 자동 할당, IAM 인스턴스 프로파일</td></tr><tr><td>상태</td><td>중지하면 EBS 요금만 남고 퍼블릭 IP가 바뀝니다. 종료는 삭제입니다.</td></tr><tr><td>접속</td><td>키 페어 없이 Session Manager로 접속합니다. 사용자는 ssm-user이고, <code>bash</code>로 바꿔 씁니다.</td></tr><tr><td>권한 확인</td><td>서버 안의 AWS CLI가 역할로 요청하고, 주지 않은 권한(S3)은 거부됩니다.</td></tr><tr><td>IMDSv2</td><td>토큰 없는 메타데이터 요청은 401입니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">어제 쓴 EC2를 "중지"했다가 오늘 다시 "시작"했습니다. 달라질 수 있는 것은 무엇인가요?</p><label><input type="radio" name="p44q1" value="1"> <span>1. EBS 디스크의 파일</span></label><label><input type="radio" name="p44q1" value="2"> <span>2. 퍼블릭 IP</span></label><label><input type="radio" name="p44q1" value="3"> <span>3. 인스턴스 ID</span></label><label><input type="radio" name="p44q1" value="4"> <span>4. 붙어 있는 IAM 역할</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>퍼블릭 IP는 시작할 때마다 새로 받습니다. 고정하려면 탄력적 IP를 쓰지만, 이 과정에서는 8일차에 ALB 주소로 접속합니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">인스턴스 시작 화면에서 보안 그룹을 "보안 그룹 생성"으로 둔 채 넘어가면 어떤 일이 생길 수 있나요?</p><label><input type="radio" name="p44q2" value="1"> <span>1. RDS에 접속할 수 없다</span></label><label><input type="radio" name="p44q2" value="2"> <span>2. 요금이 늘어난다</span></label><label><input type="radio" name="p44q2" value="3"> <span>3. 보안 그룹 없이 만들어진다</span></label><label><input type="radio" name="p44q2" value="4"> <span>4. 22번을 모든 곳에 여는 규칙이 들어간 새 보안 그룹이 붙는다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>기존 보안 그룹 선택에서 book-api-sg를 골라야 합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">서버 안에서 <code>aws sts get-caller-identity</code>의 Arn이 <code>assumed-role/book-api-ec2-role/...</code>로 나왔습니다. 무엇을 뜻하나요?</p><label><input type="radio" name="p44q3" value="1"> <span>1. 누군가 액세스 키를 서버에 저장했다</span></label><label><input type="radio" name="p44q3" value="2"> <span>2. 서버에 붙인 IAM 역할의 임시 자격 증명으로 요청한다</span></label><label><input type="radio" name="p44q3" value="3"> <span>3. 루트 사용자로 요청한다</span></label><label><input type="radio" name="p44q3" value="4"> <span>4. Session Manager 사용자의 권한으로 요청한다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>서버의 AWS CLI와 SDK는 인스턴스 프로파일의 역할을 자동으로 찾아 씁니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>다음 파트에서는 이 서버에 Docker를 설치하고, GitHub에서 도서 API 소스를 받아 이미지를 만든 뒤 컨테이너로 실행합니다. 내 PC의 브라우저에서 서버의 퍼블릭 IP로 <code>/health</code>에 접속하는 것이 목표입니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p44/s13-p44-04.html"><span class="dir">이전</span>S13-P44-04 SSH와 Session Manager 비교</a>
+  <a class="next" href="../../s13/p45/s13-p45-01.html"><span class="dir">다음</span>S13-P45-01 서버에 Docker 설치하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

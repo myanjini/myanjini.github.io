@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P38-05 정리: 진단 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P38-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P38 보안약점 진단 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p38-01.html" style="flex:5" data-type="주요 개념" title="진단 과제 안내 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p38-02.html" style="flex:20" data-type="실습" title="보안약점 진단 1 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s11-p38-03.html" style="flex:15" data-type="실습" title="보안약점 진단 2 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s11-p38-04.html" style="flex:5" data-type="실습" title="진단 결과 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s11-p38-05.html" style="flex:5" data-type="정리" title="정리: 진단 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S11-P38-05</span></div>
+<h1>정리: 진단</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>배운 것</th><th>핵심</th></tr></thead><tbody><tr><td>진단의 단위</td><td>약점마다 한 줄씩, 유형, 항목, 위치, 위험도, 근거를 적습니다.</td></tr><tr><td>좋은 근거</td><td>"이렇게 요청하면 이런 일이 일어난다"처럼 다시 해 볼 수 있게 적습니다.</td></tr><tr><td>읽는 요령</td><td>사용자 입력이 흘러가는 길, 보안 결정을 내리는 곳, 동시에 실행되는 상황, 오류가 나는 상황을 따라갑니다.</td></tr><tr><td>도구의 몫</td><td>bandit은 12건을 보고했지만 진단표 25개 항목 가운데 8개 항목에 해당했고, pip-audit은 1개 항목을 찾았습니다. 나머지 16개 항목은 사람이 찾았습니다.</td></tr></tbody></table></div>
+
+<p>약점은 기능이 많은 곳에 몰려 있습니다. 이 예제에서는 파일 업로드(5개)와 링크 미리 보기(4개)가 그랬습니다. 실제 진단에서도 외부와 맞닿은 기능(업로드, 외부 요청, 가져오기)과 권한이 갈리는 기능(삭제, 관리자 기능)부터 봅니다.</p>
+<h2>다음 파트 예고</h2>
+<p>다음 파트에서는 진단표의 약점에 우선순위를 매기고, 그 순서대로 코드를 고칩니다. 고친 결과는 강사가 준비한 보안 테스트로 확인하고, 직접 테스트도 몇 개 써 봅니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p38/s11-p38-04.html"><span class="dir">이전</span>S11-P38-04 진단 결과 점검</a>
+  <a class="next" href="../../s11/p39/s11-p39-01.html"><span class="dir">다음</span>S11-P39-01 조치 우선순위 정하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

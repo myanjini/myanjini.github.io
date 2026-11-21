@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P17-02 보호된 API 적용 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P17-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P17 보호된 API와 권한 검사</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p17-01.html" style="flex:5" data-type="주요 개념" title="현재 사용자 의존성 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s5-p17-02.html" style="flex:10" data-type="주요 개념" title="보호된 API 적용 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p17-03.html" style="flex:25" data-type="실습" title="소유자와 관리자 권한 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s5-p17-04.html" style="flex:5" data-type="실습" title="권한 표 만들기 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s5-p17-05.html" style="flex:5" data-type="정리" title="정리: 권한 검사 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S5-P17-02</span></div>
+<h1>보호된 API 적용</h1>
+
+<p class="lead">현재 사용자 의존성을 도서 API에 연결합니다. 어떤 API를 보호할지 정하고, 보호하는 두 가지 방법을 비교합니다.</p>
+
+<h2>어떤 API를 보호하나요</h2>
+<p>도서 목록과 상세 조회는 누구나 볼 수 있어야 합니다. 도서관 서가는 회원이 아니어도 둘러볼 수 있는 것과 같습니다. 데이터를 바꾸는 등록, 수정, 삭제만 로그인한 사용자에게 허락합니다.</p>
+
+<h2>방법 1: 매개변수로 받기</h2>
+<p>경로 함수에서 현재 사용자 정보가 필요하면 매개변수로 받습니다. 도서를 등록할 때는 누가 등록했는지 기록해야 하므로 이 방법을 씁니다.</p>
+<div class="codeblock"><span class="file">app/routers/books.py</span><pre><code>@router.post("", response_model=BookRead, status_code=status.HTTP_201_CREATED, summary="도서 등록", ...)
+def create_book(db: SessionDep, user: CurrentUserDep, book_in: BookCreate):
+    ...
+    book = Book(**book_in.model_dump(), owner_id=user.id)  # 등록한 사람을 기록합니다.</code></pre></div>
+
+<p><code>user: CurrentUserDep</code> 한 줄이면 FastAPI가 경로 함수를 실행하기 전에 <code>get_current_user</code>를 먼저 실행합니다. 검사에서 막히면 경로 함수는 실행되지 않고 401이 나갑니다.</p>
+<figure><svg viewBox="0 0 640 180" role="img" aria-label="의존성은 다른 의존성을 가질 수 있습니다. FastAPI가 오른쪽부터 차례로 실행합니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="60" width="150" height="60" rx="8" class="svg-box-accent"/><text x="85.0" y="86.0" text-anchor="middle" class="svg-text">create_book</text><text x="85.0" y="106.0" text-anchor="middle" class="svg-small">경로 함수</text><rect x="230" y="60" width="170" height="60" rx="8" class="svg-box"/><text x="315.0" y="86.0" text-anchor="middle" class="svg-text">get_current_user</text><text x="315.0" y="106.0" text-anchor="middle" class="svg-small">현재 사용자</text><rect x="470" y="10" width="160" height="60" rx="8" class="svg-box"/><text x="550.0" y="36.0" text-anchor="middle" class="svg-text">oauth2_scheme</text><text x="550.0" y="56.0" text-anchor="middle" class="svg-small">헤더에서 토큰 꺼내기</text><rect x="470" y="110" width="160" height="60" rx="8" class="svg-box"/><text x="550.0" y="136.0" text-anchor="middle" class="svg-text">get_db</text><text x="550.0" y="156.0" text-anchor="middle" class="svg-small">세션</text><line x1="165" y1="90" x2="225" y2="90" class="svg-line" marker-end="url(#arr)"/><line x1="405" y1="80" x2="465" y2="45" class="svg-line" marker-end="url(#arr)"/><line x1="405" y1="100" x2="465" y2="135" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>의존성은 다른 의존성을 가질 수 있습니다. FastAPI가 오른쪽부터 차례로 실행합니다.</figcaption></figure>
+
+<p><code>create_book</code>도 <code>SessionDep</code>을 받고 <code>get_current_user</code>도 <code>SessionDep</code>을 받습니다. 그래도 세션은 두 개가 아니라 하나만 열립니다. FastAPI는 한 요청 안에서 같은 의존성을 한 번만 실행하고 그 결과를 나눠 쓰기 때문입니다.</p>
+
+<h2>방법 2: 검사만 하기</h2>
+<p>사용자 정보는 필요 없고 "통과했는가"만 중요할 때는 경로 데코레이터의 <code>dependencies</code>에 넣습니다. 저자 등록과 삭제는 관리자만 할 수 있게 하는데, 함수 안에서 관리자 정보를 쓸 일은 없으므로 이 방법이 어울립니다.</p>
+<div class="codeblock"><span class="file">app/dependencies.py</span><pre><code>def require_admin(user: CurrentUserDep) -&gt; User:
+    """관리자가 아니면 403으로 막습니다."""
+    if user.role != "admin":
+        raise AppError(403, "FORBIDDEN", "관리자만 사용할 수 있습니다.")
+    return user</code></pre></div>
+<div class="codeblock"><span class="file">app/routers/authors.py</span><pre><code>@router.post("", response_model=AuthorRead, status_code=status.HTTP_201_CREATED, summary="저자 등록",
+             dependencies=[Depends(require_admin)],  # 관리자만 호출할 수 있습니다.
+             responses={409: {"description": "이미 등록된 저자 이름"}})
+def create_author(db: SessionDep, author_in: AuthorCreate):</code></pre></div>
+
+<p><code>require_admin</code>은 <code>CurrentUserDep</code>을 받으므로, 로그인하지 않았으면 401이, 로그인했지만 관리자가 아니면 403이 나갑니다. 의존성을 겹쳐 쌓아 인증과 인가를 차례로 검사하는 구조입니다.</p>
+
+<h2>내 정보 조회 API</h2>
+<p>토큰이 제대로 동작하는지 가장 쉽게 확인하는 방법은 "지금 로그인한 사람이 누구인지" 돌려주는 API입니다.</p>
+<div class="codeblock"><span class="file">app/routers/auth.py</span><pre><code>@router.get("/me", response_model=UserRead, summary="내 정보 조회",
+            responses={401: {"description": "로그인 필요"}})
+def read_me(user: CurrentUserDep):
+    return user</code></pre></div>
+
+<h2>Swagger UI에서 달라지는 점</h2>
+<p>보호된 API가 생기면 <code>/docs</code> 오른쪽 위에 <strong>Authorize</strong> 버튼이 나타나고, 보호된 API 옆에는 자물쇠 그림이 붙습니다. <code>GET /books</code>처럼 보호하지 않은 API에는 자물쇠가 없습니다. Authorize 창에서 로그인하면 자물쇠가 잠긴 모양으로 바뀌고, 그때부터 보내는 요청에 토큰이 자동으로 들어갑니다. 창의 <strong>Logout</strong> 버튼은 Swagger UI가 기억한 토큰을 지울 뿐 서버에는 아무것도 보내지 않습니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p17/s5-p17-01.html"><span class="dir">이전</span>S5-P17-01 현재 사용자 의존성</a>
+  <a class="next" href="../../s5/p17/s5-p17-03.html"><span class="dir">다음</span>S5-P17-03 소유자와 관리자 권한</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

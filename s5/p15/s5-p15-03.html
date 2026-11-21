@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P15-03 User 모델과 회원가입 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P15-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P15 인증 기초와 회원가입</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p15-01.html" style="flex:5" data-type="주요 개념" title="2일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s5-p15-02.html" style="flex:10" data-type="주요 개념" title="인증, 인가와 비밀번호 해시 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p15-03.html" style="flex:10" data-type="주요 개념" title="User 모델과 회원가입 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p15-04.html" style="flex:20" data-type="실습" title="회원가입 API (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s5-p15-05.html" style="flex:5" data-type="정리" title="정리: 회원가입 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S5-P15-03</span></div>
+<h1>User 모델과 회원가입</h1>
+
+<p class="lead">사용자 테이블을 만들고, 비밀번호를 해시로 바꿔 저장하는 코드를 강사 화면으로 봅니다. 다음 페이지 실습에서 이 코드를 그대로 씁니다.</p>
+
+<h2>해시 도구 설치</h2>
+<div class="codeblock term"><pre><code>pip install "pwdlib[argon2]"</code></pre></div>
+
+<p><strong>pwdlib</strong>는 비밀번호 해시를 만들고 검증하는 작은 라이브러리입니다. <code>[argon2]</code>를 붙이면 Argon2 계산 모듈도 함께 설치됩니다.</p>
+
+<h2>User 모델</h2>
+<p><code>app/models.py</code>의 <code>Author</code> 클래스 위에 추가합니다.</p>
+<div class="codeblock"><span class="file">app/models.py</span><pre><code>class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True)
+    # 비밀번호 원문이 아니라 해시만 저장합니다.
+    hashed_password: Mapped[str] = mapped_column(String(255))
+    # 역할: 일반 사용자는 "user", 관리자는 "admin"
+    role: Mapped[str] = mapped_column(String(20), default="user")</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>열</th><th>설명</th></tr></thead><tbody><tr><td><code>email</code></td><td>로그인할 때 쓰는 아이디입니다. 같은 이메일로 두 번 가입할 수 없도록 <code>unique=True</code>를 줍니다.</td></tr><tr><td><code>hashed_password</code></td><td>비밀번호 해시입니다. 이름에 hashed를 넣어 원문이 아니라는 것을 코드에서도 바로 알 수 있게 합니다.</td></tr><tr><td><code>role</code></td><td>역할입니다. 가입하면 <code>"user"</code>로 시작하고, 관리자는 <code>"admin"</code>입니다. S5-P17에서 씁니다.</td></tr></tbody></table></div>
+
+<h2>해시 함수 모음: security.py</h2>
+<p>인증에 관련된 계산을 한 파일에 모읍니다. 오늘 오전 내내 이 파일에 함수가 늘어납니다.</p>
+<div class="codeblock"><span class="file">app/security.py</span><pre><code>from pwdlib import PasswordHash
+
+# 지금 권장되는 알고리즘(Argon2)으로 비밀번호 해시를 만드는 도구입니다.
+password_hash = PasswordHash.recommended()
+
+
+def hash_password(password: str) -&gt; str:
+    """비밀번호를 해시로 바꿉니다. 같은 비밀번호도 호출할 때마다 다른 결과가 나옵니다."""
+    return password_hash.hash(password)
+
+
+def verify_password(password: str, hashed: str) -&gt; bool:
+    """입력한 비밀번호가 저장된 해시와 맞는지 확인합니다."""
+    return password_hash.verify(password, hashed)</code></pre></div>
+
+<p><code>PasswordHash.recommended()</code>는 pwdlib가 권장하는 설정(Argon2)으로 도구를 만듭니다. 나중에 더 안전한 설정이 권장되면 이 한 줄만 바꾸면 됩니다.</p>
+<p>Python 대화형 셸에서 직접 확인해 봅시다. 같은 비밀번호를 두 번 해시하면 솔트가 달라 결과가 다르지만, 검증은 둘 다 통과합니다.</p>
+<div class="codeblock term"><pre><code>&gt;&gt;&gt; from app.security import hash_password, verify_password
+&gt;&gt;&gt; h1 = hash_password("practice-pass-1")
+&gt;&gt;&gt; h2 = hash_password("practice-pass-1")
+&gt;&gt;&gt; h1 == h2
+False
+&gt;&gt;&gt; verify_password("practice-pass-1", h1), verify_password("practice-pass-1", h2)
+(True, True)
+&gt;&gt;&gt; verify_password("wrong-pass", h1)
+False</code></pre></div>
+
+<h2>입력 모델과 출력 모델</h2>
+<p>1일차에 도서의 매입가를 응답에서 감췄던 것처럼, 사용자 응답에서는 비밀번호 해시를 감춥니다. 해시도 유출되면 공격자가 대입을 시도할 재료가 되므로 응답에 절대 넣지 않습니다.</p>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code>class UserCreate(BaseModel):
+    """회원가입에 쓰는 입력 모델"""
+    email: EmailStr = Field(examples=["user1@example.com"])
+    password: str = Field(min_length=8, max_length=64, examples=["practice-pass-1"])
+
+
+class UserRead(BaseModel):
+    """사용자 응답 모델. 비밀번호 해시는 넣지 않습니다."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    role: str</code></pre></div>
+
+<p><code>EmailStr</code>은 이메일 형식인지 검사하는 타입입니다. <code>@</code>가 없거나 도메인 부분이 이상하면 422로 막습니다. 1일차에 설치한 <code>fastapi[standard]</code>에 검사 모듈(email-validator)이 들어 있어 따로 설치하지 않아도 됩니다. 비밀번호는 우선 길이만 8~64자로 제한합니다. 더 꼼꼼한 비밀번호 규칙은 5일차 보안 단원에서 추가합니다.</p>
+
+<h2>마이그레이션</h2>
+<p>모델을 추가했으니 2일차에 배운 순서대로 리비전을 만들고 확인한 뒤 적용합니다.</p>
+<div class="codeblock term"><pre><code>alembic revision --autogenerate -m "create users"
+...
+INFO  [alembic.autogenerate.compare.tables] Detected added table 'users'</code></pre></div>
+
+<p>새로 생긴 리비전 파일의 <code>upgrade</code>에 <code>users</code> 테이블을 만드는 코드만 들어 있는지 확인합니다. 다른 테이블을 지우거나 바꾸는 코드가 섞여 있다면 모델을 잘못 고친 것입니다.</p>
+<div class="codeblock"><pre><code>def upgrade() -&gt; None:
+    op.create_table('users',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('email', sa.String(length=255), nullable=False),
+    sa.Column('hashed_password', sa.String(length=255), nullable=False),
+    sa.Column('role', sa.String(length=20), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('email')
+    )</code></pre></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p15/s5-p15-02.html"><span class="dir">이전</span>S5-P15-02 인증, 인가와 비밀번호 해시</a>
+  <a class="next" href="../../s5/p15/s5-p15-04.html"><span class="dir">다음</span>S5-P15-04 회원가입 API</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

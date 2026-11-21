@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P19-01 라우터, 서비스, 저장소 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P19-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P19 계층 분리와 트랜잭션</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p19-01.html" style="flex:10" data-type="주요 개념" title="라우터, 서비스, 저장소 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p19-02.html" style="flex:10" data-type="주요 개념" title="서비스 계층으로 옮기기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p19-03.html" style="flex:20" data-type="실습" title="서비스 계층 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s6-p19-04.html" style="flex:5" data-type="실습" title="계층 분리의 득과 실 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s6-p19-05.html" style="flex:5" data-type="정리" title="정리: 계층 분리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S6-P19-01</span></div>
+<h1>라우터, 서비스, 저장소</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>라우터, 서비스, 저장소 계층을 분리하고 트랜잭션 범위를 정할 수 있습니다.</p></div>
+
+<p class="lead">지금 <code>app/routers/books.py</code> 한 파일이 요청 받기, 규칙 검사, 데이터베이스 작업을 모두 하고 있습니다. 기능이 늘어나기 전에 일을 나눠 맡기는 구조를 배웁니다.</p>
+
+<h2>한 파일이 모든 일을 할 때의 문제</h2>
+<p>오늘 오후에는 재고와 대여 기능을 추가합니다. 대여할 때도 재고를 줄여야 하고, 관리자가 재고를 조정할 때도 재고를 바꿔야 합니다. 재고를 바꾸는 규칙("0보다 작아질 수 없다", "바뀔 때마다 기록을 남긴다")이 라우터 함수 안에 들어 있으면, 대여 라우터에도 같은 코드를 복사해야 합니다. 규칙이 바뀌면 복사한 곳을 모두 찾아 고쳐야 하고, 하나라도 놓치면 버그가 됩니다.</p>
+
+<h2>세 계층으로 나누기</h2>
+<p>식당을 떠올려 봅시다. 홀 직원은 주문을 받고 음식을 내갈 뿐 요리하지 않습니다. 주방장은 레시피대로 요리하지만 손님과 직접 이야기하지 않습니다. 창고 담당은 재료를 꺼내고 넣는 일만 합니다. 각자 맡은 일만 하므로 레시피가 바뀌어도 홀 직원은 그대로 일합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>계층</th><th>식당</th><th>맡는 일</th><th>이 과정의 위치</th></tr></thead><tbody><tr><td>라우터(router)</td><td>홀 직원</td><td>주소와 메서드, 요청 검사, 의존성, 응답 모델과 상태 코드. HTTP에 관한 일만 합니다.</td><td><code>app/routers/</code></td></tr><tr><td>서비스(service)</td><td>주방장</td><td>업무 규칙(중복 검사, 권한 검사, 재고 규칙)과 트랜잭션 확정(<code>commit</code>)</td><td><code>app/services/</code></td></tr><tr><td>저장소(repository)</td><td>창고 담당</td><td>데이터베이스에서 읽고 쓰는 코드. 쿼리를 만들지만 <code>commit</code>하지 않습니다.</td><td><code>app/repositories/</code></td></tr></tbody></table></div>
+<figure><svg viewBox="0 0 640 120" role="img" aria-label="호출은 왼쪽에서 오른쪽으로만 갑니다. 저장소가 서비스를, 서비스가 라우터를 부르지 않습니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="30" width="140" height="70" rx="8" class="svg-box"/><text x="80.0" y="61.0" text-anchor="middle" class="svg-text">라우터</text><text x="80.0" y="81.0" text-anchor="middle" class="svg-small">HTTP</text><rect x="190" y="30" width="140" height="70" rx="8" class="svg-box-accent"/><text x="260.0" y="61.0" text-anchor="middle" class="svg-text">서비스</text><text x="260.0" y="81.0" text-anchor="middle" class="svg-small">규칙, commit</text><rect x="370" y="30" width="140" height="70" rx="8" class="svg-box"/><text x="440.0" y="61.0" text-anchor="middle" class="svg-text">저장소</text><text x="440.0" y="81.0" text-anchor="middle" class="svg-small">쿼리</text><rect x="550" y="30" width="80" height="70" rx="8" class="svg-box"/><text x="590.0" y="70.0" text-anchor="middle" class="svg-text">DB</text><line x1="155" y1="65" x2="185" y2="65" class="svg-line" marker-end="url(#arr)"/><line x1="335" y1="65" x2="365" y2="65" class="svg-line" marker-end="url(#arr)"/><line x1="515" y1="65" x2="545" y2="65" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>호출은 왼쪽에서 오른쪽으로만 갑니다. 저장소가 서비스를, 서비스가 라우터를 부르지 않습니다.</figcaption></figure>
+
+<p>호출 방향이 한쪽으로만 흐르게 하는 것이 핵심입니다. 서비스는 <code>Request</code>나 상태 코드 같은 HTTP를 모르므로, 나중에 같은 규칙을 관리자용 명령어나 예약 작업에서도 그대로 쓸 수 있습니다. 4일차 테스트에서도 서비스 함수만 따로 검사하기 쉬워집니다.</p>
+
+<h2>트랜잭션</h2>
+<p>은행 이체를 생각해 봅시다. 내 계좌에서 10만 원을 빼고 상대 계좌에 10만 원을 넣는 두 작업은 둘 다 되거나, 둘 다 안 되어야 합니다. 빼기만 되고 넣기가 실패하면 돈이 사라집니다. 이렇게 "전부 되거나 전부 안 되는" 작업 묶음을 <strong>트랜잭션(transaction)</strong>이라고 합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>명령</th><th>뜻</th></tr></thead><tbody><tr><td><code>db.flush()</code></td><td>지금까지의 변경을 데이터베이스에 보내 실행합니다. 새 행의 id를 받을 수 있지만, 아직 확정되지 않아 되돌릴 수 있습니다.</td></tr><tr><td><code>db.commit()</code></td><td>트랜잭션 안의 모든 변경을 한 번에 확정합니다. 이후에는 되돌릴 수 없습니다.</td></tr><tr><td><code>db.rollback()</code></td><td>확정하지 않은 모든 변경을 취소합니다.</td></tr></tbody></table></div>
+
+<p>이 과정에서는 <strong>서비스 함수 하나가 트랜잭션 하나</strong>라는 규칙을 씁니다. 저장소는 <code>commit</code>하지 않고, 서비스 함수가 필요한 작업을 모두 마친 뒤 마지막에 한 번만 <code>commit</code>합니다. 이 경계를 <strong>트랜잭션 경계</strong>라고 부릅니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p18/s5-p18-05.html"><span class="dir">이전</span>S5-P18-05 정리: 인증 흐름 완성</a>
+  <a class="next" href="../../s6/p19/s6-p19-02.html"><span class="dir">다음</span>S6-P19-02 서비스 계층으로 옮기기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

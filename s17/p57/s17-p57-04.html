@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P57-04 설계 자기 점검 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P57-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P57 설계와 API 명세</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p57-01.html" style="flex:5" data-type="주요 개념" title="설계 진행 안내 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s17-p57-02.html" style="flex:10" data-type="실습" title="요구사항과 자원 도출 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s17-p57-03.html" style="flex:20" data-type="실습" title="API 명세와 보안 요구사항 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s17-p57-04.html" style="flex:10" data-type="실습" title="설계 자기 점검 (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s17-p57-05.html" style="flex:5" data-type="정리" title="정리: 설계 확정 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S17-P57-04</span></div>
+<h1>설계 자기 점검</h1>
+
+<p class="lead">명세를 다 썼으면 구현하기 전에 스스로 점검합니다. 질문에 내 명세로 답해 보고, 답하지 못하면 명세를 고칩니다. 지금 고치는 것이 코드를 고치는 것보다 훨씬 쌉니다.</p>
+<div class="qa"><p class="question">질문 1. (권한 누락) 데이터를 바꾸는 API(POST, PATCH, PUT, DELETE) 가운데 "인증/권한" 칸이 "없음"인 것이 있나요?</p><textarea data-save="d1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>회원가입과 로그인 말고는 없어야 합니다. 있다면 누구나 데이터를 바꿀 수 있다는 뜻입니다. 특히 URI에 <code>{id}</code>가 들어간 수정, 삭제 API는 "로그인 사용자"만으로는 부족하고, "소유자 본인" 같은 객체 수준의 권한이 있어야 합니다. 예시에서는 모임 수정, 삭제, 참가자 명단이 "개설자 본인, 관리자"입니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 2. (권한 누락) 조회 API가 돌려주는 데이터 가운데 남에게 보이면 안 되는 것이 있나요?</p><textarea data-save="d2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>응답 모델의 필드를 하나씩 봅니다. 이메일, 연락처, 내부 메모 같은 값이 목록 응답에 그대로 있으면 누구나 모을 수 있습니다. 예시에서는 참가자 명단을 개설자만 보게 하고, 그 안에서도 이메일을 가렸습니다. 비밀번호 해시는 어떤 응답에도 넣지 않습니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 3. (입력 검증 누락) 요청으로 받는 문자열에 모두 최대 길이가 있고, 숫자에 모두 범위가 있나요? 목록 API에 페이지 크기 상한이 있나요?</p><textarea data-save="d3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>최대 길이가 없으면 아주 긴 값으로 저장 공간과 응답을 키울 수 있고, 페이지 크기 상한이 없으면 <code>limit=1000000</code> 한 번으로 서버를 느리게 할 수 있습니다. 예시에서는 검색어 최대 50자, 페이지 번호 1~1000, 한 페이지 10개로 고정했습니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 4. (상태 충돌) 수량, 정원, 재고처럼 "남은 개수"가 있는 자원이 있나요? 동시에 요청이 오면 어떻게 되나요?</p><textarea data-save="d4" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>있다면 그 개수를 줄이는 API는 경쟁 조건 대책이 필요합니다(S11-P36). 명세의 상태 코드에 409를 넣고, 보안 요구사항에 "조건부 UPDATE"를 적어 둡니다. 예시의 정원이 여기에 해당합니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 5. (범위 과다) 내 API를 모두 구현하고 테스트까지 쓰려면 몇 시간이 걸릴까요? 12시 50분까지 끝낼 수 있나요?</p><textarea data-save="d5" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>도서 API를 만들어 본 경험으로 보면, CRUD 다섯 개와 권한 검사는 한 시간, 핵심 기능 하나와 테스트는 한 시간쯤 걸립니다. 남은 오전 시간은 세 시간이므로, 자원 1~2개, API 10개 안팎이 한계입니다. 넘는다면 "범위에서 뺀 것"으로 옮깁니다. 기능 하나를 덜 만드는 것보다, 만든 기능에 권한 검사나 테스트가 없는 것이 훨씬 큰 감점입니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 6. 내 보안 요구사항마다 확인 테스트가 하나 이상 있나요?</p><textarea data-save="d6" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>테스트가 없는 요구사항은 "지켰다"고 말할 근거가 없습니다. 발표에서 "남의 모임은 고칠 수 없습니다"라고 말하려면, 그것을 확인하는 테스트가 통과하는 화면을 보여 줄 수 있어야 합니다.</p></div></details></div>
+<div class="table-wrap"><table><thead><tr><th>점검 결과</th><th>내 값</th></tr></thead><tbody><tr><td>명세에서 고친 곳</td><td><input data-save="p57_fix" aria-label="내 결과"></td></tr><tr><td>범위에서 뺀 기능</td><td><input data-save="p57_cut" aria-label="내 결과"></td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s17/p57/s17-p57-03.html"><span class="dir">이전</span>S17-P57-03 API 명세와 보안 요구사항</a>
+  <a class="next" href="../../s17/p57/s17-p57-05.html"><span class="dir">다음</span>S17-P57-05 정리: 설계 확정</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

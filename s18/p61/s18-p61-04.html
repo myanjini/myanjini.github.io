@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S18-P61-04 정리: 발표 준비 점검 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S18-P61-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S18. 보안 점검, 배포와 발표</a><span class="sep">/</span><span>S18-P61 보안 점검과 AWS 배포</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s18-p61-01.html" style="flex:15" data-type="실습" title="보안 점검 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s18-p61-02.html" style="flex:25" data-type="실습" title="AWS 배포 (25분)"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s18-p61-03.html" style="flex:5" data-type="실습" title="README 작성 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s18-p61-04.html" style="flex:5" data-type="정리" title="정리: 발표 준비 점검 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S18-P61-04</span></div>
+<h1>정리: 발표 준비 점검</h1>
+
+<h2>제출물 확인</h2>
+<p>미니 프로젝트 평가(50%)는 아래 제출물로 합니다. 저장소 하나에 모두 들어 있어야 합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>제출물</th><th>위치</th><th>평가 항목</th></tr></thead><tbody><tr><td>API 명세서, 보안 요구사항</td><td><code>docs/api-spec.md</code></td><td>명세와 보안 요구사항 10%</td></tr><tr><td>코드(모델, CRUD, 입력 검증)</td><td><code>app/</code>, <code>migrations/</code></td><td>CRUD와 입력 검증 10%</td></tr><tr><td>인증과 권한</td><td><code>app/services/</code>, 권한 테스트</td><td>인증과 권한 10%</td></tr><tr><td>테스트, 자기 진단표, 자동 점검 결과</td><td><code>tests/</code>, <code>docs/security-diagnosis.md</code>, Actions 기록</td><td>테스트와 보안 점검 10%</td></tr><tr><td>배포 결과, README</td><td>Actions의 deploy 성공 기록, <code>README.md</code></td><td>AWS 배포와 README 10%</td></tr></tbody></table></div>
+
+<h2>발표 준비 점검(<a href="../../appendix/appendix-d.html">부록 D</a>)</h2>
+<div class="table-wrap"><table><thead><tr><th>번호</th><th>확인 항목</th><th>내 준비</th></tr></thead><tbody><tr><td>1</td><td>프로젝트 주제와 해결하려는 문제를 한 문장으로 설명할 수 있는가</td><td><input data-save="pd1" aria-label="내 결과"></td></tr><tr><td>2</td><td>자원과 API 목록, 보안 요구사항을 명세서로 보여 줄 수 있는가</td><td><input data-save="pd2" aria-label="내 결과"></td></tr><tr><td>3</td><td>AWS에 배포된 주소로 로그인부터 보호된 API 호출까지 시연할 수 있는가</td><td><input data-save="pd3" aria-label="내 결과"></td></tr><tr><td>4</td><td>보안 점검 결과와 조치한 보안약점 하나를 설명할 수 있는가</td><td><input data-save="pd4" aria-label="내 결과"></td></tr><tr><td>5</td><td>테스트 실행 결과나 CI 실행 기록을 보여 줄 수 있는가</td><td><input data-save="pd5" aria-label="내 결과"></td></tr><tr><td>6</td><td>예상 질문 2개와 답을 준비했는가</td><td><input data-save="pd6" aria-label="내 결과"></td></tr><tr><td>7</td><td>어려웠던 점과 개선하고 싶은 점을 정리했는가</td><td><input data-save="pd7" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>3번이 아직 안 된다면 쉬는 시간에 마칩니다. 배포가 끝내 안 되면, 내 PC의 Compose(PostgreSQL)로 같은 시연을 하고 실패한 단계와 메시지를 설명합니다. 실패를 정확히 설명하는 것도 평가 대상입니다.</p>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">프로젝트를 같은 RDS에 배포할 때 앱 전용 계정을 따로 만든 가장 큰 이유는 무엇인가요?</p><label><input type="radio" name="p61q1" value="1"> <span>1. 접속 속도가 빨라서</span></label><label><input type="radio" name="p61q1" value="2"> <span>2. 한 앱이 뚫려도 다른 앱의 데이터에 접근하지 못하게 하려고</span></label><label><input type="radio" name="p61q1" value="3"> <span>3. 마스터 암호를 잊어서</span></label><label><input type="radio" name="p61q1" value="4"> <span>4. RDS 요금이 줄어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>앱마다 자기 데이터베이스에만 접속하게 하면 피해 범위가 줄어듭니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">배포 워크플로의 자격 증명 단계가 <code>AssumeRoleWithWebIdentity</code> 거부로 실패합니다. 먼저 고칠 곳은 어디인가요?</p><label><input type="radio" name="p61q2" value="1"> <span>1. ECR 저장소 이름</span></label><label><input type="radio" name="p61q2" value="2"> <span>2. RDS 보안 그룹</span></label><label><input type="radio" name="p61q2" value="3"> <span>3. EC2 역할의 파라미터 정책</span></label><label><input type="radio" name="p61q2" value="4"> <span>4. 배포 역할 신뢰 정책의 <code>sub</code> 조건</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>GitHub가 보낸 토큰의 저장소가 신뢰 정책에 없으면 역할을 맡을 수 없습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s18/p61/s18-p61-03.html"><span class="dir">이전</span>S18-P61-03 README 작성</a>
+  <a class="next" href="../../s18/p62/s18-p62-01.html"><span class="dir">다음</span>S18-P62-01 발표 방법 안내</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

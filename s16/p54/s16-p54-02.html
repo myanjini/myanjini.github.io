@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P54-02 점검 도구 보기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P54-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. 운영 보안 점검과 장애 대응</a><span class="sep">/</span><span>S16-P54 AWS 보안 점검</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p54-01.html" style="flex:10" data-type="주요 개념" title="AWS 보안 점검 항목 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p54-02.html" style="flex:10" data-type="주요 개념" title="점검 도구 보기 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s16-p54-03.html" style="flex:25" data-type="실습" title="내 환경 점검과 조치 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s16-p54-04.html" style="flex:5" data-type="정리" title="정리: 보안 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S16-P54-02</span></div>
+<h1>점검 도구 보기</h1>
+
+<p class="lead">점검을 사람 눈으로만 하면 빠뜨리기 쉽습니다. AWS는 설정을 자동으로 훑어 보여 주는 도구를 여럿 제공합니다. 이번 실습에서 쓸 도구와 각 도구가 보는 범위를 정리합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>도구</th><th>무엇을 보나요</th><th>요금</th><th>이번 실습</th></tr></thead><tbody><tr><td>IAM Access Analyzer(외부 액세스)</td><td>S3 버킷, IAM 역할, KMS 키 같은 자원의 정책을 분석해, 내 계정 밖(다른 계정, 공개)에서 접근할 수 있는 자원을 찾습니다.</td><td>추가 요금 없음</td><td>분석기 결과 확인(기관이 만들어 둔 경우)</td></tr><tr><td>IAM Access Analyzer(정책 검사)</td><td>정책을 저장할 때 문법 오류, 지나치게 넓은 권한 같은 문제를 알려 줍니다. S12에서 JSON 편집기 아래에 보인 경고입니다.</td><td>추가 요금 없음</td><td>역할의 인라인 정책 다시 열어 보기</td></tr><tr><td>IAM Access Analyzer(미사용 액세스)</td><td>오래 쓰지 않은 역할, 권한을 찾습니다.</td><td>역할과 사용자 수에 따라 요금</td><td>개념만. 대신 역할의 "마지막 액세스" 탭으로 확인</td></tr><tr><td>Trusted Advisor</td><td>AWS의 모범 사례와 계정 설정을 비교합니다. 기본 지원 플랜에서도 보안 항목 일부(루트 MFA, 특정 포트 무제한 개방, S3 버킷 권한, 공개된 EBS와 RDS 스냅샷)를 볼 수 있습니다.</td><td>기본 항목은 무료</td><td>보안 항목 새로 고침 후 확인</td></tr><tr><td>ECR 이미지 스캔</td><td>이미지 안의 패키지 취약점</td><td>기본 스캔은 무료</td><td>최신 배포 이미지의 결과 확인(S14-P48)</td></tr><tr><td>AWS CLI 질의</td><td>보안 그룹의 <code>0.0.0.0/0</code> 규칙, RDS 공개 여부처럼 원하는 조건을 직접 확인</td><td>무료</td><td><a href="../../appendix/appendix-c.html">부록 C</a> 항목마다 근거로 사용</td></tr></tbody></table></div>
+
+<h2>IAM의 마지막 액세스 정보</h2>
+<p>IAM 콘솔에서 역할을 열고 <strong>마지막 액세스</strong> 탭을 보면, 그 역할이 각 서비스를 마지막으로 언제 썼는지 나옵니다. 오래 쓰지 않은 서비스의 권한은 지워도 되는 후보입니다. 예를 들어 EC2 역할에 실습 중 시험 삼아 붙였다가 쓰지 않은 권한이 있다면 여기서 드러납니다. 단, 정보는 몇 시간 늦게 반영되므로 오늘 처음 쓴 권한은 아직 안 보일 수 있습니다.</p>
+<div class="callout note"><p class="callout-title">Security Hub</p><p>실무에서는 Security Hub로 여러 점검 결과를 한곳에 모으고, AWS 기초 보안 모범 사례 같은 기준으로 계정 전체를 자동 점검합니다. 점검 항목 수에 따라 요금이 붙어 이 과정에서는 쓰지 않지만, 오늘 손으로 하는 점검을 자동으로 계속 해 주는 서비스라고 기억해 둡니다.</p></div>
+
+<h2>도구가 보지 못하는 것</h2>
+<p>S11에서 bandit이 인가 누락을 찾지 못한 것처럼, 이 도구들도 "이 서비스에서 이 역할이 정말 이 권한을 써야 하는가"는 판단하지 못합니다. 도구 결과는 점검의 출발점이고, 최종 판단은 서비스의 구조를 아는 사람이 합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s16/p54/s16-p54-01.html"><span class="dir">이전</span>S16-P54-01 AWS 보안 점검 항목</a>
+  <a class="next" href="../../s16/p54/s16-p54-03.html"><span class="dir">다음</span>S16-P54-03 내 환경 점검과 조치</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

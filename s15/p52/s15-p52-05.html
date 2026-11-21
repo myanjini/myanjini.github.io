@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P52-05 정리: 로드 밸런서 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P52-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P52 로드 밸런서와 HTTPS</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p52-01.html" style="flex:10" data-type="주요 개념" title="ALB와 대상 그룹 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p52-02.html" style="flex:10" data-type="주요 개념" title="ALB 구성 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p52-03.html" style="flex:20" data-type="실습" title="ALB 뒤로 API 옮기기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s15-p52-04.html" style="flex:5" data-type="주요 개념" title="HTTPS 적용 과정 보기 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s15-p52-05.html" style="flex:5" data-type="정리" title="정리: 로드 밸런서 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S15-P52-05</span></div>
+<h1>정리: 로드 밸런서</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>핵심</th></tr></thead><tbody><tr><td>ALB 구성</td><td>보안 그룹, 대상 그룹(HTTP 8000, /health), 로드 밸런서(퍼블릭 서브넷 2개, 리스너 80) 순서로 만듭니다.</td></tr><tr><td>보안 그룹</td><td>인터넷에 열린 곳은 ALB뿐. EC2는 ALB 보안 그룹에서 오는 8000번만 받습니다.</td></tr><tr><td>사용자 IP</td><td><code>FORWARDED_ALLOW_IPS</code>로 ALB가 붙인 <code>X-Forwarded-For</code>만 믿습니다. 로그인 실패 제한이 사용자별로 동작합니다.</td></tr><tr><td>헬스 체크</td><td>정상 대상에만 요청을 보내고, 정상 대상이 없으면 502, 503을 돌려줍니다.</td></tr><tr><td>HTTPS</td><td>ACM 인증서, DNS 검증, 443 리스너, 80을 443으로 리디렉션, DNS 연결 순서입니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">대상이 계속 unhealthy입니다. 가장 먼저 확인할 것은 무엇인가요?</p><label><input type="radio" name="p52q1" value="1"> <span>1. RDS 백업</span></label><label><input type="radio" name="p52q1" value="2"> <span>2. ACM 인증서</span></label><label><input type="radio" name="p52q1" value="3"> <span>3. EC2 보안 그룹이 ALB 보안 그룹에서 오는 8000번을 허용하는지</span></label><label><input type="radio" name="p52q1" value="4"> <span>4. S3 버킷 정책</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>헬스 체크 요청도 ALB에서 EC2로 가므로, 보안 그룹이 막으면 실패합니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q"><code>FORWARDED_ALLOW_IPS</code>를 <code>*</code>(모두 믿음)로 두면 무엇이 문제인가요?</p><label><input type="radio" name="p52q2" value="1"> <span>1. 사용자가 보낸 X-Forwarded-For를 그대로 믿어, IP를 바꿔 가며 로그인 실패 제한을 피할 수 있다</span></label><label><input type="radio" name="p52q2" value="2"> <span>2. 로그가 남지 않는다</span></label><label><input type="radio" name="p52q2" value="3"> <span>3. HTTPS가 꺼진다</span></label><label><input type="radio" name="p52q2" value="4"> <span>4. ALB가 동작하지 않는다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>헤더는 사용자가 마음대로 만들 수 있으므로, 믿을 수 있는 프록시가 붙인 부분만 씁니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">ALB 뒤로 옮긴 뒤에도 EC2에 퍼블릭 IP를 남겨 둔 이유는 무엇인가요?</p><label><input type="radio" name="p52q3" value="1"> <span>1. Session Manager가 22번을 써서</span></label><label><input type="radio" name="p52q3" value="2"> <span>2. 사용자가 접속하려고</span></label><label><input type="radio" name="p52q3" value="3"> <span>3. NAT 게이트웨이 없이 서버가 ECR, Parameter Store 같은 곳으로 나가려고</span></label><label><input type="radio" name="p52q3" value="4"> <span>4. ALB가 퍼블릭 IP로만 대상을 찾아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>들어오는 길은 보안 그룹이 막고, 나가는 길로만 씁니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>지금까지 배포는 내 PC에서 이미지를 올리고 서버에 들어가 명령을 치는 방식이었습니다. 다음 파트에서는 main 브랜치에 푸시하면 GitHub Actions가 테스트, 보안 점검, 이미지 빌드와 푸시, 서버 배포, 배포 확인까지 차례로 하게 만듭니다. 액세스 키 없이 OIDC로 AWS에 접근합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p52/s15-p52-04.html"><span class="dir">이전</span>S15-P52-04 HTTPS 적용 과정 보기</a>
+  <a class="next" href="../../s15/p53/s15-p53-01.html"><span class="dir">다음</span>S15-P53-01 배포 파이프라인 설계</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

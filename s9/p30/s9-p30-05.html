@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P30-05 정리: SQL 삽입과 경로 조작 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P30-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P30 입력데이터 검증 1: SQL 삽입과 경로 조작</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p30-01.html" style="flex:10" data-type="주요 개념" title="입력데이터 검증 및 표현 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s9-p30-02.html" style="flex:10" data-type="주요 개념" title="SQL 삽입 재현과 방어 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p30-03.html" style="flex:15" data-type="실습" title="검색 API 보안 조치 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s9-p30-04.html" style="flex:10" data-type="실습" title="경로 조작과 자원 삽입 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s9-p30-05.html" style="flex:5" data-type="정리" title="정리: SQL 삽입과 경로 조작 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S9-P30-05</span></div>
+<h1>정리: SQL 삽입과 경로 조작</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>입력데이터 검증 보안약점은 외부 입력이 SQL, 경로, HTML, 셸 명령의 구조에 섞여 들어가서 생깁니다.</li>
+  <li>받을 때는 Pydantic으로 타입, 길이, 형식을 허용 목록 방식으로 좁히고, 쓸 때는 쓰는 곳에 맞게 처리합니다.</li>
+  <li>SQL은 값 바인딩(<code>:이름</code>)으로 값과 구조를 나누고, 바인딩할 수 없는 정렬 기준과 열 이름은 허용 목록에서 꺼냅니다.</li>
+  <li>파일 경로는 <code>resolve()</code>로 정규화한 뒤 <code>is_relative_to()</code>로 기준 폴더 안인지 확인합니다.</li>
+  <li>고친 약점은 공격 값을 담은 회귀 테스트로 남겨 CI가 지키게 합니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">SQLAlchemy에서 SQL 삽입에 안전한 코드는 무엇인가요?</p><label><input type="radio" name="p30q1" value="1"> <span>1. <code>text("SELECT * FROM books WHERE title = :t")</code>에 <code>{"t": t}</code>를 넘김</span></label><label><input type="radio" name="p30q1" value="2"> <span>2. <code>text("SELECT * FROM books WHERE title = '" + t + "'")</code></span></label><label><input type="radio" name="p30q1" value="3"> <span>3. <code>.order_by(text(t))</code></span></label><label><input type="radio" name="p30q1" value="4"> <span>4. <code>text(f"SELECT * FROM books WHERE title = '{t}'")</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>값 바인딩은 SQL 구조와 값을 따로 보내므로 값이 구조를 바꿀 수 없습니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q"><code>ORDER BY</code> 뒤의 정렬 기준을 사용자에게서 받을 때 알맞은 방법은 무엇인가요?</p><label><input type="radio" name="p30q2" value="1"> <span>1. 값 바인딩을 쓴다.</span></label><label><input type="radio" name="p30q2" value="2"> <span>2. 작은따옴표를 지운다.</span></label><label><input type="radio" name="p30q2" value="3"> <span>3. 허용 목록에 있는 값만 받아 정해 둔 열 이름으로 바꾼다.</span></label><label><input type="radio" name="p30q2" value="4"> <span>4. 길이를 10자로 제한한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>열 이름은 바인딩할 수 없으므로 허용 목록을 씁니다. 따옴표 제거나 길이 제한은 금지 목록 방식이라 우회될 수 있습니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q"><code>(FILES_DIR / name).resolve()</code> 다음에 꼭 해야 하는 검사는 무엇인가요?</p><label><input type="radio" name="p30q3" value="1"> <span>1. 정규화한 경로가 FILES_DIR 안에 있는지 검사</span></label><label><input type="radio" name="p30q3" value="2"> <span>2. 확장자가 txt인지 검사</span></label><label><input type="radio" name="p30q3" value="3"> <span>3. 파일 이름이 영어인지 검사</span></label><label><input type="radio" name="p30q3" value="4"> <span>4. 파일 크기 검사</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>정규화만으로는 ../가 풀린 실제 경로를 얻을 뿐입니다. 그 경로가 기준 폴더 안인지 확인해야 막힙니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>S9-P31에서는 API가 내준 데이터가 화면에서 스크립트로 실행되는 크로스사이트 스크립트와, 이미지로 위장한 파일 업로드를 막고, 명령어 삽입과 서버사이드 요청 위조의 방어 원칙을 정리합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p30/s9-p30-04.html"><span class="dir">이전</span>S9-P30-04 경로 조작과 자원 삽입</a>
+  <a class="next" href="../../s9/p31/s9-p31-01.html"><span class="dir">다음</span>S9-P31-01 크로스사이트 스크립트와 API</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

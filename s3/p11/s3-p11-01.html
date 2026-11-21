@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P11-01 DB 세션 의존성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P11-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P11 CRUD API 구현: 생성과 조회</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p11-01.html" style="flex:5" data-type="주요 개념" title="DB 세션 의존성 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s3-p11-02.html" style="flex:5" data-type="주요 개념" title="ORM 객체와 Pydantic 변환 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s3-p11-03.html" style="flex:10" data-type="주요 개념" title="생성과 조회 구현 보기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p11-04.html" style="flex:25" data-type="실습" title="등록, 목록, 상세 API (25분)"><span class="seg-num">04</span><span class="seg-min">25분</span></a><a href="s3-p11-05.html" style="flex:5" data-type="정리" title="정리: 생성과 조회 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S3-P11-01</span></div>
+<h1>DB 세션 의존성</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>DB 세션 의존성으로 등록과 조회 API를 데이터베이스와 연결할 수 있습니다.</p></div>
+
+<p class="lead">API가 데이터베이스를 쓰려면 요청마다 세션이 필요합니다. S3-P8에서 연습한 yield 의존성으로 세션을 열고 닫습니다.</p>
+<div class="codeblock"><span class="file">app/database.py</span><pre><code>def get_db():
+    """요청 하나에 세션 하나를 열어 주고, 요청이 끝나면 닫습니다."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()</code></pre></div>
+
+<p>S3-P8-04의 <code>get_resource</code>와 모양이 같습니다. 요청이 오면 세션을 열어 경로 함수에 넘기고, 응답을 만들고 나면 <code>finally</code>에서 반드시 닫습니다.</p>
+<h2>요청마다 세션을 하나씩 쓰는 이유</h2>
+<ul>
+  <li>여러 요청이 세션 하나를 함께 쓰면, 한 요청의 작업이 다른 요청에 섞일 수 있습니다.</li>
+  <li>세션을 닫지 않으면 데이터베이스 연결이 쌓여 결국 새 요청을 받지 못하게 됩니다.</li>
+</ul>
+<h2>SessionDep</h2>
+<div class="codeblock"><span class="file">app/dependencies.py</span><pre><code>from sqlalchemy.orm import Session
+
+from app.database import get_db
+
+SessionDep = Annotated[Session, Depends(get_db)]</code></pre></div>
+
+<p><code>PageDep</code>처럼 이름 하나로 묶어 두면, 경로 함수에서는 <code>db: SessionDep</code>만 적어 세션을 받습니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p10/s3-p10-05.html"><span class="dir">이전</span>S3-P10-05 정리: ORM 기초</a>
+  <a class="next" href="../../s3/p11/s3-p11-02.html"><span class="dir">다음</span>S3-P11-02 ORM 객체와 Pydantic 변환</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

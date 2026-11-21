@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P47-04 비밀정보 교체 절차 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P47-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 안전한 배포 구성</a><span class="sep">/</span><span>S14-P47 클라우드 비밀정보 관리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p47-01.html" style="flex:10" data-type="주요 개념" title="클라우드에서 비밀정보 다루기 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s14-p47-02.html" style="flex:10" data-type="주요 개념" title="Parameter Store 사용 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s14-p47-03.html" style="flex:20" data-type="실습" title="비밀정보 이전 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s14-p47-04.html" style="flex:5" data-type="주요 개념" title="비밀정보 교체 절차 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s14-p47-05.html" style="flex:5" data-type="정리" title="정리: 비밀정보 관리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S14-P47-04</span></div>
+<h1>비밀정보 교체 절차</h1>
+
+<p class="lead">비밀 값은 새었을 때만이 아니라, 담당자가 바뀌거나 일정 기간이 지났을 때도 바꿉니다. 바꾸는 순서를 미리 정해 두면 서비스를 멈추지 않고 안전하게 바꿀 수 있습니다.</p>
+
+<h2>JWT 비밀 키 교체</h2>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>할 일</th><th>명령이나 방법</th></tr></thead><tbody><tr><td>1</td><td>새 값 만들기</td><td><code>secrets.token_urlsafe(32)</code></td></tr><tr><td>2</td><td>Parameter Store 값 덮어쓰기</td><td>콘솔에서 파라미터를 열고 <strong>편집</strong>. 버전이 1 올라갑니다.</td></tr><tr><td>3</td><td>앱 다시 시작</td><td>값은 시작할 때만 읽으므로 컨테이너를 다시 만듭니다(<code>docker compose up -d --force-recreate</code>).</td></tr><tr><td>4</td><td>확인</td><td><code>/health</code>, 로그인, 이전 토큰이 401인지</td></tr></tbody></table></div>
+
+<p>비밀 키를 바꾸면 그 키로 서명한 액세스 토큰은 모두 무효가 됩니다. 사용자 입장에서는 로그인이 풀린 것처럼 보이지만, 도서 API의 리프레시 토큰은 비밀 키로 서명한 값이 아니라 데이터베이스에 해시로 저장한 무작위 값이므로(S5-P18) 앱이 <code>/auth/refresh</code>로 새 액세스 토큰을 받아 이어 쓸 수 있습니다. 실습 환경에서 교체를 재현하면 다음과 같습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>시점</th><th>이전에 받은 액세스 토큰으로 <code>/auth/me</code></th></tr></thead><tbody><tr><td>값을 덮어쓴 직후(재시작 전)</td><td>200(앱은 아직 이전 값을 씀)</td></tr><tr><td>컨테이너를 다시 만든 뒤</td><td>401</td></tr><tr><td>다시 로그인해 받은 토큰</td><td>200</td></tr></tbody></table></div>
+
+<h2>DB 암호 교체</h2>
+<p>DB 암호는 RDS와 Parameter Store 두 곳에 있어서 순서가 중요합니다. RDS의 암호를 먼저 바꾸면, 앱을 다시 시작하기 전까지 새로 맺는 연결이 실패합니다. 실습 규모에서는 아래 순서로 짧은 중단을 받아들이고, 중단이 없어야 하는 서비스는 DB 계정을 두 개 두고 번갈아 바꾸거나 Secrets Manager의 자동 교체를 씁니다.</p>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>할 일</th></tr></thead><tbody><tr><td>1</td><td>새 암호 만들기</td></tr><tr><td>2</td><td>RDS 콘솔에서 <strong>수정</strong>, 새 마스터 암호 입력, <strong>즉시 적용</strong></td></tr><tr><td>3</td><td>Parameter Store의 <code>/book-api/DATABASE_URL</code> 값에서 암호 부분만 바꾸기</td></tr><tr><td>4</td><td>앱 다시 시작, <code>/health</code>의 <code>database</code>가 <code>ok</code>인지 확인</td></tr></tbody></table></div>
+
+<h2>노출 사고가 났을 때</h2>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>할 일</th></tr></thead><tbody><tr><td>1</td><td>새어 나간 값을 <strong>바로 교체</strong>합니다. 원인 조사보다 먼저입니다.</td></tr><tr><td>2</td><td>어디로 새었는지(채팅, Git, 로그, 화면 공유) 찾아 지우고, Git 기록이라면 저장소 관리자와 함께 정리합니다.</td></tr><tr><td>3</td><td>CloudTrail에서 그 파라미터를 누가 읽었는지(<code>GetParameter</code>, <code>GetParameters</code>) 확인합니다.</td></tr><tr><td>4</td><td>DB 암호였다면 그 사이 DB에 낯선 접속이나 변경이 없었는지 봅니다. JWT 키였다면 그 사이 발급된 토큰을 믿을 수 없으므로 리프레시 토큰도 모두 폐기하는 것을 검토합니다.</td></tr></tbody></table></div>
+
+<p>Parameter Store는 값을 바꿀 때마다 버전을 남기므로, 잘못 바꿨을 때 이전 값을 찾아 되돌릴 수 있습니다. 기록은 <code>aws ssm get-parameter-history --name /book-api/SECRET_KEY</code>로 볼 수 있습니다(값은 암호화된 채로 보입니다).</p>
+<div class="quiz" data-answer="3"><p class="q">Parameter Store의 SECRET_KEY 값을 바꿨는데 이전 토큰이 계속 통과합니다. 왜 그런가요?</p><label><input type="radio" name="p47q0" value="1"> <span>1. 브라우저 캐시 때문에</span></label><label><input type="radio" name="p47q0" value="2"> <span>2. Parameter Store가 바꾼 값을 저장하지 않아서</span></label><label><input type="radio" name="p47q0" value="3"> <span>3. 앱이 시작할 때만 값을 읽으므로, 다시 시작하기 전까지 이전 값을 쓰고 있어서</span></label><label><input type="radio" name="p47q0" value="4"> <span>4. JWT는 키와 관계없이 검증되어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>교체 후에는 반드시 앱을 다시 시작합니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p47/s14-p47-03.html"><span class="dir">이전</span>S14-P47-03 비밀정보 이전</a>
+  <a class="next" href="../../s14/p47/s14-p47-05.html"><span class="dir">다음</span>S14-P47-05 정리: 비밀정보 관리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

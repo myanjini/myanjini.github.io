@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P39-04 강사 풀이 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P39-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P39 보안약점 조치와 보안 테스트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p39-01.html" style="flex:5" data-type="주요 개념" title="조치 우선순위 정하기 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p39-02.html" style="flex:20" data-type="실습" title="보안약점 조치 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s11-p39-03.html" style="flex:15" data-type="실습" title="보안 테스트 작성 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s11-p39-04.html" style="flex:5" data-type="주요 개념" title="강사 풀이 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s11-p39-05.html" style="flex:5" data-type="정리" title="정리: 개발 보안 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S11-P39-04</span></div>
+<h1>강사 풀이</h1>
+
+<p class="lead">모범 조치 코드와 완성한 진단표를 보며 내 조치와 비교합니다. 테스트를 통과했더라도 방식이 다를 수 있으니, 차이가 나는 부분은 왜 그렇게 했는지 생각해 봅니다.</p>
+
+<h2>완성한 진단표(조치와 확인)</h2>
+<details><summary>조치 내용과 확인 방법 보기(25개 항목)</summary><div class="answer"><div class="table-wrap"><table><thead><tr><th>번호</th><th>보안약점 항목</th><th>조치 내용</th><th>확인 방법(테스트)</th></tr></thead><tbody><tr><td>1</td><td>SQL 삽입</td><td>q와 limit는 <code>?</code> 자리로 따로 넘기고, sort는 <code>Literal["id", "likes"]</code>로 받아 허용 목록에서 열을 고릅니다. limit는 1에서 100 사이로 묶습니다.</td><td>test_01 두 개</td></tr><tr><td>2</td><td>경로 조작 및 자원 삽입</td><td>저장 이름은 서버가 uuid로 만들고, 내려받을 때는 <code>resolve()</code>한 경로가 업로드 폴더 안인지 <code>is_relative_to</code>로 확인합니다.</td><td>test_02 두 개</td></tr><tr><td>3</td><td>운영체제 명령어 삽입</td><td>명령과 인자를 목록으로 넘기고 셸을 거치지 않습니다. 저장 이름도 서버가 만듭니다.</td><td>test_03</td></tr><tr><td>4</td><td>위험한 형식 파일 업로드</td><td>확장자 허용 목록(.txt, .pdf, .png, .jpg)과 2MB 제한을 둡니다.</td><td>test_04</td></tr><tr><td>5</td><td>서버사이드 요청 위조</td><td>https이면서 허용 목록에 있는 호스트만 요청하고, 리다이렉트는 따라가지 않습니다.</td><td>test_05</td></tr><tr><td>6</td><td>보안기능 결정에 사용되는 부적절한 입력값</td><td>서버가 토큰으로 확인한 사용자의 역할로 판단합니다(<code>require_admin</code>).</td><td>test_06</td></tr><tr><td>7</td><td>부적절한 인가</td><td>작성자나 관리자만 지울 수 있고, 그 밖에는 404로 답합니다.</td><td>test_07</td></tr><tr><td>8</td><td>취약한 암호화 알고리즘 사용, 솔트 없이 일방향 해쉬 함수 사용</td><td>Argon2(pwdlib)로 저장하고 확인합니다.</td><td>test_08</td></tr><tr><td>9</td><td>취약한 비밀번호 허용</td><td>10자 이상, 아이디가 들어간 비밀번호 금지</td><td>test_09</td></tr><tr><td>10</td><td>반복된 인증시도 제한 기능 부재</td><td>15분 안에 5번 실패하면 비밀번호 확인 전에 429로 막습니다.</td><td>test_10</td></tr><tr><td>11</td><td>하드코드된 중요정보</td><td>환경 변수에서 읽고, 없거나 32자보다 짧으면 실행을 멈춥니다.</td><td>test_11</td></tr><tr><td>12</td><td>적절하지 않은 난수 값 사용</td><td><code>secrets.randbelow</code>로 만들고 SHA-256 해시만 저장합니다.</td><td>test_12</td></tr><tr><td>13</td><td>적절한 인증 없는 중요 기능 허용</td><td>일괄 등록은 관리자만, 업로드와 미리 보기는 로그인한 사용자만 씁니다.</td><td>test_13</td></tr><tr><td>14</td><td>경쟁 조건: 검사 시점과 사용 시점</td><td><code>UPDATE ... SET likes = likes + 1 ... RETURNING likes</code> 한 문장으로 바꿉니다.</td><td>test_14</td></tr><tr><td>15</td><td>종료되지 않는 반복문 또는 재귀 함수</td><td>다시 시도는 3번까지, 한 번에 3초까지만 기다립니다.</td><td>test_15</td></tr><tr><td>16</td><td>오류 메시지 정보노출</td><td>응답에는 정해진 문구만 담고, 자세한 내용은 <code>logger.exception</code>으로 서버 로그에 남깁니다.</td><td>test_16</td></tr><tr><td>17</td><td>오류상황 대응 부재</td><td>예상한 예외(<code>OSError</code>, <code>SubprocessError</code>)만 잡고, 로그를 남긴 뒤 형식을 unknown으로 둡니다.</td><td>코드 검토</td></tr><tr><td>18</td><td>Null 포인터 역참조</td><td>None이면 404로 답하는 <code>find_notice</code>를 만들어 조회, 삭제, 고정에서 함께 씁니다.</td><td>test_18</td></tr><tr><td>19</td><td>부적절한 자원 해제</td><td><code>yield</code>와 <code>finally</code>로 닫는 <code>get_db</code> 의존성을 씁니다.</td><td>코드 검토</td></tr><tr><td>20</td><td>신뢰할 수 없는 데이터의 역직렬화</td><td>서명한 JWT(HS256, exp와 sub 필수)를 쓰고, 역할은 데이터베이스에서 다시 읽습니다.</td><td>test_20 두 개</td></tr><tr><td>21</td><td>시스템 데이터 정보노출(응답의 내부 필드)</td><td>id와 username만 응답합니다.</td><td>test_21</td></tr><tr><td>22</td><td>잘못된 세션에 의한 데이터 정보노출</td><td>의존성(<code>current_user</code>)이 요청마다 새 값을 돌려주고, 전역 변수에 담지 않습니다.</td><td>test_22</td></tr><tr><td>23</td><td>제거되지 않고 남은 디버그 코드</td><td>print와 /debug/config를 지웁니다.</td><td>test_23 두 개</td></tr><tr><td>24</td><td>취약한 API 사용</td><td><code>yaml.safe_load</code>로 읽고, 항목마다 <code>NoticeIn</code> 모델로 검증합니다.</td><td>test_24</td></tr><tr><td>25</td><td>취약한 외부 패키지 사용</td><td>requests를 2.34.2로 올립니다.</td><td>pip-audit</td></tr></tbody></table></div>
+</div></details>
+
+<h2>모범 조치 코드</h2>
+<p>주석의 [번호]가 진단표의 번호입니다. 실행하려면 <code>SECRET_KEY</code> 환경 변수를 32자 이상으로 정해야 합니다.</p>
+<details><summary>조치한 app.py 전체 보기</summary><div class="answer"><div class="codeblock"><span class="file">app.py(조치 완료)</span><pre><code>"""동아리 공지 게시판 API (조치 완료 예시)
+
+진단용 예제의 보안약점을 조치한 코드입니다. 주석의 [번호]는 예시 진단표의 번호입니다.
+실행: SECRET_KEY 환경 변수를 32자 이상으로 정한 뒤 uvicorn app:app --reload
+"""
+import hashlib
+import logging
+import os
+import secrets
+import sqlite3
+import subprocess
+import time
+import uuid
+from collections.abc import Iterator
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Literal
+from urllib.parse import urlparse
+
+import jwt
+import requests
+import yaml
+from fastapi import Depends, FastAPI, File, Header, HTTPException, Query, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
+from pwdlib import PasswordHash
+from pydantic import BaseModel, Field, ValidationError
+
+logger = logging.getLogger("board")
+
+SECRET_KEY = os.environ.get("SECRET_KEY", "")  # [11] 비밀 키는 코드 밖(환경 변수)에서 받습니다.
+if len(SECRET_KEY) &lt; 32:
+    raise RuntimeError("SECRET_KEY 환경 변수를 32자 이상으로 정하세요.")
+DB_PATH = "board.db"
+UPLOAD_DIR = Path("uploads").resolve()
+ALLOWED_EXTENSIONS = {".txt", ".pdf", ".png", ".jpg"}
+MAX_FILE_SIZE = 2 * 1024 * 1024
+PREVIEW_HOSTS = {"example.com", "www.example.com"}  # 미리 보기를 허용하는 사이트만 적습니다.
+MAX_FAILURES, FAILURE_WINDOW = 5, 15 * 60
+login_failures: dict[str, list[float]] = {}  # 예제를 짧게 하려고 메모리에 둡니다. 실제 서비스는 데이터베이스에 둡니다.
+
+app = FastAPI(title="동아리 공지 게시판")
+password_hash = PasswordHash.recommended()  # [8] Argon2(솔트를 자동으로 붙입니다.)
+
+
+def get_db() -&gt; Iterator[sqlite3.Connection]:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()  # [19] 요청이 끝나면 성공하든 실패하든 연결을 닫습니다.
+
+
+def init_db():
+    UPLOAD_DIR.mkdir(exist_ok=True)
+    conn = sqlite3.connect(DB_PATH)
+    try:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT, role TEXT DEFAULT 'member');
+            CREATE TABLE IF NOT EXISTS notices (
+                id INTEGER PRIMARY KEY, title TEXT, body TEXT, author_id INTEGER,
+                likes INTEGER DEFAULT 0, pinned INTEGER DEFAULT 0);
+            CREATE TABLE IF NOT EXISTS reset_codes (username TEXT, code_hash TEXT);
+        """)
+        conn.commit()
+    finally:
+        conn.close()
+
+
+init_db()
+
+
+@app.exception_handler(Exception)
+def handle_error(request: Request, exc: Exception):
+    logger.exception("처리하지 못한 오류")  # [16] 자세한 내용은 서버 로그에만 남깁니다.
+    return JSONResponse(status_code=500, content={"error": "서버 오류가 발생했습니다."})
+
+
+class SignupIn(BaseModel):
+    username: str = Field(min_length=3, max_length=30, pattern=r"^[a-z0-9_]+$")
+    password: str = Field(min_length=10, max_length=128)  # [9] 10자 이상만 받습니다.
+
+
+class LoginIn(BaseModel):
+    username: str = Field(max_length=30)
+    password: str = Field(max_length=128)
+
+
+class NoticeIn(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+    body: str = Field(min_length=1, max_length=5000)
+
+
+# ---------- 토큰 ----------
+def make_token(user) -&gt; str:
+    payload = {"sub": str(user["id"]), "exp": datetime.now(timezone.utc) + timedelta(minutes=30)}
+    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")  # [20] 서명한 JWT를 씁니다.
+
+
+def current_user(authorization: str | None = Header(None), db: sqlite3.Connection = Depends(get_db)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "로그인이 필요합니다.")
+    try:
+        payload = jwt.decode(authorization.removeprefix("Bearer "), SECRET_KEY, algorithms=["HS256"],
+                             options={"require": ["exp", "sub"]})
+    except jwt.InvalidTokenError:
+        raise HTTPException(401, "토큰이 올바르지 않습니다.")
+    user = db.execute("SELECT id, username, role FROM users WHERE id = ?", (int(payload["sub"]),)).fetchone()
+    if user is None:
+        raise HTTPException(401, "토큰이 올바르지 않습니다.")
+    return dict(user)  # [22] 요청마다 새로 만든 값을 돌려줍니다. 전역 변수에 담지 않습니다.
+
+
+def require_admin(user: dict = Depends(current_user)) -&gt; dict:
+    if user["role"] != "admin":  # [6] 서버가 확인한 역할로만 판단합니다.
+        raise HTTPException(403, "관리자만 할 수 있습니다.")
+    return user
+
+
+# ---------- 회원 ----------
+@app.post("/signup", status_code=201)
+def signup(body: SignupIn, db: sqlite3.Connection = Depends(get_db)):
+    if body.username in body.password:
+        raise HTTPException(422, "비밀번호에 아이디를 넣을 수 없습니다.")
+    try:
+        cur = db.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)",
+                         (body.username, password_hash.hash(body.password)))
+        db.commit()
+    except sqlite3.IntegrityError:
+        raise HTTPException(409, "이미 쓰고 있는 아이디입니다.")
+    return {"id": cur.lastrowid, "username": body.username}  # [21] 해시는 응답에 넣지 않습니다.
+
+
+def check_failures(username: str) -&gt; None:
+    now = time.monotonic()
+    recent = [t for t in login_failures.get(username, []) if now - t &lt; FAILURE_WINDOW]
+    login_failures[username] = recent
+    if len(recent) &gt;= MAX_FAILURES:  # [10] 비밀번호를 확인하기 전에 막습니다.
+        raise HTTPException(429, "로그인 실패가 많습니다. 15분 뒤에 다시 시도하세요.", headers={"Retry-After": "900"})
+
+
+@app.post("/login")
+def login(body: LoginIn, db: sqlite3.Connection = Depends(get_db)):
+    check_failures(body.username)  # [23] 비밀번호를 출력하던 디버그 코드는 지웠습니다.
+    row = db.execute("SELECT * FROM users WHERE username = ?", (body.username,)).fetchone()
+    if row is None or not password_hash.verify(body.password, row["password_hash"]):
+        login_failures.setdefault(body.username, []).append(time.monotonic())
+        raise HTTPException(401, "아이디 또는 비밀번호가 틀렸습니다.")
+    login_failures.pop(body.username, None)
+    return {"access_token": make_token(row), "token_type": "bearer"}
+
+
+@app.get("/me")
+def me(user: dict = Depends(current_user)):
+    time.sleep(0.1)  # 프로필 사진을 불러오는 시간을 흉내 냅니다.
+    return {"username": user["username"], "role": user["role"]}
+
+
+@app.post("/password-reset")
+def password_reset(username: str, db: sqlite3.Connection = Depends(get_db)):
+    code = f"{secrets.randbelow(1_000_000):06d}"  # [12] 추측할 수 없는 난수를 씁니다.
+    db.execute("INSERT INTO reset_codes VALUES (?, ?)", (username, hashlib.sha256(code.encode()).hexdigest()))
+    db.commit()
+    return {"message": "인증 번호를 이메일로 보냈습니다."}
+
+
+# ---------- 공지 ----------
+SORT_COLUMNS = {"id": "id", "likes": "likes DESC"}
+
+
+@app.get("/notices")
+def list_notices(q: str = Query("", max_length=100), sort: Literal["id", "likes"] = "id",
+                 limit: int = Query(20, ge=1, le=100), db: sqlite3.Connection = Depends(get_db)):
+    # [1] 값은 ? 자리에 따로 넘기고, 정렬 열은 허용 목록에서만 고릅니다.
+    sql = f"SELECT id, title, likes FROM notices WHERE title LIKE ? ORDER BY {SORT_COLUMNS[sort]} LIMIT ?"  # nosec B608
+    return [dict(r) for r in db.execute(sql, (f"%{q}%", limit)).fetchall()]
+
+
+@app.post("/notices", status_code=201)
+def create_notice(body: NoticeIn, user: dict = Depends(current_user), db: sqlite3.Connection = Depends(get_db)):
+    cur = db.execute("INSERT INTO notices (title, body, author_id) VALUES (?, ?, ?)", (body.title, body.body, user["id"]))
+    db.commit()
+    return {"id": cur.lastrowid}
+
+
+def find_notice(db: sqlite3.Connection, notice_id: int):
+    row = db.execute("SELECT * FROM notices WHERE id = ?", (notice_id,)).fetchone()
+    if row is None:  # [18] 결과가 없을 때를 먼저 처리합니다.
+        raise HTTPException(404, "공지를 찾을 수 없습니다.")
+    return row
+
+
+@app.get("/notices/{notice_id}")
+def get_notice(notice_id: int, db: sqlite3.Connection = Depends(get_db)):
+    row = find_notice(db, notice_id)
+    return {"id": row["id"], "title": row["title"], "body": row["body"], "likes": row["likes"]}
+
+
+@app.delete("/notices/{notice_id}", status_code=204)
+def delete_notice(notice_id: int, user: dict = Depends(current_user), db: sqlite3.Connection = Depends(get_db)):
+    row = find_notice(db, notice_id)
+    if row["author_id"] != user["id"] and user["role"] != "admin":  # [7] 작성자나 관리자만 지웁니다.
+        raise HTTPException(404, "공지를 찾을 수 없습니다.")
+    db.execute("DELETE FROM notices WHERE id = ?", (notice_id,))
+    db.commit()
+
+
+@app.post("/notices/{notice_id}/like")
+def like_notice(notice_id: int, db: sqlite3.Connection = Depends(get_db)):
+    # [14] 읽고 더해서 쓰는 대신, 데이터베이스가 한 문장으로 더합니다.
+    row = db.execute("UPDATE notices SET likes = likes + 1 WHERE id = ? RETURNING likes", (notice_id,)).fetchone()
+    db.commit()
+    if row is None:
+        raise HTTPException(404, "공지를 찾을 수 없습니다.")
+    time.sleep(0.05)  # 작성자에게 알림을 보내는 시간을 흉내 냅니다.
+    return {"likes": row["likes"]}
+
+
+@app.post("/admin/notices/{notice_id}/pin")
+def pin_notice(notice_id: int, admin: dict = Depends(require_admin), db: sqlite3.Connection = Depends(get_db)):
+    find_notice(db, notice_id)
+    db.execute("UPDATE notices SET pinned = 1 WHERE id = ?", (notice_id,))
+    db.commit()
+    return {"pinned": True}
+
+
+@app.post("/notices/import", status_code=201)
+async def import_notices(request: Request, admin: dict = Depends(require_admin), db: sqlite3.Connection = Depends(get_db)):
+    # [13] 공지를 한꺼번에 넣는 기능은 관리자만 씁니다.
+    try:
+        data = yaml.safe_load(await request.body())  # [24] 기본 자료형만 만드는 safe_load를 씁니다.
+        items = [NoticeIn.model_validate(item) for item in data]
+    except (yaml.YAMLError, ValidationError, TypeError):
+        raise HTTPException(400, "가져올 공지 형식이 올바르지 않습니다.")
+    for item in items:
+        db.execute("INSERT INTO notices (title, body, author_id) VALUES (?, ?, ?)", (item.title, item.body, admin["id"]))
+    db.commit()
+    return {"count": len(items)}
+
+
+# ---------- 첨부 파일 ----------
+@app.post("/files", status_code=201)
+def upload_file(file: UploadFile = File(...), user: dict = Depends(current_user)):  # [13] 로그인한 사용자만
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in ALLOWED_EXTENSIONS:  # [4] 허용한 확장자만 받습니다.
+        raise HTTPException(400, "올릴 수 없는 파일 형식입니다.")
+    data = file.file.read(MAX_FILE_SIZE + 1)
+    if len(data) &gt; MAX_FILE_SIZE:
+        raise HTTPException(413, "파일 크기는 2MB를 넘을 수 없습니다.")
+    saved = f"{uuid.uuid4().hex}{ext}"  # [2] 저장 이름은 서버가 만듭니다.
+    path = UPLOAD_DIR / saved
+    path.write_bytes(data)
+    try:
+        # [3] 셸을 거치지 않고, 명령과 인자를 목록으로 넘깁니다.
+        kind = subprocess.run(["file", "-b", str(path)], capture_output=True, text=True, timeout=5).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        logger.warning("파일 형식을 확인하지 못했습니다: %s", saved)  # [17] 실패를 기록하고 알 수 없음으로 둡니다.
+        kind = "unknown"
+    return {"filename": saved, "kind": kind}
+
+
+@app.get("/files/{name}")
+def download_file(name: str):
+    path = (UPLOAD_DIR / name).resolve()
+    if not path.is_relative_to(UPLOAD_DIR) or not path.is_file():  # [2] 업로드 폴더 밖은 열지 않습니다.
+        raise HTTPException(404, "파일을 찾을 수 없습니다.")
+    return FileResponse(path)
+
+
+@app.get("/link-preview")
+def link_preview(url: str = Query(max_length=300), user: dict = Depends(current_user)):  # [13] 로그인한 사용자만
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or parsed.hostname not in PREVIEW_HOSTS:  # [5] 허용한 사이트만 요청합니다.
+        raise HTTPException(400, "미리 볼 수 없는 주소입니다.")
+    for _ in range(3):  # [15] 다시 시도하는 횟수에 끝을 둡니다.
+        try:
+            res = requests.get(url, timeout=3, allow_redirects=False)
+            return {"status": res.status_code, "head": res.text[:200]}
+        except requests.RequestException:
+            time.sleep(0.5)
+    raise HTTPException(502, "주소에 연결하지 못했습니다.")
+
+# [23] 설정과 비밀 키를 보여 주던 /debug/config는 지웠습니다.</code></pre></div>
+</div></details>
+<details><summary>조치 전 app.py 다시 보기</summary><div class="answer"><div class="codeblock"><span class="file">app.py(진단용 원본)</span><pre><code>"""동아리 공지 게시판 API (진단용 예제)
+
+이 코드에는 보안약점이 일부러 섞여 있습니다. 실습 컴퓨터에서만 실행하고, 인터넷에 공개하지 않습니다.
+실행: uvicorn app:app --reload
+"""
+import base64
+import hashlib
+import os
+import pickle
+import random
+import sqlite3
+import subprocess
+import time
+import traceback
+
+import requests
+import yaml
+from fastapi import FastAPI, File, Header, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel
+
+SECRET_KEY = "club-board-secret-2026"
+DB_PATH = "board.db"
+UPLOAD_DIR = "uploads"
+
+app = FastAPI(title="동아리 공지 게시판")
+CURRENT_USER = {}
+
+
+def get_conn():
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def init_db():
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    conn = get_conn()
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY, username TEXT UNIQUE, password_hash TEXT, role TEXT DEFAULT 'member');
+        CREATE TABLE IF NOT EXISTS notices (
+            id INTEGER PRIMARY KEY, title TEXT, body TEXT, author_id INTEGER,
+            likes INTEGER DEFAULT 0, pinned INTEGER DEFAULT 0);
+        CREATE TABLE IF NOT EXISTS reset_codes (username TEXT, code TEXT);
+    """)
+    conn.commit()
+
+
+init_db()
+
+
+@app.exception_handler(Exception)
+def handle_error(request: Request, exc: Exception):
+    return JSONResponse(status_code=500, content={"error": str(exc), "trace": traceback.format_exc()})
+
+
+class SignupIn(BaseModel):
+    username: str
+    password: str
+
+
+class NoticeIn(BaseModel):
+    title: str
+    body: str
+
+
+def make_token(user) -&gt; str:
+    data = {"id": user["id"], "username": user["username"], "role": user["role"]}
+    return base64.b64encode(pickle.dumps(data)).decode()
+
+
+def read_token(authorization: str | None) -&gt; dict | None:
+    if not authorization:
+        return None
+    data = pickle.loads(base64.b64decode(authorization.removeprefix("Bearer ")))
+    CURRENT_USER.update(data)
+    return data
+
+
+# ---------- 회원 ----------
+@app.post("/signup", status_code=201)
+def signup(body: SignupIn):
+    password_hash = hashlib.md5(body.password.encode()).hexdigest()
+    conn = get_conn()
+    cur = conn.execute("INSERT INTO users (username, password_hash) VALUES (?, ?)", (body.username, password_hash))
+    conn.commit()
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (cur.lastrowid,)).fetchone()
+    return dict(row)
+
+
+@app.post("/login")
+def login(body: SignupIn):
+    print(f"[login] username={body.username} password={body.password}")
+    conn = get_conn()
+    password_hash = hashlib.md5(body.password.encode()).hexdigest()
+    row = conn.execute("SELECT * FROM users WHERE username = ? AND password_hash = ?",
+                       (body.username, password_hash)).fetchone()
+    if row is None:
+        return JSONResponse(status_code=401, content={"error": "아이디 또는 비밀번호가 틀렸습니다."})
+    return {"access_token": make_token(row), "token_type": "bearer"}
+
+
+@app.get("/me")
+def me(authorization: str | None = Header(None)):
+    read_token(authorization)
+    time.sleep(0.1)  # 프로필 사진을 불러오는 시간을 흉내 냅니다.
+    return {"username": CURRENT_USER.get("username"), "role": CURRENT_USER.get("role")}
+
+
+@app.post("/password-reset")
+def password_reset(username: str):
+    code = str(random.randint(100000, 999999))
+    conn = get_conn()
+    conn.execute("INSERT INTO reset_codes VALUES (?, ?)", (username, code))
+    conn.commit()
+    return {"message": "인증 번호를 이메일로 보냈습니다."}
+
+
+# ---------- 공지 ----------
+@app.get("/notices")
+def list_notices(q: str = "", sort: str = "id", limit: int = 20):
+    conn = get_conn()
+    sql = f"SELECT id, title, likes FROM notices WHERE title LIKE '%{q}%' ORDER BY {sort} LIMIT {limit}"
+    return [dict(r) for r in conn.execute(sql).fetchall()]
+
+
+@app.post("/notices", status_code=201)
+def create_notice(body: NoticeIn, authorization: str | None = Header(None)):
+    user = read_token(authorization)
+    if user is None:
+        return JSONResponse(status_code=401, content={"error": "로그인이 필요합니다."})
+    conn = get_conn()
+    cur = conn.execute("INSERT INTO notices (title, body, author_id) VALUES (?, ?, ?)",
+                       (body.title, body.body, user["id"]))
+    conn.commit()
+    return {"id": cur.lastrowid}
+
+
+@app.get("/notices/{notice_id}")
+def get_notice(notice_id: int):
+    row = get_conn().execute("SELECT * FROM notices WHERE id = ?", (notice_id,)).fetchone()
+    return {"id": row["id"], "title": row["title"], "body": row["body"], "likes": row["likes"]}
+
+
+@app.delete("/notices/{notice_id}", status_code=204)
+def delete_notice(notice_id: int, authorization: str | None = Header(None)):
+    if read_token(authorization) is None:
+        return JSONResponse(status_code=401, content={"error": "로그인이 필요합니다."})
+    conn = get_conn()
+    conn.execute("DELETE FROM notices WHERE id = ?", (notice_id,))
+    conn.commit()
+
+
+@app.post("/notices/{notice_id}/like")
+def like_notice(notice_id: int):
+    conn = get_conn()
+    likes = conn.execute("SELECT likes FROM notices WHERE id = ?", (notice_id,)).fetchone()["likes"]
+    time.sleep(0.05)  # 작성자에게 알림을 보내는 시간을 흉내 냅니다.
+    conn.execute("UPDATE notices SET likes = ? WHERE id = ?", (likes + 1, notice_id))
+    conn.commit()
+    return {"likes": likes + 1}
+
+
+@app.post("/admin/notices/{notice_id}/pin")
+def pin_notice(notice_id: int, x_role: str | None = Header(None)):
+    if x_role != "admin":
+        return JSONResponse(status_code=403, content={"error": "관리자만 고정할 수 있습니다."})
+    conn = get_conn()
+    conn.execute("UPDATE notices SET pinned = 1 WHERE id = ?", (notice_id,))
+    conn.commit()
+    return {"pinned": True}
+
+
+@app.post("/notices/import", status_code=201)
+async def import_notices(request: Request):
+    items = yaml.load(await request.body(), Loader=yaml.Loader)
+    conn = get_conn()
+    for item in items:
+        conn.execute("INSERT INTO notices (title, body, author_id) VALUES (?, ?, 0)", (item["title"], item["body"]))
+    conn.commit()
+    return {"count": len(items)}
+
+
+# ---------- 첨부 파일 ----------
+@app.post("/files", status_code=201)
+def upload_file(file: UploadFile = File(...)):
+    path = os.path.join(UPLOAD_DIR, file.filename)
+    with open(path, "wb") as f:
+        f.write(file.file.read())
+    kind = ""
+    try:
+        kind = subprocess.run(f"file -b {path}", shell=True, capture_output=True, text=True).stdout.strip()
+    except Exception:
+        pass
+    return {"filename": file.filename, "kind": kind}
+
+
+@app.get("/files/{name:path}")
+def download_file(name: str):
+    return FileResponse(os.path.join(UPLOAD_DIR, name))
+
+
+@app.get("/link-preview")
+def link_preview(url: str):
+    while True:
+        try:
+            res = requests.get(url, timeout=3)
+            return {"status": res.status_code, "head": res.text[:200]}
+        except requests.RequestException:
+            continue
+
+
+# ---------- 운영 ----------
+@app.get("/debug/config")
+def debug_config():
+    return {"secret_key": SECRET_KEY, "db_path": os.path.abspath(DB_PATH), "env": dict(os.environ)}</code></pre></div>
+</div></details>
+
+<h2>흔한 실수</h2>
+<div class="table-wrap"><table><thead><tr><th>실수</th><th>왜 문제인가요</th><th>바른 방법</th></tr></thead><tbody><tr><td>검색어에서 작은따옴표만 지우기</td><td>다른 우회 방법이 남고, 작은따옴표가 든 정상적인 검색어(예: O'Brien)도 망가집니다.</td><td>값 바인딩(<code>?</code>)</td></tr><tr><td>sort 값에서 공백이나 괄호를 막기</td><td>막을 글자를 빠짐없이 고르기 어렵습니다.</td><td>허용 목록(<code>Literal</code>)</td></tr><tr><td>파일 이름에서 <code>../</code>만 지우기</td><td><code>....//</code>처럼 지운 뒤에 다시 생기는 입력이 있습니다.</td><td>서버가 이름을 만들고, 최종 경로가 폴더 안인지 확인</td></tr><tr><td>pickle 토큰에 서명만 붙이기</td><td>서명은 위조를 막지만, 서명 키가 새면 코드 실행까지 이어집니다. 형식 자체가 위험합니다.</td><td>JWT 같은 값만 담는 형식</td></tr><tr><td>SSRF를 막으려고 내부 IP 목록을 거부</td><td>도메인 이름, 리다이렉트, IPv6, 10진수 표기로 우회됩니다.</td><td>허용할 호스트만 적는 허용 목록, 리다이렉트 끄기</td></tr><tr><td><code>except Exception</code>을 그대로 두고 로그만 추가</td><td>예상하지 못한 버그까지 삼킵니다.</td><td>예상한 예외만 잡기</td></tr><tr><td>좋아요에 <code>threading.Lock</code> 쓰기</td><td>서버 프로세스가 여러 개면(S8의 워커) 잠금이 서로 통하지 않습니다.</td><td>데이터베이스 한 문장으로 처리</td></tr><tr><td>테스트가 실패하자 테스트를 고치기</td><td>약점이 그대로 남은 채 통과합니다.</td><td>앱 코드를 고치기</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p39/s11-p39-03.html"><span class="dir">이전</span>S11-P39-03 보안 테스트 작성</a>
+  <a class="next" href="../../s11/p39/s11-p39-05.html"><span class="dir">다음</span>S11-P39-05 정리: 개발 보안 마무리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

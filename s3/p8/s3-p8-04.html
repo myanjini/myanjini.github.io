@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P8-04 의존성 활용하기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P8-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P8 의존성 주입</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p8-01.html" style="flex:5" data-type="주요 개념" title="1일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s3-p8-02.html" style="flex:10" data-type="주요 개념" title="의존성 주입의 개념 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s3-p8-03.html" style="flex:10" data-type="주요 개념" title="공통 파라미터 의존성 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p8-04.html" style="flex:20" data-type="실습" title="의존성 활용하기 (20분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s3-p8-05.html" style="flex:5" data-type="정리" title="정리: 의존성 주입 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S3-P8-04</span></div>
+<h1>의존성 활용하기</h1>
+
+<p class="lead">페이지 나누기 의존성을 직접 만들어 목록 API에 적용하고, 열고 닫아야 하는 자원을 다루는 yield 의존성을 미리 연습합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>클래스 의존성으로 목록 API에 페이지 나누기를 적용하고, yield 의존성의 실행 순서를 설명할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>dependencies.py 만들기</h3>
+<p><code>app</code> 폴더에 <code>dependencies.py</code>를 만들고 앞 페이지의 <code>Pagination</code>과 <code>PageDep</code>를 작성합니다.</p>
+</li><li><h3>목록 API에 적용</h3>
+<p><code>app/routers/books.py</code> 위쪽에 가져오기 줄을 추가하고 <code>list_books</code>를 바꿉니다.</p>
+<div class="codeblock"><span class="file">app/routers/books.py</span><pre><code>from app.dependencies import PageDep</code></pre></div>
+<div class="codeblock"><span class="file">app/routers/books.py</span><pre><code>@router.get("", response_model=list[BookRead], summary="도서 목록 조회")
+def list_books(page: PageDep, author: str | None = None):
+    """저자 이름(author)으로 거르고, skip과 limit으로 나눠 돌려줍니다."""
+    result = BOOKS
+    if author is not None:
+        result = [book for book in result if book["author"] == author]
+    return result[page.skip : page.skip + page.limit]</code></pre></div>
+</li><li><h3>페이지 나누기 확인</h3>
+<div class="table-wrap"><table><thead><tr><th>요청</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td><code>/books?skip=1&amp;limit=2</code></td><td>2번, 3번 도서</td><td><input data-save="t1" aria-label="내 결과"></td></tr><tr><td><code>/books?author=김하늘&amp;limit=1</code></td><td>1번 도서만</td><td><input data-save="t2" aria-label="내 결과"></td></tr><tr><td><code>/books?limit=0</code></td><td>422</td><td><input data-save="t3" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>yield 의존성 만들기</h3>
+<p>데이터베이스 연결처럼 "쓰기 전에 열고, 다 쓰면 반드시 닫아야 하는" 자원이 있습니다. 이런 자원은 <code>return</code> 대신 <code>yield</code>를 쓰는 의존성으로 다룹니다. <code>app/dependencies.py</code> 맨 아래에 연습용 함수를 추가합니다.</p>
+<div class="codeblock"><span class="file">app/dependencies.py</span><pre><code>def get_resource():
+    """yield 의존성 연습용 함수입니다. 열고, 넘겨주고, 닫습니다."""
+    print("자원을 엽니다.")
+    try:
+        yield "임시 자원"
+    finally:
+        print("자원을 닫습니다.")</code></pre></div>
+
+<p><code>yield</code> 앞부분이 먼저 실행되고, <code>yield</code>로 넘긴 값이 경로 함수에 들어갑니다. 경로 함수가 끝나면 <code>yield</code> 뒤의 <code>finally</code> 부분이 실행됩니다. <code>finally</code>는 중간에 오류가 나도 반드시 실행되므로, 자원을 닫는 코드는 여기에 둡니다.</p>
+</li><li><h3>실행 순서 확인</h3>
+<p><code>get_book</code>에 잠시 연결해 터미널에 찍히는 순서를 봅니다.</p>
+<div class="codeblock"><span class="file">app/routers/books.py</span><pre><code>from fastapi import APIRouter, Depends, status
+from app.dependencies import PageDep, get_resource
+
+
+@router.get("/{book_id}", ...)
+def get_book(book_id: int, resource: str = Depends(get_resource)):
+    print("경로 함수 실행:", resource)
+    return find_book(book_id)</code></pre></div>
+
+<p><code>GET /books/1</code>을 호출하면 터미널에 다음 순서로 찍힙니다.</p>
+<div class="codeblock term"><pre><code>자원을 엽니다.
+경로 함수 실행: 임시 자원
+자원을 닫습니다.</code></pre></div>
+
+<p>확인했으면 <code>get_book</code>을 원래대로 되돌립니다(<code>resource</code> 매개변수와 <code>print</code> 삭제). 이 모양은 S3-P11에서 데이터베이스 세션을 여닫는 <code>get_db</code>로 그대로 다시 씁니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>skip과 limit으로 목록이 잘린다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>limit에 0이나 101 이상을 넣으면 422가 나온다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>yield 의존성의 실행 순서를 터미널에서 확인했다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>get_book을 원래대로 되돌렸다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p8-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p8/s3-p8-03.html"><span class="dir">이전</span>S3-P8-03 공통 파라미터 의존성</a>
+  <a class="next" href="../../s3/p8/s3-p8-05.html"><span class="dir">다음</span>S3-P8-05 정리: 의존성 주입</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

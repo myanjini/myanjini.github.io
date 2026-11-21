@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P34-03 인증 보강 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P34-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 보안기능과 에러처리</a><span class="sep">/</span><span>S10-P34 보안기능 3: 인증 강화와 요청 제한</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p34-01.html" style="flex:10" data-type="주요 개념" title="반복된 인증 시도와 인증 우회 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p34-02.html" style="flex:10" data-type="주요 개념" title="로그인 시도 제한 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s10-p34-03.html" style="flex:20" data-type="실습" title="인증 보강 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p34-04.html" style="flex:5" data-type="주요 개념" title="요청 제한의 운영 방식 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p34-05.html" style="flex:5" data-type="정리" title="정리: 인증 강화 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S10-P34-03</span></div>
+<h1>인증 보강</h1>
+
+<p class="lead">로그인 실패 제한과 비밀번호 규칙을 적용하고, 토큰 검증까지 공격 값으로 시험해 회귀 테스트로 남깁니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>로그인 실패 제한, 비밀번호 규칙, 토큰 검증을 적용하고 테스트로 확인할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>실패 기록 테이블</h3>
+<p>앞 페이지의 <code>LoginFailure</code>를 <code>app/models.py</code> 맨 아래에 추가하고 리비전을 만듭니다. 출력에 테이블과 함께 인덱스 3개가 보입니다. 인덱스는 이메일, IP, 시각으로 실패를 빨리 세려고 만든 것입니다.</p>
+<div class="codeblock term"><pre><code>alembic revision --autogenerate -m "create login_failures"
+...
+INFO  [alembic.autogenerate.compare.tables] Detected added table 'login_failures'
+INFO  [alembic.autogenerate.compare.indexes] Detected added index 'ix_login_failures_created_at' on '('created_at',)'
+INFO  [alembic.autogenerate.compare.indexes] Detected added index 'ix_login_failures_email' on '('email',)'
+INFO  [alembic.autogenerate.compare.indexes] Detected added index 'ix_login_failures_ip' on '('ip',)'
+alembic upgrade head</code></pre></div>
+</li><li><h3>저장소, 서비스, 로그인 API</h3>
+<div class="codeblock"><span class="file">app/repositories/login_failures.py</span><pre><code>"""로그인 실패 기록 저장소"""
+from datetime import datetime
+
+from sqlalchemy import delete, func, select
+from sqlalchemy.orm import Session
+
+from app.models import LoginFailure
+
+
+def count_since(db: Session, since: datetime, *, email: str | None = None, ip: str | None = None) -&gt; int:
+    stmt = select(func.count()).select_from(LoginFailure).where(LoginFailure.created_at &gt; since)
+    if email is not None:
+        stmt = stmt.where(LoginFailure.email == email)
+    if ip is not None:
+        stmt = stmt.where(LoginFailure.ip == ip)
+    return db.scalar(stmt)
+
+
+def add(db: Session, email: str, ip: str, at: datetime) -&gt; None:
+    db.add(LoginFailure(email=email, ip=ip, created_at=at))
+
+
+def clear(db: Session, email: str) -&gt; None:
+    db.execute(delete(LoginFailure).where(LoginFailure.email == email))</code></pre></div>
+
+<p><code>app/services/login_guard.py</code>를 만들고, 로그인 API를 앞 페이지의 코드로 바꿉니다. <code>app/routers/auth.py</code>의 가져오기에 <code>Request</code>와 <code>from app.services import login_guard</code>를 추가합니다.</p>
+</li><li><h3>잠금 확인</h3>
+<div class="table-wrap"><table><thead><tr><th>요청</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>user1, 틀린 비밀번호 5번</td><td>모두 401</td><td><input data-save="l1" aria-label="내 결과"></td></tr><tr><td>user1, 맞는 비밀번호</td><td>429, <code>TOO_MANY_ATTEMPTS</code>, 응답 헤더 <code>retry-after: 900</code></td><td><input data-save="l2" aria-label="내 결과"></td></tr><tr><td>가입하지 않은 <code>nobody@example.com</code>로 6번</td><td>5번은 401, 6번째는 429</td><td><input data-save="l3" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>15분을 기다리는 대신 실패 기록을 지워 풀어 줍니다. 실습이 끝나면 꼭 실행해 둡니다.</p>
+<div class="codeblock term"><pre><code>python -c "import sqlite3; c = sqlite3.connect('books.db'); c.execute('delete from login_failures'); c.commit()"</code></pre></div>
+</li><li><h3>비밀번호 규칙</h3>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code># 실제 서비스에서는 유출된 비밀번호 목록 수십만 개를 씁니다. 여기서는 예시로 몇 개만 둡니다.
+COMMON_PASSWORDS = {
+    "password1234", "1234567890", "qwerty1234", "qwertyuiop", "iloveyou12",
+    "admin12345", "abcd123456", "1q2w3e4r5t", "password12", "welcome123",
+}</code></pre></div>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code>class UserCreate(InputModel):
+    """회원가입에 쓰는 입력 모델"""
+    email: EmailStr = Field(examples=["user1@example.com"])
+    password: str = Field(min_length=10, max_length=64, examples=["practice-pass-1"])
+
+    @model_validator(mode="after")
+    def check_password_rules(self):
+        password = self.password.lower()
+        email_id = self.email.split("@")[0].lower()
+        if password in COMMON_PASSWORDS:
+            raise ValueError("너무 흔한 비밀번호입니다.")
+        if len(email_id) &gt;= 3 and email_id in password:
+            raise ValueError("비밀번호에 이메일 아이디를 넣을 수 없습니다.")
+        if len(set(password)) &lt; 4:
+            raise ValueError("같은 글자를 반복한 비밀번호는 쓸 수 없습니다.")
+        return self</code></pre></div>
+
+<p>가져오기에 <code>model_validator</code>를 추가합니다. 비밀번호와 이메일을 함께 봐야 하므로 필드 하나가 아니라 모델 전체를 검사하는 <code>model_validator(mode="after")</code>를 씁니다. 규칙에 어긋나면 <code>ValueError</code>를 내고, FastAPI가 422로 바꿔 줍니다.</p>
+<div class="table-wrap"><table><thead><tr><th>비밀번호(이메일 mybook@example.com)</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td><code>short-pw1</code></td><td>422, at least 10 characters</td><td><input data-save="l4" aria-label="내 결과"></td></tr><tr><td><code>password1234</code></td><td>422, 너무 흔한 비밀번호입니다.</td><td><input data-save="l5" aria-label="내 결과"></td></tr><tr><td><code>aaaaaaaaaaaa</code></td><td>422, 같은 글자를 반복한 비밀번호는 쓸 수 없습니다.</td><td><input data-save="l6" aria-label="내 결과"></td></tr><tr><td><code>mybook-is-good</code></td><td>422, 비밀번호에 이메일 아이디를 넣을 수 없습니다.</td><td><input data-save="l7" aria-label="내 결과"></td></tr><tr><td><code>correct-horse-battery</code></td><td>201</td><td><input data-save="l8" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>이미 가입한 사용자의 비밀번호는 바뀌지 않습니다. 실제 서비스에서는 다음 로그인 때 새 규칙에 맞게 바꾸도록 안내합니다.</p>
+</li><li><h3>회귀 테스트 추가</h3>
+<p>토큰을 직접 만들려면 테스트 키가 필요합니다. <code>tests/conftest.py</code>의 키 설정을 상수로 바꿉니다.</p>
+<div class="codeblock"><span class="file">tests/conftest.py</span><pre><code>TEST_KEY = "test-secret-key-only-for-pytest-0123456789"
+os.environ["SECRET_KEY"] = TEST_KEY</code></pre></div>
+
+<p><code>tests/test_attacks.py</code> 위쪽에 <code>from datetime import datetime, timedelta, timezone</code>, <code>import jwt</code>, <code>from tests.conftest import TEST_KEY</code>를 추가하고 덧붙입니다. 마지막 테스트는 만료된 토큰, 만료 시각 없는 토큰, 다른 키로 서명한 토큰, 서명 없는 토큰을 모두 401로 막는지 확인합니다.</p>
+<div class="codeblock"><span class="file">tests/test_attacks.py</span><pre><code>def login(client, email, password):
+    return client.post("/auth/token", data={"username": email, "password": password})
+
+
+def test_login_is_locked_after_five_failures(client, make_user):
+    make_user("user1@example.com")
+    for _ in range(5):
+        assert login(client, "user1@example.com", "wrong-pass-0").status_code == 401
+    response = login(client, "user1@example.com", "test-pass-123")  # 맞는 비밀번호여도 잠깁니다.
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] == "900"
+
+
+def test_successful_login_resets_failures(client, make_user):
+    make_user("user1@example.com")
+    for _ in range(4):
+        login(client, "user1@example.com", "wrong-pass-0")
+    assert login(client, "user1@example.com", "test-pass-123").status_code == 200
+    for _ in range(4):
+        login(client, "user1@example.com", "wrong-pass-0")
+    assert login(client, "user1@example.com", "test-pass-123").status_code == 200
+
+
+@pytest.mark.parametrize("password", ["short-pw1", "password1234", "aaaaaaaaaaaa", "mybook-mybook-1"])
+def test_weak_password_is_rejected(client, password):
+    response = client.post("/auth/signup", json={"email": "mybook@example.com", "password": password})
+    assert response.status_code == 422
+
+
+def make_token(payload: dict, key: str = TEST_KEY, algorithm: str = "HS256") -&gt; str:
+    return jwt.encode(payload, key, algorithm=algorithm)
+
+
+@pytest.mark.parametrize("token", [
+    make_token({"sub": "1", "exp": datetime.now(timezone.utc) - timedelta(minutes=1)}),    # 만료
+    make_token({"sub": "1"}),                                                               # exp 없음
+    make_token({"sub": "1", "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}, "other-key-" * 4),  # 다른 키
+    make_token({"sub": "1", "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}, None, "none"),     # 서명 없음
+])
+def test_invalid_tokens_are_rejected(client, make_user, token):
+    make_user("user1@example.com")
+    response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 401</code></pre></div>
+<div class="codeblock term"><pre><code>pytest</code></pre></div>
+</li></ol>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>같은 계정 5번 실패 뒤에는 맞는 비밀번호도 429로 막힌다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>가입하지 않은 이메일도 똑같이 막혀 가입 여부가 드러나지 않는다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>흔한 비밀번호, 이메일 아이디가 든 비밀번호, 반복 글자 비밀번호가 거절된다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>공격용 토큰 4종이 모두 401로 막히는 테스트가 통과한다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p34-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p34/s10-p34-02.html"><span class="dir">이전</span>S10-P34-02 로그인 시도 제한</a>
+  <a class="next" href="../../s10/p34/s10-p34-04.html"><span class="dir">다음</span>S10-P34-04 요청 제한의 운영 방식</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

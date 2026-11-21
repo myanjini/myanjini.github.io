@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P51-05 정리: 모니터링 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P51-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P51 CloudWatch 로그와 모니터링</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p51-01.html" style="flex:10" data-type="주요 개념" title="CloudWatch 개요 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p51-02.html" style="flex:10" data-type="주요 개념" title="컨테이너 로그 전송 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p51-03.html" style="flex:20" data-type="실습" title="로그 조회와 경보 설정 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s15-p51-04.html" style="flex:5" data-type="주요 개념" title="로그 보안 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s15-p51-05.html" style="flex:5" data-type="정리" title="정리: 모니터링 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S15-P51-05</span></div>
+<h1>정리: 모니터링</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>핵심</th></tr></thead><tbody><tr><td>로그 수집</td><td>Docker의 awslogs 드라이버로 컨테이너 출력을 CloudWatch Logs로 보냅니다. 앱 코드는 그대로입니다.</td></tr><tr><td>로그 그룹</td><td>미리 만들고 보존 기간(30일)을 정합니다. 역할에는 스트림 만들기와 로그 넣기만 줍니다.</td></tr><tr><td>추적</td><td>응답 헤더의 요청 ID로 Logs Insights에서 한 요청의 로그를 찾습니다.</td></tr><tr><td>경보</td><td>CPU와 상태 검사 경보를 SNS 메일로 받습니다. <code>set-alarm-state</code>로 알림을 시험합니다.</td></tr><tr><td>로그 보안</td><td>토큰, 해시, 이메일, 서명된 URL이 남지 않았는지 검색으로 확인합니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">로그 그룹을 Docker가 자동으로 만들게 하지 않고 미리 만든 이유는 무엇인가요?</p><label><input type="radio" name="p51q1" value="1"> <span>1. 로그가 더 빨리 들어와서</span></label><label><input type="radio" name="p51q1" value="2"> <span>2. 요금이 붙지 않아서</span></label><label><input type="radio" name="p51q1" value="3"> <span>3. Docker가 로그 그룹을 만들 수 없어서</span></label><label><input type="radio" name="p51q1" value="4"> <span>4. 보존 기간을 정하고, 역할에 그룹 만들기 권한을 주지 않으려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>자동으로 만든 그룹은 보존 기간이 "영구"입니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">사용자가 "500 오류가 났고 요청 ID가 9a1c...였다"고 알려 왔습니다. 가장 먼저 할 일은 무엇인가요?</p><label><input type="radio" name="p51q2" value="1"> <span>1. 서버를 재시작한다</span></label><label><input type="radio" name="p51q2" value="2"> <span>2. Logs Insights에서 그 request_id로 로그를 찾는다</span></label><label><input type="radio" name="p51q2" value="3"> <span>3. RDS를 복원한다</span></label><label><input type="radio" name="p51q2" value="4"> <span>4. 이미지를 되돌린다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>요청 ID로 그 요청에서 무슨 일이 있었는지부터 확인합니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">SNS 이메일 구독을 만들었는데 경보 메일이 오지 않습니다. 가장 흔한 원인은 무엇인가요?</p><label><input type="radio" name="p51q3" value="1"> <span>1. 리전이 달라서</span></label><label><input type="radio" name="p51q3" value="2"> <span>2. CPU가 낮아서</span></label><label><input type="radio" name="p51q3" value="3"> <span>3. 경보가 너무 많아서</span></label><label><input type="radio" name="p51q3" value="4"> <span>4. 구독 확인 메일의 Confirm subscription을 누르지 않아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>구독을 확인해야 메시지가 전달됩니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>지금 사용자는 서버의 IP와 8000번 포트로 직접 접속합니다. 다음 파트에서는 ALB를 앞에 두어 접속 주소를 고정하고, 서버는 ALB에서 오는 요청만 받게 바꿉니다. 그리고 강사 시연으로 HTTPS를 적용하는 과정을 봅니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p51/s15-p51-04.html"><span class="dir">이전</span>S15-P51-04 로그 보안</a>
+  <a class="next" href="../../s15/p52/s15-p52-01.html"><span class="dir">다음</span>S15-P52-01 ALB와 대상 그룹</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

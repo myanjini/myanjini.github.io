@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P47-03 비밀정보 이전 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P47-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 안전한 배포 구성</a><span class="sep">/</span><span>S14-P47 클라우드 비밀정보 관리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p47-01.html" style="flex:10" data-type="주요 개념" title="클라우드에서 비밀정보 다루기 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s14-p47-02.html" style="flex:10" data-type="주요 개념" title="Parameter Store 사용 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s14-p47-03.html" style="flex:20" data-type="실습" title="비밀정보 이전 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s14-p47-04.html" style="flex:5" data-type="주요 개념" title="비밀정보 교체 절차 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s14-p47-05.html" style="flex:5" data-type="정리" title="정리: 비밀정보 관리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S14-P47-03</span></div>
+<h1>비밀정보 이전</h1>
+
+<p class="lead">도서 API가 Parameter Store에서 비밀 값을 읽게 코드를 바꾸고, 비밀 키와 DB 접속 정보를 Parameter Store로 옮긴 뒤, EC2에서 비밀 값 파일 없이 컨테이너를 실행합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>비밀 값을 Parameter Store의 SecureString으로 옮기고, 서버 디스크에 비밀 값 파일 없이 API를 실행할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>내 PC: 코드 바꾸기</h3>
+<p>boto3를 설치하고 패키지 목록을 다시 저장합니다.</p>
+<div class="codeblock term"><pre><code>pip install boto3
+pip freeze &gt; requirements.txt</code></pre></div>
+
+<p><code>app/config.py</code> 맨 위에 <code>import os</code>를 추가하고, 앞 페이지의 <code>load_ssm_parameters</code> 함수를 <code>settings = Settings()</code> 바로 위에 넣습니다. <code>tests/test_ssm.py</code>도 만듭니다.</p>
+<div class="codeblock term"><pre><code>pytest -q
+...
+64 passed
+bandit -r app -ll -q
+pip-audit -r requirements.txt
+No known vulnerabilities found
+
+git add .
+git commit -m "Parameter Store에서 비밀 값 읽기"
+git push</code></pre></div>
+</li><li><h3>Parameter Store에 등록</h3>
+<p>새 비밀 키를 만듭니다. 오전에 서버에서 만든 값은 파일에 평문으로 있었으므로, 옮기는 김에 새 값으로 바꿉니다.</p>
+<div class="codeblock term"><pre><code>python -c "import secrets; print(secrets.token_urlsafe(32))"</code></pre></div>
+
+<p>콘솔에서 앞 페이지의 표대로 두 파라미터를 만듭니다. <code>/book-api/DATABASE_URL</code>의 값은 오전에 <code>~/book-api.env</code>에 적은 RDS 주소(<code>postgresql+psycopg://bookapi:...@...:5432/bookapi?sslmode=require</code>) 그대로입니다. 그다음 CLI로 등록 결과를 확인합니다. <code>--with-decryption</code>을 붙이지 않았으므로 값은 암호화된 채로 보입니다.</p>
+<div class="codeblock term"><pre><code>aws ssm get-parameters --names /book-api/SECRET_KEY /book-api/DATABASE_URL --query "Parameters[].[Name,Type,Version]" --output table
+------------------------------------------------
+|                 GetParameters                |
++--------------------------+---------------+---+
+|  /book-api/DATABASE_URL  |  SecureString |  1|
+|  /book-api/SECRET_KEY    |  SecureString |  1|
++--------------------------+---------------+---+</code></pre></div>
+</li><li><h3>EC2: 역할로 읽히는지 확인</h3>
+<p>Session Manager로 접속해 확인합니다. 값이 화면에 찍히지 않도록 이름과 글자 수만 봅니다.</p>
+<div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>aws ssm get-parameters --names /book-api/SECRET_KEY /book-api/DATABASE_URL --with-decryption --query "Parameters[].[Name,length(Value)]" --output text
+/book-api/DATABASE_URL	128
+/book-api/SECRET_KEY	43
+
+aws ssm get-parameter --name /other-app/DB_PASSWORD
+An error occurred (AccessDeniedException) when calling the GetParameter operation: User: arn:aws:sts::123456789012:assumed-role/book-api-ec2-role/i-0123... is not authorized to perform: ssm:GetParameter on resource: arn:aws:ssm:ap-northeast-2:123456789012:parameter/other-app/DB_PASSWORD ...
+
+TOKEN=$(curl -s -X PUT http://169.254.169.254/latest/api/token -H "X-aws-ec2-metadata-token-ttl-seconds: 60")
+curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id; echo
+i-0123456789abcdef0
+aws ec2 describe-instances --instance-ids i-0123456789abcdef0 --query "Reservations[].Instances[].MetadataOptions.[HttpTokens,HttpPutResponseHopLimit]" --output text
+An error occurred (UnauthorizedOperation) ...</code></pre></div>
+
+<p>역할은 <code>/book-api/</code> 아래만 읽을 수 있고, 다른 경로는 거부됩니다. 마지막 명령은 서버의 역할에 EC2 조회 권한이 없어 거부되는 것이 정상입니다. 홉 제한은 <strong>내 PC</strong>에서 확인합니다.</p>
+<div class="codeblock term"><pre><code>aws ec2 describe-instances --filters Name=tag:Name,Values=book-api-server --query "Reservations[].Instances[].MetadataOptions.[HttpTokens,HttpPutResponseHopLimit]" --output text
+required	2</code></pre></div>
+<p>값이 1이면 내 PC에서 <code>aws ec2 modify-instance-metadata-options --instance-id 인스턴스ID --http-put-response-hop-limit 2 --http-tokens required</code>로 바꿉니다.</p></li><li><h3>EC2: 새 코드로 이미지 만들고 실행</h3>
+<p>이번에도 서버에서 빌드합니다. 다음 파트에서 ECR로 바꿉니다.</p>
+<div class="codeblock term"><pre><code>cd ~/book-api
+git pull
+docker build -t book-api .
+docker rm -f book-api
+docker run -d --name book-api -p 8000:8000 \
+  -e SSM_PREFIX=/book-api/ -e AWS_DEFAULT_REGION=ap-northeast-2 -e APP_ENV=development \
+  -v book-uploads:/app/uploads --restart unless-stopped book-api
+curl -s localhost:8000/health
+{"status":"ok","database":"ok"}</code></pre></div>
+
+<p>환경 변수로 넣은 것은 비밀이 아닌 세 가지뿐입니다. 컨테이너가 시작하면서 Parameter Store에서 비밀 키와 DB 주소를 읽어 RDS에 연결했습니다. 비밀 키를 바꿨으므로 오전에 받은 토큰은 더 이상 쓸 수 없습니다. 다시 로그인합니다.</p>
+</li><li><h3>비밀 값 파일 지우고 확인</h3><div class="codeblock term"><pre><code>rm ~/book-api.env
+docker inspect book-api --format "{{json .Config.Env}}"
+["SSM_PREFIX=/book-api/","AWS_DEFAULT_REGION=ap-northeast-2","APP_ENV=development","PATH=...","LANG=C.UTF-8",...]
+grep -rl "postgresql+psycopg" ~ 2&gt;/dev/null
+(아무것도 나오지 않음)</code></pre></div>
+<p>컨테이너 설정에도, 서버 디스크에도 비밀 값이 없습니다. 값은 컨테이너 프로세스의 메모리에만 있습니다.</p></li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>두 파라미터의 유형과 버전</td><td><input data-save="ps1" aria-label="내 결과"></td></tr><tr><td>다른 경로 읽기 결과</td><td><input data-save="ps2" aria-label="내 결과"></td></tr><tr><td>HttpPutResponseHopLimit</td><td><input data-save="ps3" aria-label="내 결과"></td></tr><tr><td>docker inspect의 환경 변수에 비밀 값이 있나</td><td><input data-save="ps4" aria-label="내 결과"></td></tr></tbody></table></div>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p47c1"> <span>test_ssm.py를 포함한 전체 테스트가 통과하고 코드를 푸시했다.</span></label></li><li><label><input type="checkbox" data-save="p47c2"> <span>SECRET_KEY와 DATABASE_URL이 SecureString으로 등록되어 있다.</span></label></li><li><label><input type="checkbox" data-save="p47c3"> <span>EC2 역할은 /book-api/ 아래만 읽고, 다른 경로는 거부된다.</span></label></li><li><label><input type="checkbox" data-save="p47c4"> <span>~/book-api.env를 지웠고, 컨테이너는 Parameter Store의 값으로 동작한다.</span></label></li></ul>
+<details><summary>컨테이너가 바로 멈출 때</summary><div class="answer"><div class="table-wrap"><table><thead><tr><th>로그(<code>docker logs book-api</code>)</th><th>원인</th></tr></thead><tbody><tr><td><code>NoCredentialsError: Unable to locate credentials</code></td><td>컨테이너가 역할의 자격 증명을 받지 못했습니다. 홉 제한이 1이거나 인스턴스에 역할이 없습니다.</td></tr><tr><td><code>AccessDeniedException ... ssm:GetParameters</code></td><td>역할의 인라인 정책에서 Resource의 계정 ID나 경로가 틀렸습니다.</td></tr><tr><td><code>Parameter Store에 없는 파라미터: [...]</code></td><td>이름의 철자나 대소문자, 앞의 <code>/</code>를 확인합니다. 리전이 서울인지도 봅니다.</td></tr><tr><td><code>SECRET_KEY는 secrets 모듈로 만든 32자 이상의 값이어야 합니다.</code></td><td>등록한 비밀 키가 짧습니다. 값을 새로 만들어 덮어씁니다.</td></tr><tr><td><code>NoRegionError</code></td><td><code>AWS_DEFAULT_REGION</code> 환경 변수를 빠뜨렸습니다.</td></tr></tbody></table></div>
+</div></details>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p47/s14-p47-02.html"><span class="dir">이전</span>S14-P47-02 Parameter Store 사용</a>
+  <a class="next" href="../../s14/p47/s14-p47-04.html"><span class="dir">다음</span>S14-P47-04 비밀정보 교체 절차</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

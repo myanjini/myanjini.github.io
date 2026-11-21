@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P56-03 미니 프로젝트 안내 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P56-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. 운영 보안 점검과 장애 대응</a><span class="sep">/</span><span>S16-P56 비용 정리와 미니 프로젝트 준비</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p56-01.html" style="flex:10" data-type="주요 개념" title="비용 확인과 자원 정리 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p56-02.html" style="flex:10" data-type="실습" title="불필요한 자원 정리 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s16-p56-03.html" style="flex:10" data-type="주요 개념" title="미니 프로젝트 안내 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s16-p56-04.html" style="flex:15" data-type="실습" title="주제와 보안 요구사항 정하기 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s16-p56-05.html" style="flex:5" data-type="정리" title="정리: 8일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S16-P56-03</span></div>
+<h1>미니 프로젝트 안내</h1>
+
+<p class="lead">9일차에는 직접 고른 주제로 작은 API를 설계하고, 구현하고, 보안 점검을 거쳐 AWS에 배포한 뒤 발표합니다. 지금까지 배운 것을 처음부터 끝까지 혼자 다시 해 보는 시간입니다.</p>
+
+<h2>필수 요구사항(최소 요건)</h2>
+<div class="table-wrap"><table><thead><tr><th>번호</th><th>요구사항</th><th>다시 볼 곳</th></tr></thead><tbody><tr><td>1</td><td>주 자원 1~2개의 CRUD API와 입력 검증</td><td>S3, S4</td></tr><tr><td>2</td><td>회원가입, 로그인, 로그인해야 쓰는 API, 남의 자원 보호(소유자 검사)</td><td>S5, S9-P32</td></tr><tr><td>3</td><td>테스트 3개 이상(정상 흐름, 인증 실패, 권한 위반 포함 권장)</td><td>S7, S11</td></tr><tr><td>4</td><td>bandit과 pip-audit 실행 결과 첨부, <a href="../../appendix/appendix-f.html">부록 F</a> 진단표로 자기 진단</td><td>S11-P37, S11-P38</td></tr><tr><td>5</td><td>AWS 배포 후 접속 확인(8일차 배포 구성 재사용)</td><td>S13~S15</td></tr><tr><td>6</td><td>README: 실행 방법, API 목록, 보안 조치 요약</td><td>S18-P61</td></tr></tbody></table></div>
+
+<h2>평가 기준</h2>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>비중</th><th>기준</th></tr></thead><tbody><tr><td>명세와 보안 요구사항</td><td>10%</td><td>API 명세(<a href="../../appendix/appendix-b.html">부록 B</a>)에 권한과 입력 검증 규칙이 있는가</td></tr><tr><td>CRUD와 입력 검증</td><td>10%</td><td>명세대로 동작하고 잘못된 입력을 422로 막는가</td></tr><tr><td>인증과 권한</td><td>10%</td><td>로그인과 소유자 검사가 동작하는가</td></tr><tr><td>테스트와 보안 점검</td><td>10%</td><td>테스트가 통과하고, 점검 결과를 판정하고 조치했는가</td></tr><tr><td>AWS 배포와 README</td><td>10%</td><td>배포 주소로 접속되고, README로 다른 사람이 실행할 수 있는가</td></tr><tr><td>발표</td><td>20%</td><td>설계 의도와 보안 조치 설명, 배포된 API 시연, 예상 질문 답변</td></tr></tbody></table></div>
+
+<h2>9일차 일정</h2>
+<div class="table-wrap"><table><thead><tr><th>시간</th><th>파트</th><th>할 일</th></tr></thead><tbody><tr><td>1교시</td><td>S17-P57</td><td>주제 확정, 자원과 API 명세, 보안 요구사항</td></tr><tr><td>2교시</td><td>S17-P58</td><td>모델, 스키마, 마이그레이션, CRUD</td></tr><tr><td>3교시</td><td>S17-P59</td><td>인증과 권한</td></tr><tr><td>4교시</td><td>S17-P60</td><td>핵심 기능과 테스트</td></tr><tr><td>5교시</td><td>S18-P61</td><td>보안 점검, AWS 배포, README</td></tr><tr><td>6교시</td><td>S18-P62</td><td>발표</td></tr><tr><td>7교시</td><td>S18-P63</td><td>회고와 AWS 자원 정리</td></tr></tbody></table></div>
+
+<h2>범위는 작게</h2>
+<p>하루 일정이므로 기능은 주 자원 1~2개로 제한합니다. 기능을 많이 만드는 것보다, 작은 기능을 "인증, 권한, 검증, 테스트, 점검, 배포"까지 끝까지 마무리하는 것이 평가에서 훨씬 중요합니다. 시작은 도서 API의 구조(설정, 인증, 오류 처리, 로그, Dockerfile, 워크플로)를 재사용한 시작 템플릿으로 합니다(S17-P58-01).</p>
+<div class="callout note"><p class="callout-title">배포는 지금 구성을 다시 씁니다</p><p>프로젝트는 지금의 EC2, RDS, ALB, 배포 워크플로를 그대로 써서 배포합니다. RDS에는 프로젝트용 데이터베이스를 새로 만들고, Parameter Store에는 프로젝트용 경로의 비밀 값을 두며, 서버의 도서 API 컨테이너를 프로젝트 컨테이너로 바꿉니다. 자세한 순서는 S18-P61에서 안내합니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s16/p56/s16-p56-02.html"><span class="dir">이전</span>S16-P56-02 불필요한 자원 정리</a>
+  <a class="next" href="../../s16/p56/s16-p56-04.html"><span class="dir">다음</span>S16-P56-04 주제와 보안 요구사항 정하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

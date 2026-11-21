@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P14-05 정리: 2일차 마무리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P14-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 데이터베이스 활용과 마이그레이션</a><span class="sep">/</span><span>S4-P14 Alembic 마이그레이션</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p14-01.html" style="flex:10" data-type="주요 개념" title="왜 마이그레이션인가 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s4-p14-02.html" style="flex:10" data-type="주요 개념" title="Alembic 설정 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s4-p14-03.html" style="flex:20" data-type="실습" title="리비전 생성과 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s4-p14-04.html" style="flex:5" data-type="주요 개념" title="마이그레이션 운영 수칙 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s4-p14-05.html" style="flex:5" data-type="정리" title="정리: 2일차 마무리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S4-P14-05</span></div>
+<h1>정리: 2일차 마무리</h1>
+
+<h2>2일차 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>배운 것</th><th>코드에서 어디에 있나요</th></tr></thead><tbody><tr><td>의존성 주입</td><td><code>app/dependencies.py</code>의 <code>PageDep</code>, <code>SessionDep</code></td></tr><tr><td>설정 분리와 비밀 키 관리</td><td><code>app/config.py</code>, <code>.env</code>, <code>.env.example</code>, <code>.gitignore</code></td></tr><tr><td>미들웨어와 CORS</td><td><code>app/main.py</code>의 <code>CORSMiddleware</code>, 처리 시간 기록</td></tr><tr><td>SQLAlchemy 모델과 세션</td><td><code>app/database.py</code>, <code>app/models.py</code></td></tr><tr><td>데이터베이스 CRUD와 목록 고도화</td><td><code>app/routers/books.py</code></td></tr><tr><td>1:N 관계와 N+1 해결</td><td><code>Author.books</code>, <code>Book.author</code>, <code>selectinload</code></td></tr><tr><td>마이그레이션</td><td><code>migrations/</code>, <code>alembic upgrade head</code></td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">모델에 열을 추가한 뒤 실제 데이터베이스에 반영하는 순서로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p14q1" value="1"> <span>1. <code>books.db</code>를 지운다.</span></label><label><input type="radio" name="p14q1" value="2"> <span>2. <code>alembic downgrade -1</code>을 실행한다.</span></label><label><input type="radio" name="p14q1" value="3"> <span>3. 서버를 다시 시작한다.</span></label><label><input type="radio" name="p14q1" value="4"> <span>4. <code>alembic revision --autogenerate</code>로 리비전을 만들고, 열어 본 뒤, <code>alembic upgrade head</code>를 실행한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>리비전을 만들고 검토한 뒤 적용합니다. 데이터베이스를 지울 필요가 없습니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q"><code>alembic downgrade -1</code>로 열 추가를 되돌렸다가 다시 <code>upgrade head</code>했습니다. 그 열에 넣었던 값은 어떻게 되나요?</p><label><input type="radio" name="p14q2" value="1"> <span>1. 그대로 남아 있다.</span></label><label><input type="radio" name="p14q2" value="2"> <span>2. 사라져서 null이 된다.</span></label><label><input type="radio" name="p14q2" value="3"> <span>3. 오류가 난다.</span></label><label><input type="radio" name="p14q2" value="4"> <span>4. 다른 열로 옮겨진다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>열을 지우는 순간 그 열의 데이터도 지워지므로, 다시 만들어도 값은 돌아오지 않습니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">자동 생성된 리비전을 반드시 열어 확인해야 하는 이유로 가장 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p14q3" value="1"> <span>1. Alembic이 SQL을 실행하지 못해서</span></label><label><input type="radio" name="p14q3" value="2"> <span>2. 리비전 번호가 겹쳐서</span></label><label><input type="radio" name="p14q3" value="3"> <span>3. 파일 이름이 틀릴 수 있어서</span></label><label><input type="radio" name="p14q3" value="4"> <span>4. 열 이름 변경을 삭제와 추가로 만들어 데이터가 사라질 수 있어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>자동 생성은 의도를 모두 알지 못합니다. 데이터를 잃을 수 있는 변경이 없는지 사람이 확인합니다.</p></div>
+
+<h2>3일차 예고</h2>
+<p>지금은 누구나 도서를 등록하고 지울 수 있습니다. 3일차에는 회원가입과 로그인을 만들고, 로그인한 사람만, 그리고 자기 도서만 고칠 수 있도록 인증과 인가를 적용합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s4/p14/s4-p14-04.html"><span class="dir">이전</span>S4-P14-04 마이그레이션 운영 수칙</a>
+  <a class="next" href="../../s5/p15/s5-p15-01.html"><span class="dir">다음</span>S5-P15-01 2일차 복습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P15-05 정리: 회원가입 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P15-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P15 인증 기초와 회원가입</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p15-01.html" style="flex:5" data-type="주요 개념" title="2일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s5-p15-02.html" style="flex:10" data-type="주요 개념" title="인증, 인가와 비밀번호 해시 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p15-03.html" style="flex:10" data-type="주요 개념" title="User 모델과 회원가입 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p15-04.html" style="flex:20" data-type="실습" title="회원가입 API (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s5-p15-05.html" style="flex:5" data-type="정리" title="정리: 회원가입 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S5-P15-05</span></div>
+<h1>정리: 회원가입</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>인증은 "누구인가", 인가는 "해도 되는가"를 확인합니다. 인증이 먼저입니다.</li>
+  <li>인증 실패는 401, 인증은 되었지만 권한이 없으면 403입니다.</li>
+  <li>비밀번호는 평문이나 암호화가 아니라, Argon2 같은 비밀번호 전용 해시로 저장합니다.</li>
+  <li>솔트 덕분에 같은 비밀번호도 매번 다른 해시가 되고, 검증은 <code>verify_password</code>로 합니다.</li>
+  <li>응답 모델(<code>UserRead</code>)에는 비밀번호 해시를 넣지 않습니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">로그인한 일반 사용자가 관리자 전용 API를 호출했습니다. 알맞은 상태 코드는 무엇인가요?</p><label><input type="radio" name="p15q1" value="1"> <span>1. 403</span></label><label><input type="radio" name="p15q1" value="2"> <span>2. 404</span></label><label><input type="radio" name="p15q1" value="3"> <span>3. 400</span></label><label><input type="radio" name="p15q1" value="4"> <span>4. 401</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>누구인지는 확인되었지만 그 일을 할 권한이 없으므로 403입니다. 다시 로그인해도 결과는 같습니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">비밀번호 저장에 SHA-256 대신 Argon2를 쓰는 가장 큰 이유는 무엇인가요?</p><label><input type="radio" name="p15q2" value="1"> <span>1. 결과가 더 짧아서</span></label><label><input type="radio" name="p15q2" value="2"> <span>2. 되돌릴 수 있어서</span></label><label><input type="radio" name="p15q2" value="3"> <span>3. 일부러 느리게 계산해서 대입 공격에 드는 시간이 크게 늘어나서</span></label><label><input type="radio" name="p15q2" value="4"> <span>4. 데이터베이스가 SHA-256을 지원하지 않아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>일반 해시는 빨라서 흔한 비밀번호를 매우 빠르게 대입해 볼 수 있습니다. 비밀번호 전용 해시는 이를 어렵게 만듭니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">user1과 user2가 우연히 같은 비밀번호를 썼습니다. 데이터베이스의 hashed_password는 어떻게 되나요?</p><label><input type="radio" name="p15q3" value="1"> <span>1. 솔트가 달라서 서로 다르다.</span></label><label><input type="radio" name="p15q3" value="2"> <span>2. 두 번째 가입이 409로 막힌다.</span></label><label><input type="radio" name="p15q3" value="3"> <span>3. 앞부분 절반만 같다.</span></label><label><input type="radio" name="p15q3" value="4"> <span>4. 완전히 같다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>해시할 때마다 새 솔트를 섞기 때문에 같은 비밀번호라도 저장 값이 다릅니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>가입한 사용자가 이메일과 비밀번호로 로그인하면, 이후 요청에서 "나는 user1입니다"를 증명할 수단이 필요합니다. S5-P16에서는 그 수단인 JWT 액세스 토큰을 발급합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p15/s5-p15-04.html"><span class="dir">이전</span>S5-P15-04 회원가입 API</a>
+  <a class="next" href="../../s5/p16/s5-p16-01.html"><span class="dir">다음</span>S5-P16-01 JWT의 구조</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

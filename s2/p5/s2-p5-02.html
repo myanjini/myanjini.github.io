@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P5-02 상태 코드 선택하기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P5-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 응답 설계와 프로젝트 구조</a><span class="sep">/</span><span>S2-P5 응답 모델과 상태 코드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p5-01.html" style="flex:10" data-type="주요 개념" title="응답 모델과 데이터 계약 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s2-p5-02.html" style="flex:5" data-type="주요 개념" title="상태 코드 선택하기 (5분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s2-p5-03.html" style="flex:10" data-type="주요 개념" title="응답 모델 적용하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s2-p5-04.html" style="flex:20" data-type="실습" title="수정, 삭제 API 완성 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s2-p5-05.html" style="flex:5" data-type="정리" title="정리: 응답 설계 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S2-P5-02</span></div>
+<h1>상태 코드 선택하기</h1>
+
+<p class="lead">요청이 성공했는지, 실패했다면 왜 실패했는지를 상태 코드로 정확히 알려 주면 API를 쓰는 쪽이 훨씬 편해집니다. 이 과정에서 쓰는 상태 코드의 기준을 정리합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>상태 코드</th><th>언제 쓰나요</th><th>이 과정의 예</th></tr></thead><tbody><tr><td>200 OK</td><td>조회, 수정이 성공했을 때</td><td><code>GET /books</code>, <code>PATCH /books/1</code></td></tr><tr><td>201 Created</td><td>새 자원을 만들었을 때</td><td><code>POST /books</code></td></tr><tr><td>204 No Content</td><td>성공했지만 돌려줄 내용이 없을 때</td><td><code>DELETE /books/1</code></td></tr><tr><td>404 Not Found</td><td>요청한 자원이 없을 때</td><td>없는 번호의 도서 조회</td></tr><tr><td>409 Conflict</td><td>지금 상태와 충돌해 처리할 수 없을 때</td><td>이미 등록된 ISBN으로 등록</td></tr><tr><td>422 Unprocessable Content</td><td>요청 데이터가 규칙에 맞지 않을 때</td><td>가격에 음수 입력(FastAPI가 자동으로 보냄)</td></tr></tbody></table></div>
+
+<p>FastAPI는 따로 정하지 않으면 성공 응답을 모두 200으로 보냅니다. 201과 204는 우리가 직접 정해야 합니다.</p>
+<div class="codeblock"><pre><code>from fastapi import status
+
+@app.post("/books", status_code=status.HTTP_201_CREATED)
+...
+
+@app.delete("/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
+...</code></pre></div>
+
+<p><code>status_code=201</code>처럼 숫자를 바로 써도 동작합니다. 하지만 <code>status.HTTP_201_CREATED</code>처럼 이름을 쓰면 코드를 읽는 사람이 뜻을 바로 알 수 있고 오타도 줄어듭니다.</p>
+<div class="callout note"><p class="callout-title">404와 409를 헷갈리지 않으려면</p><p>찾는 대상이 아예 없으면 404, 대상은 있지만 지금 상태 때문에 요청을 들어줄 수 없으면 409입니다. 이미 대여 중인 도서를 또 대여하려는 경우도 409입니다(3일차 통합 실습).</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s2/p5/s2-p5-01.html"><span class="dir">이전</span>S2-P5-01 응답 모델과 데이터 계약</a>
+  <a class="next" href="../../s2/p5/s2-p5-03.html"><span class="dir">다음</span>S2-P5-03 응답 모델 적용하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P39-05 정리: 개발 보안 마무리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P39-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P39 보안약점 조치와 보안 테스트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p39-01.html" style="flex:5" data-type="주요 개념" title="조치 우선순위 정하기 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p39-02.html" style="flex:20" data-type="실습" title="보안약점 조치 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s11-p39-03.html" style="flex:15" data-type="실습" title="보안 테스트 작성 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s11-p39-04.html" style="flex:5" data-type="주요 개념" title="강사 풀이 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s11-p39-05.html" style="flex:5" data-type="정리" title="정리: 개발 보안 마무리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S11-P39-05</span></div>
+<h1>정리: 개발 보안 마무리</h1>
+
+<h2>개발 보안 전체 요약</h2>
+<p>5일차부터 6일차 오전까지, KISA 구현 단계 보안약점 7개 유형을 도서 API에 적용하고 진단 실습으로 마무리했습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>유형</th><th>배운 곳</th><th>핵심 조치</th></tr></thead><tbody><tr><td>입력데이터 검증 및 표현</td><td>S9-P30, S9-P31</td><td>값 바인딩, 허용 목록, 기준 폴더 검사, 인자 목록, 외부 요청 허용 목록</td></tr><tr><td>보안기능</td><td>S9-P32, S10-P33, S10-P34</td><td>소유자와 역할 검사, 해시 저장, 비밀 값 분리, secrets, 실패 제한, 비밀번호 규칙</td></tr><tr><td>시간 및 상태</td><td>S11-P36</td><td>조건부 UPDATE, 유일 제약, 반복과 대기의 상한</td></tr><tr><td>에러처리</td><td>S10-P35</td><td>전역 예외 처리, 입력 값 없는 422, 예상한 예외만 잡기</td></tr><tr><td>코드오류</td><td>S11-P36, S11-P37</td><td>None 확인, finally와 with, 밖에서 온 데이터는 JSON으로</td></tr><tr><td>캡슐화</td><td>S9-P32, S10-P35</td><td>응답 모델 분리, 디버그 코드 제거, 요청 사이에 상태 공유하지 않기</td></tr><tr><td>API 오용</td><td>S11-P37</td><td>위험한 함수 피하기, bandit과 pip-audit을 CI에서 실행</td></tr></tbody></table></div>
+
+<p>보안은 한 번 점검하고 끝나는 일이 아닙니다. 고친 약점은 테스트로 남기고, 테스트와 점검 도구는 CI에서 매번 돌게 했습니다. 도서 API의 <code>tests/test_attacks.py</code>, <code>tests/test_race.py</code>, 그리고 워크플로의 보안 점검 단계가 그 결과입니다.</p>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">보안약점의 조치 순서를 정할 때 가장 먼저 따질 것은 무엇인가요?</p><label><input type="radio" name="p39q1" value="1"> <span>1. 발견한 순서</span></label><label><input type="radio" name="p39q1" value="2"> <span>2. 코드의 줄 수</span></label><label><input type="radio" name="p39q1" value="3"> <span>3. 고치기 쉬운 것</span></label><label><input type="radio" name="p39q1" value="4"> <span>4. 위험도와 영향 범위</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>위험도와 영향 범위로 순위를 정하고, 같은 순위 안에서 조치 난이도로 순서를 정합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">남의 공지를 지우는 공격을 막았는지 확인하는 테스트로 가장 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p39q2" value="1"> <span>1. 응답이 403인지만 확인한다.</span></label><label><input type="radio" name="p39q2" value="2"> <span>2. 응답 코드를 확인하고, 공지가 그대로 남아 있는지도 확인한다.</span></label><label><input type="radio" name="p39q2" value="3"> <span>3. 삭제 API가 있는지 확인한다.</span></label><label><input type="radio" name="p39q2" value="4"> <span>4. bandit을 실행한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>막혔다는 응답과 함께, 실제로 피해(삭제)가 없는지 확인해야 합니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">외부 주소로 요청하는 기능을 테스트할 때 <code>requests.get</code>을 가짜로 바꾸는 이유로 알맞지 않은 것은 무엇인가요?</p><label><input type="radio" name="p39q3" value="1"> <span>1. 테스트가 인터넷 연결에 좌우되지 않게</span></label><label><input type="radio" name="p39q3" value="2"> <span>2. 요청을 보냈는지와 몇 번 보냈는지 기록하려고</span></label><label><input type="radio" name="p39q3" value="3"> <span>3. 끝나지 않는 재시도로 테스트가 멈추는 것을 막으려고</span></label><label><input type="radio" name="p39q3" value="4"> <span>4. SSRF 약점을 없애려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>가짜로 바꾸는 것은 테스트 방법일 뿐이고, 약점은 앱 코드를 고쳐야 없어집니다.</p></div>
+
+<h2>AWS 단원 예고</h2>
+<p>6일차 오후부터는 보안 점검을 마친 도서 API를 AWS에 배포할 준비를 합니다. 먼저 클라우드와 AWS의 기본 개념, 사용자와 권한을 관리하는 IAM, 서버가 놓일 네트워크(VPC)를 배웁니다. 오늘 진단한 SSRF가 클라우드에서 왜 더 위험한지도 IAM 역할을 배우며 다시 만나게 됩니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p39/s11-p39-04.html"><span class="dir">이전</span>S11-P39-04 강사 풀이</a>
+  <a class="next" href="../../s12/p40/s12-p40-01.html"><span class="dir">다음</span>S12-P40-01 클라우드 컴퓨팅</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

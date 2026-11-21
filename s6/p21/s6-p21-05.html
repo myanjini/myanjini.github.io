@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P21-05 정리: 3일차 마무리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P21-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P21 3일차 통합 실습: 도서 대여 기능</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p21-01.html" style="flex:5" data-type="주요 개념" title="과제 안내 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s6-p21-02.html" style="flex:10" data-type="실습" title="대여 모델과 API 설계 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p21-03.html" style="flex:25" data-type="실습" title="대여, 반납 구현 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s6-p21-04.html" style="flex:5" data-type="주요 개념" title="강사 풀이와 흔한 실수 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s6-p21-05.html" style="flex:5" data-type="정리" title="정리: 3일차 마무리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S6-P21-05</span></div>
+<h1>정리: 3일차 마무리</h1>
+
+<h2>3일차 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>배운 것</th><th>코드에서 어디에 있나요</th></tr></thead><tbody><tr><td>비밀번호 해시와 회원가입</td><td><code>app/security.py</code>의 <code>hash_password</code>, <code>POST /auth/signup</code></td></tr><tr><td>JWT 로그인</td><td><code>create_access_token</code>, <code>POST /auth/token</code></td></tr><tr><td>인증과 권한 검사</td><td><code>get_current_user</code>, <code>require_admin</code>, <code>check_can_modify</code></td></tr><tr><td>리프레시 토큰과 로그아웃</td><td><code>refresh_tokens</code> 테이블, <code>POST /auth/refresh</code>, <code>POST /auth/logout</code></td></tr><tr><td>계층 분리와 트랜잭션</td><td><code>app/routers</code>, <code>app/services</code>, <code>app/repositories</code>, <code>get_db</code>의 <code>rollback</code></td></tr><tr><td>파일 업로드와 백그라운드 작업</td><td><code>app/services/covers.py</code>, <code>POST /books/{book_id}/cover</code>, <code>BackgroundTasks</code></td></tr><tr><td>대여와 반납</td><td><code>app/services/loans.py</code>, <code>/loans</code></td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">대여할 때 빌리는 사람을 요청 본문의 <code>user_id</code>가 아니라 토큰에서 가져오는 이유는 무엇인가요?</p><label><input type="radio" name="p21q1" value="1"> <span>1. user_id는 정수가 아니어서</span></label><label><input type="radio" name="p21q1" value="2"> <span>2. 본문이 너무 길어져서</span></label><label><input type="radio" name="p21q1" value="3"> <span>3. 본문 값은 보내는 사람이 마음대로 정할 수 있어 남의 이름으로 빌릴 수 있으므로</span></label><label><input type="radio" name="p21q1" value="4"> <span>4. 토큰이 더 빨라서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>누가 요청했는지는 서버가 검증한 토큰으로만 판단합니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">대여 서비스에서 <code>change_stock</code>을 부른 뒤 대여 기록 추가 중 예외가 났습니다. 재고는 어떻게 되나요?</p><label><input type="radio" name="p21q2" value="1"> <span>1. commit 전이므로 rollback되어 그대로다.</span></label><label><input type="radio" name="p21q2" value="2"> <span>2. 0이 된다.</span></label><label><input type="radio" name="p21q2" value="3"> <span>3. 음수가 된다.</span></label><label><input type="radio" name="p21q2" value="4"> <span>4. 1 줄어든 채 남는다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>재고 변경과 대여 기록이 하나의 트랜잭션이므로 함께 취소됩니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">user3이 user1의 대여 번호로 반납을 요청했습니다. user3은 일반 사용자입니다. 알맞은 응답은 무엇인가요?</p><label><input type="radio" name="p21q3" value="1"> <span>1. 200</span></label><label><input type="radio" name="p21q3" value="2"> <span>2. 401</span></label><label><input type="radio" name="p21q3" value="3"> <span>3. 403</span></label><label><input type="radio" name="p21q3" value="4"> <span>4. 409</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>로그인은 했지만 본인 대여가 아니므로 403입니다.</p></div>
+
+<h2>4일차 예고</h2>
+<p>오늘 시험 표를 채우느라 Swagger UI에서 같은 요청을 여러 번 보냈습니다. 코드를 고칠 때마다 이 일을 반복할 수는 없습니다. 4일차에는 pytest로 지금까지 만든 API를 자동으로 시험하는 테스트를 작성하고, GitHub Actions로 코드를 올릴 때마다 테스트가 실행되게 만듭니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p21/s6-p21-04.html"><span class="dir">이전</span>S6-P21-04 강사 풀이와 흔한 실수</a>
+  <a class="next" href="../../s7/p22/s7-p22-01.html"><span class="dir">다음</span>S7-P22-01 3일차 복습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

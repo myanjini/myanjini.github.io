@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P31-04 명령어 삽입과 SSRF | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P31-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P31 입력데이터 검증 2: XSS, 파일 업로드, 명령어 삽입</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p31-01.html" style="flex:10" data-type="주요 개념" title="크로스사이트 스크립트와 API (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s9-p31-02.html" style="flex:10" data-type="주요 개념" title="위험한 형식 파일 업로드 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p31-03.html" style="flex:20" data-type="실습" title="업로드 API 보안 강화 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s9-p31-04.html" style="flex:5" data-type="주요 개념" title="명령어 삽입과 SSRF (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s9-p31-05.html" style="flex:5" data-type="정리" title="정리: 입력데이터 검증 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S9-P31-04</span></div>
+<h1>명령어 삽입과 SSRF</h1>
+
+<p class="lead">도서 API에는 아직 없지만 기능을 늘리다 보면 곧 만나게 되는 두 가지 보안약점을 정리합니다. 서버가 명령을 실행하거나 다른 주소로 요청을 보내는 곳입니다.</p>
+
+<h2>운영체제 명령어 삽입</h2>
+<p>표지 이미지의 썸네일을 외부 프로그램으로 만든다고 해 봅시다. 명령을 문자열로 만들어 셸로 실행하면, 파일 이름에 <code>; rm -rf /</code> 같은 값이 들어갔을 때 그 명령까지 실행됩니다.</p>
+<div class="codeblock"><pre><code># 위험한 코드: 파일 이름이 셸 명령의 일부가 됩니다.
+subprocess.run(f"convert {path} -resize 200x200 {thumb_path}", shell=True)</code></pre></div>
+<div class="codeblock"><pre><code># 안전한 코드: 명령과 인자를 목록으로 나눠 넘기면 셸을 거치지 않습니다.
+subprocess.run(["convert", str(path), "-resize", "200x200", str(thumb_path)], check=True)</code></pre></div>
+
+<p>목록으로 넘기면 각 값은 프로그램에 전달되는 인자 하나일 뿐이고, 셸이 해석하지 않습니다. <code>shell=True</code>와 <code>os.system()</code>은 쓰지 않는 것을 원칙으로 합니다. 6일차의 자동 점검 도구(bandit)도 이 코드를 찾아냅니다.</p>
+
+<h2>서버사이드 요청 위조(SSRF)</h2>
+<p>"표지 이미지를 URL로 등록하기" 기능을 만들면, 서버가 사용자가 준 주소로 직접 요청을 보냅니다. 공격자가 <code>http://169.254.169.254/latest/meta-data/</code> 같은 주소를 주면 어떻게 될까요? 이 주소는 AWS EC2 안에서만 닿는 서버 정보 주소로, 서버에 부여된 권한 정보를 내줄 수 있습니다. 공격자는 바깥에서 닿을 수 없는 내부 주소를 우리 서버를 시켜 대신 부르게 됩니다. 이것이 <strong>서버사이드 요청 위조</strong>이며, 7일차에 서버를 AWS로 옮기면 실제 위험이 됩니다.</p>
+<div class="codeblock"><span class="file">검사 함수 예시</span><pre><code>import ipaddress
+import socket
+from urllib.parse import urlparse
+
+
+def check_public_url(url: str) -&gt; None:
+    """https이고, 인터넷의 공개 주소를 가리키는 URL만 허용합니다."""
+    parts = urlparse(url)
+    if parts.scheme != "https" or not parts.hostname:
+        raise AppError(422, "INVALID_URL", "https 주소만 쓸 수 있습니다.")
+    for *_, sockaddr in socket.getaddrinfo(parts.hostname, 443):
+        ip = ipaddress.ip_address(sockaddr[0])
+        if not ip.is_global:  # 127.0.0.1, 10.x.x.x, 169.254.169.254 같은 내부 주소
+            raise AppError(422, "INVALID_URL", "내부 주소로는 요청할 수 없습니다.")</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>추가로 지킬 것</th><th>이유</th></tr></thead><tbody><tr><td>허용하는 도메인 목록이 있다면 그것을 씁니다.</td><td>내부 주소를 막는 것보다 "이 도메인만"이 더 안전합니다.</td></tr><tr><td>요청할 때 리디렉션을 따라가지 않습니다.</td><td>처음 주소는 공개 주소여도 내부 주소로 넘겨 보낼 수 있습니다.</td></tr><tr><td>검사한 IP로 요청합니다.</td><td>검사할 때와 요청할 때 도메인이 다른 IP를 가리키게 바꾸는 공격이 있습니다.</td></tr><tr><td>EC2에서는 IMDSv2를 씁니다.</td><td>서버 정보 주소를 토큰 없이는 못 읽게 합니다. 7일차에 설정합니다.</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p31/s9-p31-03.html"><span class="dir">이전</span>S9-P31-03 업로드 API 보안 강화</a>
+  <a class="next" href="../../s9/p31/s9-p31-05.html"><span class="dir">다음</span>S9-P31-05 정리: 입력데이터 검증</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

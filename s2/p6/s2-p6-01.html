@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P6-01 HTTPException과 예외 처리기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P6-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 응답 설계와 프로젝트 구조</a><span class="sep">/</span><span>S2-P6 오류 처리와 API 문서화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p6-01.html" style="flex:10" data-type="주요 개념" title="HTTPException과 예외 처리기 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s2-p6-02.html" style="flex:15" data-type="실습" title="오류 응답 통일하기 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s2-p6-03.html" style="flex:10" data-type="주요 개념" title="API 문서 다듬기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s2-p6-04.html" style="flex:10" data-type="실습" title="CRUD 결과 점검 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s2-p6-05.html" style="flex:5" data-type="정리" title="정리: 오류 처리와 문서화 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S2-P6-01</span></div>
+<h1>HTTPException과 예외 처리기</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>일관된 오류 응답을 설계하고 API 문서를 정리할 수 있습니다.</p></div>
+
+<p class="lead">오류가 났을 때 클라이언트가 무엇이 잘못되었는지 프로그램으로 판단할 수 있도록, 오류 응답의 모양을 하나로 정하는 방법을 배웁니다.</p>
+
+<h2>HTTPException 다시 보기</h2>
+<div class="codeblock"><pre><code>raise HTTPException(status_code=404, detail="도서를 찾을 수 없습니다.")</code></pre></div>
+
+<p>이렇게 하면 응답은 <code>{"detail": "도서를 찾을 수 없습니다."}</code>입니다. 간단하지만 두 가지 아쉬움이 있습니다.</p>
+<ul>
+  <li>화면을 만드는 개발자가 오류 종류에 따라 다르게 처리하려면 메시지 문장을 비교해야 합니다. 메시지 문구를 조금만 바꿔도 화면 쪽 코드가 깨집니다.</li>
+  <li>개발자마다 <code>detail</code>에 문장을 넣기도 하고 딕셔너리를 넣기도 해, 오류 모양이 제각각이 되기 쉽습니다.</li>
+</ul>
+
+<h2>공통 오류 형식 정하기</h2>
+<p>이 과정에서는 우리가 일부러 보내는 오류를 모두 다음 모양으로 통일합니다.</p>
+<div class="codeblock"><pre><code>{
+  "code": "BOOK_NOT_FOUND",
+  "message": "3번 도서를 찾을 수 없습니다."
+}</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>누가 읽나요</th><th>설명</th></tr></thead><tbody><tr><td><code>code</code></td><td>프로그램</td><td>오류 종류를 나타내는 고정된 이름입니다. 한 번 정하면 바꾸지 않습니다.</td></tr><tr><td><code>message</code></td><td>사람</td><td>화면에 보여 줄 수 있는 설명입니다. 문구는 언제든 다듬어도 됩니다.</td></tr></tbody></table></div>
+
+<h2>사용자 정의 예외와 예외 처리기</h2>
+<p>오류를 낼 때 쓸 예외 클래스를 직접 만들고, 그 예외가 발생하면 공통 형식으로 바꿔 주는 <strong>예외 처리기</strong>를 등록합니다.</p>
+<div class="codeblock"><pre><code>class AppError(Exception):
+    """이 앱이 일부러 보내는 오류. 상태 코드, 오류 코드, 메시지를 담습니다."""
+
+    def __init__(self, status_code: int, code: str, message: str):
+        self.status_code = status_code
+        self.code = code
+        self.message = message
+
+
+@app.exception_handler(AppError)
+def handle_app_error(request: Request, exc: AppError):
+    # 어떤 AppError든 같은 모양의 JSON으로 바꿔 응답합니다.
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"code": exc.code, "message": exc.message},
+    )</code></pre></div>
+
+<p>이제 어디서든 <code>raise AppError(404, "BOOK_NOT_FOUND", "...")</code>를 실행하면, 함수는 그 자리에서 멈추고 예외 처리기가 실행되어 공통 형식의 응답이 나갑니다. 처리기의 <code>request</code> 매개변수는 지금은 쓰지 않지만, FastAPI가 처리기를 부를 때 넘겨주므로 자리를 만들어 둡니다.</p>
+<div class="callout note"><p class="callout-title">422 오류는 그대로 둡니다</p><p>입력 검증에 실패했을 때 FastAPI가 보내는 422 응답은 어떤 항목이 왜 틀렸는지 자세히 알려 주는 별도 형식입니다. 이 과정에서는 그 형식을 그대로 씁니다. 오류 응답에 어떤 정보까지 담아도 되는지는 5일차 개발 보안 단원에서 다시 점검합니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s2/p5/s2-p5-05.html"><span class="dir">이전</span>S2-P5-05 정리: 응답 설계</a>
+  <a class="next" href="../../s2/p6/s2-p6-02.html"><span class="dir">다음</span>S2-P6-02 오류 응답 통일하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

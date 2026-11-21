@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P46-02 RDS 생성 과정 보기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P46-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P46 RDS PostgreSQL 연결</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p46-01.html" style="flex:10" data-type="주요 개념" title="관리형 데이터베이스와 RDS (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p46-02.html" style="flex:10" data-type="주요 개념" title="RDS 생성 과정 보기 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s13-p46-03.html" style="flex:20" data-type="실습" title="RDS 만들고 연결하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p46-04.html" style="flex:5" data-type="주요 개념" title="RDS 보안 설정 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p46-05.html" style="flex:5" data-type="정리" title="정리: RDS (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S13-P46-02</span></div>
+<h1>RDS 생성 과정 보기</h1>
+
+<p class="lead">RDS 생성 화면은 칸이 많아 보이지만, 보안에 중요한 칸은 몇 개입니다. 특히 "어디에 두는가(서브넷 그룹)", "인터넷에서 닿는가(퍼블릭 액세스)", "누가 닿는가(보안 그룹)" 세 가지를 실습 전에 확인합니다.</p>
+
+<h2>먼저 DB 서브넷 그룹을 만드는 이유</h2>
+<p>RDS 생성 화면에서 서브넷 그룹을 "새로 만들기"로 두면, AWS가 그 VPC의 <strong>모든</strong> 서브넷(퍼블릭 포함)을 넣은 서브넷 그룹을 자동으로 만듭니다. 그러면 RDS가 퍼블릭 서브넷에 놓일 수 있습니다. 그래서 프라이빗 서브넷 두 개만 넣은 서브넷 그룹을 먼저 만들고, 생성 화면에서 그것을 고릅니다.</p>
+
+<h2>생성 화면의 주요 칸</h2>
+<div class="table-wrap"><table><thead><tr><th>칸</th><th>이번 실습 값</th><th>이유</th></tr></thead><tbody><tr><td>생성 방식</td><td>표준 생성(전체 설정)</td><td>간편 생성은 네트워크를 고를 수 없습니다.</td></tr><tr><td>엔진</td><td>PostgreSQL, 버전은 18의 최신 버전</td><td>S8 Compose와 같은 18을 씁니다. 기관 계정에서 18이 보이지 않으면 17을 고릅니다.</td></tr><tr><td>템플릿</td><td>개발/테스트(또는 기관이 안내한 템플릿)</td><td>프로덕션 템플릿은 다중 AZ 같은 비싼 기본값이 켜집니다.</td></tr><tr><td>가용성</td><td>단일 AZ DB 인스턴스</td><td>실습 비용</td></tr><tr><td>DB 인스턴스 식별자</td><td><code>book-api-db</code></td><td>콘솔과 엔드포인트 이름에 쓰입니다.</td></tr><tr><td>마스터 사용자 이름</td><td><code>bookapi</code></td><td>S8 Compose와 같은 이름</td></tr><tr><td>자격 증명 관리</td><td>자체 관리, 암호는 직접 만든 값</td><td>오늘 오후에 Parameter Store로 관리합니다.</td></tr><tr><td>인스턴스 클래스</td><td>버스터블 클래스의 가장 작은 것(예: <code>db.t4g.micro</code>)</td><td>실습 비용. RDS는 이미지와 무관하므로 Graviton이어도 됩니다.</td></tr><tr><td>스토리지</td><td>gp3 20GiB, 스토리지 자동 조정 끔</td><td>필요 이상으로 늘지 않게 합니다.</td></tr><tr><td>컴퓨팅 리소스</td><td>EC2 컴퓨팅 리소스에 연결 안 함</td><td>연결하게 두면 보안 그룹을 자동으로 만들어 붙입니다. 이번에는 직접 만든 보안 그룹을 씁니다.</td></tr><tr><td>VPC, DB 서브넷 그룹</td><td><code>book-api-vpc</code>, <code>book-api-db-subnets</code></td><td>프라이빗 서브넷에만 놓이게 합니다.</td></tr><tr><td><strong>퍼블릭 액세스</strong></td><td><strong>아니요</strong></td><td>공용 IP를 받지 않아 인터넷에서 닿지 않습니다.</td></tr><tr><td>VPC 보안 그룹</td><td>기존 항목 선택: <code>book-api-db-sg</code>(default는 제거)</td><td>API 서버에서 오는 5432만</td></tr><tr><td>가용 영역</td><td><code>ap-northeast-2a</code></td><td>EC2와 같은 가용 영역이면 가용 영역 간 데이터 전송이 없습니다.</td></tr><tr><td>추가 구성: 초기 데이터베이스 이름</td><td><code>bookapi</code></td><td>비워 두면 <code>bookapi</code> 데이터베이스가 만들어지지 않습니다.</td></tr><tr><td>백업 보존 기간</td><td>1일</td><td>실습에 충분합니다.</td></tr><tr><td>암호화</td><td>활성화(기본값, AWS 관리형 키 <code>aws/rds</code>)</td><td>만든 뒤에는 켤 수 없습니다(S13-P46-04).</td></tr><tr><td>삭제 방지</td><td>끔</td><td>과정이 끝나면 지워야 합니다. 운영 DB라면 켭니다.</td></tr></tbody></table></div>
+<div class="callout warn"><p class="callout-title">마스터 암호에 쓰면 안 되는 문자</p><p>RDS 마스터 암호에는 <code>/</code>, <code>'</code>, <code>"</code>, <code>@</code>, 공백을 쓸 수 없습니다. 또 <code>:</code>, <code>@</code>, <code>/</code>, <code>?</code>, <code>#</code> 같은 문자는 DATABASE_URL 안에서 주소의 구분자로 읽혀 연결 문자열을 망가뜨립니다. 이번 실습은 <code>secrets.token_urlsafe(24)</code>로 영문자, 숫자, <code>-</code>, <code>_</code>만 들어간 32자 암호를 만들어 두 문제를 모두 피합니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p46/s13-p46-01.html"><span class="dir">이전</span>S13-P46-01 관리형 데이터베이스와 RDS</a>
+  <a class="next" href="../../s13/p46/s13-p46-03.html"><span class="dir">다음</span>S13-P46-03 RDS 만들고 연결하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P17-04 권한 표 만들기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P17-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P17 보호된 API와 권한 검사</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p17-01.html" style="flex:5" data-type="주요 개념" title="현재 사용자 의존성 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s5-p17-02.html" style="flex:10" data-type="주요 개념" title="보호된 API 적용 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p17-03.html" style="flex:25" data-type="실습" title="소유자와 관리자 권한 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s5-p17-04.html" style="flex:5" data-type="실습" title="권한 표 만들기 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s5-p17-05.html" style="flex:5" data-type="정리" title="정리: 권한 검사 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>5분</span><span>S5-P17-04</span></div>
+<h1>권한 표 만들기</h1>
+
+<p class="lead">권한 검사는 API를 만들기 전에 "이 API는 누가 호출할 수 있는가"를 표로 정해 두면 빠뜨리지 않습니다. 지금까지 만든 API로 표를 채우고 예시 답안과 비교합니다.</p>
+
+<h2>역할별 접근 표 채우기</h2>
+<p>칸마다 <strong>가능</strong>, <strong>401</strong>, <strong>403</strong> 중 하나를 적습니다. "본인 도서"는 내가 등록한 도서, "남의 도서"는 다른 사람이 등록했거나 주인이 없는 도서입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>API</th><th>로그인 안 함</th><th>일반 사용자</th><th>관리자</th></tr></thead><tbody><tr><td><code>GET /books</code>, <code>GET /books/{id}</code></td><td><input data-save="a10" aria-label="내 답"></td><td><input data-save="a11" aria-label="내 답"></td><td><input data-save="a12" aria-label="내 답"></td></tr><tr><td><code>POST /books</code></td><td><input data-save="a20" aria-label="내 답"></td><td><input data-save="a21" aria-label="내 답"></td><td><input data-save="a22" aria-label="내 답"></td></tr><tr><td><code>PATCH /books/{id}</code> 본인 도서</td><td><input data-save="a30" aria-label="내 답"></td><td><input data-save="a31" aria-label="내 답"></td><td><input data-save="a32" aria-label="내 답"></td></tr><tr><td><code>PATCH /books/{id}</code> 남의 도서</td><td><input data-save="a40" aria-label="내 답"></td><td><input data-save="a41" aria-label="내 답"></td><td><input data-save="a42" aria-label="내 답"></td></tr><tr><td><code>POST /authors</code></td><td><input data-save="a50" aria-label="내 답"></td><td><input data-save="a51" aria-label="내 답"></td><td><input data-save="a52" aria-label="내 답"></td></tr><tr><td><code>POST /auth/signup</code></td><td><input data-save="a60" aria-label="내 답"></td><td><input data-save="a61" aria-label="내 답"></td><td><input data-save="a62" aria-label="내 답"></td></tr><tr><td><code>GET /auth/me</code></td><td><input data-save="a70" aria-label="내 답"></td><td><input data-save="a71" aria-label="내 답"></td><td><input data-save="a72" aria-label="내 답"></td></tr></tbody></table></div>
+<details><summary>예시 답안 보기</summary><div class="answer"><div class="table-wrap"><table><thead><tr><th>API</th><th>로그인 안 함</th><th>일반 사용자</th><th>관리자</th></tr></thead><tbody><tr><td><code>GET /books</code>, <code>GET /books/{id}</code></td><td>가능</td><td>가능</td><td>가능</td></tr><tr><td><code>POST /books</code></td><td>401</td><td>가능</td><td>가능</td></tr><tr><td><code>PATCH /books/{id}</code> 본인 도서</td><td>401</td><td>가능</td><td>가능</td></tr><tr><td><code>PATCH /books/{id}</code> 남의 도서</td><td>401</td><td>403</td><td>가능</td></tr><tr><td><code>POST /authors</code></td><td>401</td><td>403</td><td>가능</td></tr><tr><td><code>POST /auth/signup</code></td><td>가능</td><td>가능</td><td>가능</td></tr><tr><td><code>GET /auth/me</code></td><td>401</td><td>가능</td><td>가능</td></tr></tbody></table></div>
+<p>표와 내 코드가 다르다면 코드를 고칩니다. 특히 "로그인 안 함" 열에 403이 있다면 순서가 잘못된 것입니다. 누구인지 모르는 상태에서는 권한을 판단할 수 없으므로 항상 401이 먼저입니다.</p></div></details>
+
+<h2>스스로 묻고 답하기</h2>
+<div class="qa"><p class="question">질문 1. 표를 만들 때 "본인 도서"와 "남의 도서"를 왜 다른 행으로 나눴을까요? 하나의 행으로 적으면 어떤 문제가 생기나요?</p><textarea data-save="q1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>같은 API라도 대상 데이터의 주인에 따라 결과가 달라지기 때문입니다. 한 행으로만 적으면 "일반 사용자는 PATCH 가능"이라고 적게 되고, 남의 도서를 고칠 수 있는 구멍을 놓치기 쉽습니다. 역할만 보는 검사(관리자인가)와 데이터의 주인을 보는 검사(본인 것인가)는 따로 확인해야 합니다. 5일차 보안 단원에서 다루는 "부적절한 인가"가 바로 이 두 번째 검사를 빠뜨린 경우입니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 2. user2가 남의 도서를 수정하려 할 때 403 대신 404를 돌려주는 서비스도 있습니다. 어떤 장점과 단점이 있을까요?</p><textarea data-save="q2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>장점은 "그 번호의 도서가 존재한다"는 사실조차 알려 주지 않는다는 것입니다. 남의 주문 내역이나 개인 문서처럼 존재 자체가 민감한 데이터에 씁니다. 단점은 사용자와 개발자가 "정말 없는 것"과 "권한이 없는 것"을 구분하지 못해 문제를 찾기 어렵다는 것입니다. 도서 목록은 누구나 조회할 수 있어 존재가 비밀이 아니므로, 이 과정에서는 이유가 분명한 403을 씁니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 3. 관리자가 남의 도서를 삭제할 수 있게 한 결정은 좋은 결정일까요? 내 생각과 그 이유를 적어 보세요.</p><textarea data-save="q3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>정답이 하나인 질문은 아닙니다. 부적절한 도서 정보를 지우는 운영 업무가 필요하다면 관리자 삭제가 필요합니다. 반대로 관리자 계정이 탈취되면 모든 데이터가 지워질 수 있다는 위험이 있습니다. 실무에서는 관리자 권한을 꼭 필요한 기능에만 주고, 관리자가 한 일을 기록으로 남기며, 삭제 대신 숨김 처리를 하는 방법을 함께 씁니다. 판단의 기준은 "이 권한이 없으면 업무가 막히는가"와 "이 권한이 악용되면 피해가 얼마나 큰가"입니다.</p></div></details></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p17/s5-p17-03.html"><span class="dir">이전</span>S5-P17-03 소유자와 관리자 권한</a>
+  <a class="next" href="../../s5/p17/s5-p17-05.html"><span class="dir">다음</span>S5-P17-05 정리: 권한 검사</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

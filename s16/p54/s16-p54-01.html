@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P54-01 AWS 보안 점검 항목 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P54-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. 운영 보안 점검과 장애 대응</a><span class="sep">/</span><span>S16-P54 AWS 보안 점검</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p54-01.html" style="flex:10" data-type="주요 개념" title="AWS 보안 점검 항목 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p54-02.html" style="flex:10" data-type="주요 개념" title="점검 도구 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s16-p54-03.html" style="flex:25" data-type="실습" title="내 환경 점검과 조치 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s16-p54-04.html" style="flex:5" data-type="정리" title="정리: 보안 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S16-P54-01</span></div>
+<h1>AWS 보안 점검 항목</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>AWS 보안 점검 항목에 따라 내 배포 환경을 점검하고 조치할 수 있습니다.</p></div>
+
+<p class="lead">5일차와 6일차에는 코드의 보안약점을 점검했습니다. 클라우드에 배포한 서비스는 코드가 안전해도 설정 하나 때문에 뚫릴 수 있습니다. 실제 클라우드 사고의 상당수는 공개된 버킷, 너무 넓은 권한, 열린 포트 같은 "설정 실수"에서 시작합니다. 이번 파트에서는 AWS 설정을 점검 항목에 따라 확인합니다.</p>
+
+<h2>다섯 가지 점검 영역</h2>
+<div class="table-wrap"><table><thead><tr><th>영역</th><th>확인할 것</th><th>흔한 실수</th><th>이 과정에서 한 조치</th></tr></thead><tbody><tr><td>계정</td><td>루트 사용자를 쓰지 않고, 루트와 내 사용자에 MFA가 있는가</td><td>루트로 매일 로그인, 루트 액세스 키 생성</td><td>IAM 사용자나 Identity Center로만 로그인(S12-P40)</td></tr><tr><td>권한</td><td>사람, 서버, 배포 파이프라인에 필요한 권한만 있는가</td><td><code>AdministratorAccess</code>를 서버 역할에 붙임, <code>Resource: *</code></td><td>EC2 역할과 배포 역할을 자원 단위로 좁힘(S12-P41, S15)</td></tr><tr><td>네트워크</td><td>인터넷에 열린 포트가 꼭 필요한 것뿐인가</td><td>22번이나 DB 포트를 <code>0.0.0.0/0</code>에 엶</td><td>ALB의 80, 443만 공개, EC2는 ALB만, RDS는 EC2만(S15-P52)</td></tr><tr><td>암호화</td><td>저장 데이터와 전송 구간이 암호화되는가</td><td>RDS 암호화 끔, DB 연결에 SSL 미사용, HTTP로 로그인</td><td>RDS 암호화, <code>sslmode=require</code>, S3 기본 암호화, SecureString, HTTPS 과정(S13-P46, S15-P52)</td></tr><tr><td>공개 범위</td><td>S3 버킷, 스냅샷, 이미지가 의도치 않게 공개되지 않았는가</td><td>버킷을 공개로 바꿔 이미지 제공, RDS 스냅샷 공개 공유</td><td>퍼블릭 액세스 차단 유지, 미리 서명된 URL(S15-P50)</td></tr></tbody></table></div>
+
+<h2>애플리케이션과 AWS를 함께 봅니다</h2>
+<p>보안은 가장 약한 곳에서 깨집니다. 보안 그룹을 아무리 좁혀도 비밀 키가 Git 기록에 남아 있으면 소용없고, 코드가 완벽해도 RDS가 공개되어 있으면 데이터가 샙니다. 그래서 배포 전 점검표(<a href="../../appendix/appendix-c.html">부록 C</a>)는 애플리케이션 7개 항목과 AWS 7개 항목을 한 장에 담았습니다.</p>
+<div class="table-wrap"><table><thead><tr><th><a href="../../appendix/appendix-c.html">부록 C</a> 번호</th><th>점검 항목</th><th>이 과정에서 배운 곳</th></tr></thead><tbody><tr><td>1</td><td>비밀 값이 코드와 저장소에 없고 Parameter Store로만 전달</td><td>S10-P33, S14-P47</td></tr><tr><td>2</td><td>오류 응답에 스택 트레이스, DB 오류, 내부 경로 노출 없음</td><td>S10-P35</td></tr><tr><td>3</td><td>운영 환경의 디버그 설정과 API 문서 공개 여부</td><td>S10-P35, S14-P49</td></tr><tr><td>4</td><td>CORS 허용 Origin을 운영 주소로만 제한</td><td>S3-P9(CORS 설정), 이번 실습에서 조치</td></tr><tr><td>5</td><td>로그인 실패 제한과 토큰 만료 시간</td><td>S5-P18, S10-P34</td></tr><tr><td>6</td><td>업로드 파일 검증과 S3 퍼블릭 접근 차단</td><td>S6, S9-P31, S15-P50</td></tr><tr><td>7</td><td>bandit, pip-audit 조치</td><td>S11-P37</td></tr><tr><td>8~14</td><td>루트와 MFA, EC2 역할, 보안 그룹, RDS, OIDC, 로그, 태그와 예산</td><td>S12~S15</td></tr></tbody></table></div>
+<div class="quiz" data-answer="3"><p class="q">다음 가운데 "설정 실수"로 분류되는 사고는 무엇인가요?</p><label><input type="radio" name="p54q0" value="1"> <span>1. pickle 역직렬화로 코드 실행</span></label><label><input type="radio" name="p54q0" value="2"> <span>2. SQL 삽입으로 데이터 유출</span></label><label><input type="radio" name="p54q0" value="3"> <span>3. S3 버킷을 공개로 바꿔 고객 파일이 검색 엔진에 노출</span></label><label><input type="radio" name="p54q0" value="4"> <span>4. 경쟁 조건으로 재고보다 많이 대여</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>코드에는 문제가 없어도 클라우드 설정 하나로 데이터가 공개될 수 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p53/s15-p53-04.html"><span class="dir">이전</span>S15-P53-04 정리: 배포 자동화</a>
+  <a class="next" href="../../s16/p54/s16-p54-02.html"><span class="dir">다음</span>S16-P54-02 점검 도구 보기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

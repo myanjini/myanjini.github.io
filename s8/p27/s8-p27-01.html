@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P27-01 다중 컨테이너와 Compose | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P27-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P27 Docker Compose로 API와 PostgreSQL 실행하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p27-01.html" style="flex:10" data-type="주요 개념" title="다중 컨테이너와 Compose (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p27-02.html" style="flex:10" data-type="주요 개념" title="compose.yaml 작성 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p27-03.html" style="flex:20" data-type="실습" title="PostgreSQL로 전환 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s8-p27-04.html" style="flex:5" data-type="주요 개념" title="운영 설정 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s8-p27-05.html" style="flex:5" data-type="정리" title="정리: Compose (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S8-P27-01</span></div>
+<h1>다중 컨테이너와 Compose</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>Docker Compose로 API와 PostgreSQL을 함께 실행할 수 있습니다.</p></div>
+
+<p class="lead">실제 서비스는 API 하나로 끝나지 않고 데이터베이스와 함께 실행됩니다. 여러 컨테이너를 하나의 파일로 정의하고 한 번에 실행하는 Docker Compose를 배웁니다.</p>
+
+<h2>왜 PostgreSQL인가요</h2>
+<p>SQLite는 파일 하나로 동작해 개발하기 편하지만, 여러 요청이 동시에 쓰기를 하면 한 번에 하나씩 기다려야 하고, 서버 여러 대가 같은 데이터를 함께 쓸 수 없습니다. 실제 서비스에서는 별도 프로그램으로 실행되는 데이터베이스 서버를 씁니다. 이 과정은 <strong>PostgreSQL</strong>을 쓰고, 7일차에는 AWS가 관리해 주는 PostgreSQL인 RDS로 옮깁니다. 2일차부터 SQLAlchemy와 Alembic을 써 왔기 때문에 코드는 거의 바꾸지 않고 주소만 바꾸면 됩니다.</p>
+
+<h2>컨테이너 하나에 프로그램 하나</h2>
+<p>API와 데이터베이스를 한 컨테이너에 넣지 않고 따로 실행합니다. 각자 따로 고치고, 다시 시작하고, 늘릴 수 있기 때문입니다. 대신 여러 컨테이너의 이미지, 환경 변수, 연결, 시작 순서를 관리해야 하는데, <code>docker run</code> 명령을 여러 번 길게 치는 대신 <strong>Docker Compose</strong>로 <code>compose.yaml</code> 파일 하나에 적고 <code>docker compose up</code> 한 번으로 실행합니다.</p>
+
+<h2>Compose의 구성 요소</h2>
+<div class="table-wrap"><table><thead><tr><th>요소</th><th>뜻</th><th>도서 API에서</th></tr></thead><tbody><tr><td>서비스(service)</td><td>함께 실행할 컨테이너 하나하나의 정의</td><td><code>api</code>, <code>db</code></td></tr><tr><td>네트워크(network)</td><td>Compose가 자동으로 만드는 내부 네트워크. 서비스 이름이 곧 주소입니다.</td><td>API는 데이터베이스를 <code>db:5432</code>로 찾습니다.</td></tr><tr><td>볼륨(volume)</td><td>컨테이너 밖에 데이터를 보관하는 저장 공간. 컨테이너를 지워도 남습니다.</td><td><code>db-data</code>(데이터베이스 파일), <code>uploads</code>(표지 이미지)</td></tr><tr><td>환경 변수 파일</td><td>Compose는 같은 폴더의 <code>.env</code>를 자동으로 읽어 <code>${이름}</code> 자리에 값을 채웁니다.</td><td><code>${POSTGRES_PASSWORD}</code>, <code>${SECRET_KEY}</code></td></tr></tbody></table></div>
+<figure><svg viewBox="0 0 640 230" role="img" aria-label="db는 내 PC에 포트를 열지 않습니다. api만 내부 네트워크로 db에 접속합니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="60" width="120" height="60" rx="8" class="svg-box"/><text x="70.0" y="95.0" text-anchor="middle" class="svg-text">내 PC 브라우저</text><rect x="190" y="40" width="180" height="100" rx="8" class="svg-box-accent"/><text x="280.0" y="86.0" text-anchor="middle" class="svg-text">api</text><text x="280.0" y="106.0" text-anchor="middle" class="svg-small">uvicorn :8000</text><rect x="440" y="40" width="190" height="100" rx="8" class="svg-box"/><text x="535.0" y="86.0" text-anchor="middle" class="svg-text">db</text><text x="535.0" y="106.0" text-anchor="middle" class="svg-small">PostgreSQL :5432</text><rect x="190" y="180" width="180" height="40" rx="8" class="svg-box"/><text x="280.0" y="205.0" text-anchor="middle" class="svg-text">볼륨 uploads</text><rect x="440" y="180" width="190" height="40" rx="8" class="svg-box"/><text x="535.0" y="205.0" text-anchor="middle" class="svg-text">볼륨 db-data</text><line x1="135" y1="90" x2="185" y2="90" class="svg-line" marker-end="url(#arr)"/><text x="160" y="82" text-anchor="middle" class="svg-mono">8000</text><line x1="375" y1="90" x2="435" y2="90" class="svg-line" marker-end="url(#arr)"/><text x="405" y="82" text-anchor="middle" class="svg-mono">db:5432</text><line x1="280" y1="145" x2="280" y2="175" class="svg-line" marker-end="url(#arr)"/><line x1="535" y1="145" x2="535" y2="175" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>db는 내 PC에 포트를 열지 않습니다. api만 내부 네트워크로 db에 접속합니다.</figcaption></figure>
+
+<p>데이터베이스 포트(5432)를 내 PC에 열지 않은 것도 의도한 것입니다. 데이터베이스에 접속해야 하는 것은 API뿐이므로, 바깥에서 닿는 길을 만들지 않습니다. 7일차에 RDS를 인터넷에서 닿지 않는 프라이빗 서브넷에 두는 것과 같은 생각입니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p26/s8-p26-04.html"><span class="dir">이전</span>S8-P26-04 정리: 컨테이너화</a>
+  <a class="next" href="../../s8/p27/s8-p27-02.html"><span class="dir">다음</span>S8-P27-02 compose.yaml 작성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

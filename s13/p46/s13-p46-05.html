@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P46-05 정리: RDS | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P46-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P46 RDS PostgreSQL 연결</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p46-01.html" style="flex:10" data-type="주요 개념" title="관리형 데이터베이스와 RDS (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p46-02.html" style="flex:10" data-type="주요 개념" title="RDS 생성 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s13-p46-03.html" style="flex:20" data-type="실습" title="RDS 만들고 연결하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p46-04.html" style="flex:5" data-type="주요 개념" title="RDS 보안 설정 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p46-05.html" style="flex:5" data-type="정리" title="정리: RDS (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S13-P46-05</span></div>
+<h1>정리: RDS</h1>
+
+<h2>7일차 오전 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>교시</th><th>만든 것</th><th>핵심</th></tr></thead><tbody><tr><td>1교시</td><td>실습 VPC, 보안 그룹 2개</td><td>NAT 없는 퍼블릭과 프라이빗 구성, 출처를 IP와 보안 그룹으로 좁힌 규칙</td></tr><tr><td>2교시</td><td>EC2 서버</td><td>IAM 역할 연결, 키 페어 없이 Session Manager 접속, IMDSv2 확인</td></tr><tr><td>3교시</td><td>EC2의 도서 API 컨테이너</td><td>서버에서 설치, 빌드, 실행. 비밀 값은 소스 밖의 권한 600 파일</td></tr><tr><td>4교시</td><td>RDS PostgreSQL</td><td>프라이빗 서브넷, 퍼블릭 액세스 끔, 암호화, SSL 강제, 마이그레이션</td></tr></tbody></table></div>
+
+<p>지금 도서 API는 다음 경로로 동작합니다. 내 PC → 인터넷 → 인터넷 게이트웨이 → EC2(book-api-sg: 내 IP의 8000만) → 컨테이너 → RDS(book-api-db-sg: book-api-sg의 5432만, SSL).</p>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">RDS 생성 화면에서 서브넷 그룹을 "새로 만들기"로 두면 생길 수 있는 문제는 무엇인가요?</p><label><input type="radio" name="p46q2" value="1"> <span>1. RDS가 만들어지지 않는다</span></label><label><input type="radio" name="p46q2" value="2"> <span>2. 퍼블릭 서브넷까지 들어간 서브넷 그룹이 만들어진다</span></label><label><input type="radio" name="p46q2" value="3"> <span>3. 암호화가 꺼진다</span></label><label><input type="radio" name="p46q2" value="4"> <span>4. 요금이 두 배가 된다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>VPC의 모든 서브넷이 들어가므로, 프라이빗 서브넷만 넣은 서브넷 그룹을 먼저 만들어 고릅니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">내 PC에서 RDS 엔드포인트를 조회하면 10.0.11.x 주소가 나옵니다. 내 PC에서 접속할 수 없는 가장 직접적인 이유는 무엇인가요?</p><label><input type="radio" name="p46q3" value="1"> <span>1. psql 버전이 달라서</span></label><label><input type="radio" name="p46q3" value="2"> <span>2. SSL을 쓰지 않아서</span></label><label><input type="radio" name="p46q3" value="3"> <span>3. 엔드포인트 이름이 틀려서</span></label><label><input type="radio" name="p46q3" value="4"> <span>4. 사설 IP라서 인터넷에서 갈 길이 없고, 퍼블릭 액세스가 꺼져 있어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>퍼블릭 액세스를 끄면 공용 IP를 받지 않습니다. 보안 그룹도 API 서버만 허용하므로 겹겹이 막혀 있습니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q"><code>DATABASE_URL</code> 끝의 <code>?sslmode=require</code>를 지우면 어떻게 되나요?</p><label><input type="radio" name="p46q4" value="1"> <span>1. psycopg의 기본값(prefer)에 따라 SSL을 먼저 시도하므로 연결은 되지만, SSL을 반드시 쓰겠다는 약속이 사라진다</span></label><label><input type="radio" name="p46q4" value="2"> <span>2. 연결이 거부된다</span></label><label><input type="radio" name="p46q4" value="3"> <span>3. RDS가 자동으로 verify-full을 쓴다</span></label><label><input type="radio" name="p46q4" value="4"> <span>4. 항상 암호화하지 않은 연결로 접속한다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>기본값은 가능하면 SSL을 쓰는 prefer입니다. 지금은 RDS가 SSL을 강제하므로 연결되지만, 앱 쪽에서도 require 이상을 명시해 두는 것이 안전합니다.</p></div>
+
+<h2>7일차 오후 예고</h2>
+<p>오후에는 이 구성을 운영에 맞게 다듬습니다. 서버 파일에 있는 비밀 키와 DB 암호를 Parameter Store로 옮기고, 이미지를 내 PC에서 한 번 만들어 ECR에 올린 뒤 서버는 받아서 실행만 하게 바꿉니다. 마지막으로 운영용 Compose 파일로 재시작과 상태 확인까지 갖춘 배포를 완성합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p46/s13-p46-04.html"><span class="dir">이전</span>S13-P46-04 RDS 보안 설정</a>
+  <a class="next" href="../../s14/p47/s14-p47-01.html"><span class="dir">다음</span>S14-P47-01 클라우드에서 비밀정보 다루기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

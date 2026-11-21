@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P13-02 1:N 관계와 외래키 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P13-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 데이터베이스 활용과 마이그레이션</a><span class="sep">/</span><span>S4-P13 관계 매핑</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p13-01.html" style="flex:5" data-type="주요 개념" title="관계가 필요한 이유 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s4-p13-02.html" style="flex:10" data-type="주요 개념" title="1:N 관계와 외래키 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s4-p13-03.html" style="flex:10" data-type="주요 개념" title="저자와 도서 연결하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s4-p13-04.html" style="flex:20" data-type="실습" title="저자 API와 관계 조회 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s4-p13-05.html" style="flex:5" data-type="정리" title="정리: 관계 매핑 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S4-P13-02</span></div>
+<h1>1:N 관계와 외래키</h1>
+
+<p class="lead">저자 한 명이 여러 도서를 쓰는 관계를 1:N 관계라고 합니다. 데이터베이스와 SQLAlchemy에서 이 관계를 표현하는 방법을 배웁니다.</p>
+<figure><svg viewBox="0 0 640 120" role="img" aria-label="저자 1명에 도서 N권이 연결됩니다. 연결 정보(author_id)는 N 쪽인 books에 둡니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="20" y="20" width="220" height="80" rx="8" class="svg-box-accent"/><text x="130.0" y="56.0" text-anchor="middle" class="svg-text">authors</text><text x="130.0" y="76.0" text-anchor="middle" class="svg-small">저자 한 명</text><rect x="400" y="20" width="220" height="80" rx="8" class="svg-box"/><text x="510.0" y="56.0" text-anchor="middle" class="svg-text">books</text><text x="510.0" y="76.0" text-anchor="middle" class="svg-small">도서 여러 권</text><line x1="245" y1="60" x2="395" y2="60" class="svg-line" marker-end="url(#arr)"/><text x="320" y="50" text-anchor="middle" class="svg-mono">1 : N</text></svg><figcaption>저자 1명에 도서 N권이 연결됩니다. 연결 정보(author_id)는 N 쪽인 books에 둡니다.</figcaption></figure>
+
+<h2>외래키</h2>
+<p><strong>외래키</strong>(foreign key)는 다른 테이블의 기본키를 가리키는 열입니다. <code>books.author_id</code>가 <code>authors.id</code>를 가리키도록 정하면, 데이터베이스는 없는 저자 번호가 들어오지 못하게 막을 수 있습니다.</p>
+<div class="codeblock"><pre><code>author_id: Mapped[int] = mapped_column(ForeignKey("authors.id"))</code></pre></div>
+<div class="callout note"><p class="callout-title">SQLite는 기본적으로 외래키를 검사하지 않습니다</p><p>PostgreSQL은 외래키를 항상 검사하지만, SQLite는 기본 설정에서 검사하지 않습니다. 그래서 이 과정에서는 도서를 등록할 때 저자가 있는지 코드에서 직접 확인합니다. 어느 데이터베이스를 쓰든 클라이언트에게 알기 쉬운 오류를 주려면 어차피 이 확인이 필요합니다.</p></div>
+
+<h2>relationship</h2>
+<p>외래키만 있으면 도서에서 저자 이름을 얻을 때마다 번호로 저자를 다시 찾아야 합니다. <code>relationship</code>을 정의하면 <code>book.author.name</code>처럼 객체를 따라가듯 쓸 수 있습니다.</p>
+<div class="codeblock"><pre><code>class Author(Base):
+    books: Mapped[list["Book"]] = relationship(back_populates="author")
+
+
+class Book(Base):
+    author_id: Mapped[int] = mapped_column(ForeignKey("authors.id"))
+    author: Mapped["Author"] = relationship(back_populates="books")</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>속성</th><th>테이블에 열이 생기나요</th><th>값</th></tr></thead><tbody><tr><td><code>Book.author_id</code></td><td>예</td><td>저자 번호(정수)</td></tr><tr><td><code>Book.author</code></td><td>아니요</td><td><code>Author</code> 객체 하나</td></tr><tr><td><code>Author.books</code></td><td>아니요</td><td><code>Book</code> 객체 목록</td></tr></tbody></table></div>
+
+<p><code>back_populates</code>는 두 속성이 같은 관계의 양쪽 끝이라고 알려 줍니다. 그래서 <code>book.author</code>를 바꾸면 <code>author.books</code>에도 반영됩니다. <code>"Book"</code>처럼 따옴표로 감싼 것은 아직 아래에서 정의되지 않은 클래스를 이름으로 가리키기 위해서입니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s4/p13/s4-p13-01.html"><span class="dir">이전</span>S4-P13-01 관계가 필요한 이유</a>
+  <a class="next" href="../../s4/p13/s4-p13-03.html"><span class="dir">다음</span>S4-P13-03 저자와 도서 연결하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

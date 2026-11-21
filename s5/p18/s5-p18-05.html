@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P18-05 정리: 인증 흐름 완성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P18-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P18 리프레시 토큰과 로그아웃</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p18-01.html" style="flex:10" data-type="주요 개념" title="액세스 토큰의 한계와 리프레시 토큰 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s5-p18-02.html" style="flex:10" data-type="주요 개념" title="재발급 흐름 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p18-03.html" style="flex:20" data-type="실습" title="재발급과 로그아웃 구현 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s5-p18-04.html" style="flex:5" data-type="주요 개념" title="토큰 보안 수칙 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s5-p18-05.html" style="flex:5" data-type="정리" title="정리: 인증 흐름 완성 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S5-P18-05</span></div>
+<h1>정리: 인증 흐름 완성</h1>
+
+<h2>3일차 오전 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>API</th><th>인증</th><th>하는 일</th></tr></thead><tbody><tr><td><code>POST /auth/signup</code></td><td>필요 없음</td><td>이메일과 비밀번호로 가입합니다. 비밀번호는 Argon2 해시로 저장합니다.</td></tr><tr><td><code>POST /auth/token</code></td><td>필요 없음</td><td>폼으로 받은 이메일과 비밀번호를 확인하고 액세스 토큰(15분)과 리프레시 토큰(14일)을 발급합니다.</td></tr><tr><td><code>GET /auth/me</code></td><td>액세스 토큰</td><td>지금 로그인한 사용자를 돌려줍니다.</td></tr><tr><td><code>POST /auth/refresh</code></td><td>리프레시 토큰</td><td>새 두 토큰을 발급하고, 쓴 리프레시 토큰은 취소합니다.</td></tr><tr><td><code>POST /auth/logout</code></td><td>리프레시 토큰</td><td>리프레시 토큰을 취소합니다. 항상 204입니다.</td></tr><tr><td>도서 등록, 수정, 삭제</td><td>액세스 토큰</td><td>등록한 본인이나 관리자만 수정, 삭제할 수 있습니다.</td></tr><tr><td>저자 등록, 삭제</td><td>액세스 토큰</td><td>관리자만 할 수 있습니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">로그아웃한 뒤에도 잠시 동안 보호된 API를 호출할 수 있는 것은 무엇 때문인가요?</p><label><input type="radio" name="p18q1" value="1"> <span>1. 세션이 닫히지 않아서</span></label><label><input type="radio" name="p18q1" value="2"> <span>2. 로그아웃 API가 401을 돌려줘서</span></label><label><input type="radio" name="p18q1" value="3"> <span>3. 리프레시 토큰이 취소되지 않아서</span></label><label><input type="radio" name="p18q1" value="4"> <span>4. 이미 발급된 액세스 토큰은 만료될 때까지 서명 검증을 통과해서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>서버는 액세스 토큰을 기억하지 않으므로 만료 전에는 거둬들일 수 없습니다. 그래서 액세스 토큰을 짧게 만듭니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">리프레시 토큰을 Argon2가 아닌 SHA-256으로 해시해 저장한 이유로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p18q2" value="1"> <span>1. SHA-256이 더 안전해서</span></label><label><input type="radio" name="p18q2" value="2"> <span>2. 무작위 값이라 대입 공격 걱정이 없고, 같은 해시로 데이터베이스에서 찾아야 해서</span></label><label><input type="radio" name="p18q2" value="3"> <span>3. Argon2는 64글자를 넘어서</span></label><label><input type="radio" name="p18q2" value="4"> <span>4. SHA-256은 되돌릴 수 있어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>솔트를 섞는 Argon2는 같은 입력에도 결과가 달라 조회에 쓸 수 없습니다. 무작위 토큰에는 빠른 해시로 충분합니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">공격자가 훔친 리프레시 토큰으로 먼저 재발급을 받았습니다. 그 뒤 진짜 사용자가 같은 리프레시 토큰으로 재발급을 요청하면 어떻게 되나요?</p><label><input type="radio" name="p18q3" value="1"> <span>1. 공격자의 토큰이 자동으로 취소된다.</span></label><label><input type="radio" name="p18q3" value="2"> <span>2. 서버가 비밀번호를 다시 묻는다.</span></label><label><input type="radio" name="p18q3" value="3"> <span>3. 둘 다 계속 쓸 수 있다.</span></label><label><input type="radio" name="p18q3" value="4"> <span>4. 진짜 사용자의 요청은 401이 된다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>토큰 교체 때문에 한 번 쓴 토큰은 취소됩니다. 진짜 사용자는 다시 로그인해야 하고, 이때 이상한 일이 있었다는 신호를 얻습니다.</p></div>
+
+<h2>다음 섹션</h2>
+<p>3일차 오후(S6)에는 라우터에 몰려 있는 데이터베이스 코드를 서비스 계층으로 나누고, 도서 표지 이미지 업로드를 만듭니다. 마지막 통합 실습에서는 오늘 만든 <code>CurrentUserDep</code>로 로그인한 사용자만 도서를 대여하고 반납하는 기능을 직접 설계해 구현합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p18/s5-p18-04.html"><span class="dir">이전</span>S5-P18-04 토큰 보안 수칙</a>
+  <a class="next" href="../../s6/p19/s6-p19-01.html"><span class="dir">다음</span>S6-P19-01 라우터, 서비스, 저장소</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

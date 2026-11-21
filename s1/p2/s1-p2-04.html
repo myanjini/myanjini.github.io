@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P2-04 첫 API 만들기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P2-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. REST API와 FastAPI 기초</a><span class="sep">/</span><span>S1-P2 개발 환경 구성과 첫 FastAPI 앱</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p2-01.html" style="flex:10" data-type="주요 개념" title="FastAPI와 Uvicorn (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p2-02.html" style="flex:15" data-type="실습" title="개발 환경 구성 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s1-p2-03.html" style="flex:5" data-type="주요 개념" title="첫 앱 실행 과정 보기 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s1-p2-04.html" style="flex:15" data-type="실습" title="첫 API 만들기 (15분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s1-p2-05.html" style="flex:5" data-type="정리" title="정리: 서버 실행 흐름 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S1-P2-04</span></div>
+<h1>첫 API 만들기</h1>
+
+<p class="lead">첫 FastAPI 앱을 직접 작성해 실행하고, 브라우저와 API 문서 화면에서 응답을 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong><code>GET /</code>와 <code>GET /health</code>가 동작하는 <code>main.py</code>를 만들 수 있습니다.</p></div>
+<ol class="steps"><li><h3>main.py 작성</h3>
+<p>VSCode에서 <code>book-api</code> 폴더 바로 아래에 <code>main.py</code>를 만들고 다음 코드를 입력합니다.</p>
+<div class="codeblock"><span class="file">main.py</span><pre><code>from fastapi import FastAPI
+
+app = FastAPI(title="도서 관리 API")
+
+
+@app.get("/")
+def read_root():
+    return {"message": "도서 관리 API입니다."}
+
+
+@app.get("/health")
+def health_check():
+    # 서버가 요청에 응답할 수 있는지 확인하는 용도입니다.
+    return {"status": "ok"}</code></pre></div>
+
+<p><code>FastAPI(title=...)</code>에 적은 이름은 API 문서 화면의 제목으로 쓰입니다.</p>
+</li><li><h3>서버 실행</h3>
+<p>VSCode 터미널(가상환경이 켜진 상태)에서 실행합니다.</p>
+<div class="codeblock term"><pre><code>fastapi dev main.py</code></pre></div>
+
+<p><code>Application startup complete.</code>가 보이면 준비가 끝난 것입니다.</p>
+</li><li><h3>브라우저로 두 주소 확인</h3>
+<p>두 주소를 차례로 열어 응답을 확인합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>주소</th><th>기대하는 응답</th></tr></thead><tbody><tr><td><code>http://127.0.0.1:8000/</code></td><td><code>{"message":"도서 관리 API입니다."}</code></td></tr><tr><td><code>http://127.0.0.1:8000/health</code></td><td><code>{"status":"ok"}</code></td></tr></tbody></table></div>
+
+<p>없는 주소인 <code>http://127.0.0.1:8000/hello</code>도 열어 보세요. <code>{"detail":"Not Found"}</code>가 나오는데, 이것이 404 응답입니다.</p>
+</li><li><h3>API 문서 화면에서 호출</h3>
+<p><code>http://127.0.0.1:8000/docs</code>를 엽니다. 이 화면을 <strong>Swagger UI</strong>라고 부릅니다.</p>
+<ol>
+  <li><code>GET /health</code>를 눌러 펼칩니다.</li>
+  <li><strong>Try it out</strong>을 누르고 <strong>Execute</strong>를 누릅니다.</li>
+  <li>아래 <strong>Responses</strong> 영역에서 상태 코드 200과 응답 본문을 확인합니다.</li>
+</ol>
+<p>앞으로 만드는 API는 대부분 이 화면에서 먼저 시험합니다.</p>
+</li><li><h3>자동 재시작 확인</h3>
+<p>서버를 켜 둔 채로 <code>read_root</code>의 메시지를 <code>"도서 관리 API에 오신 것을 환영합니다."</code>로 바꾸고 저장합니다. 터미널에 재시작 로그가 지나간 뒤 브라우저를 새로 고치면 바뀐 메시지가 보입니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>GET /와 GET /health가 브라우저에서 JSON으로 보인다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>없는 주소에서 404 응답을 확인했다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>Swagger UI에서 Try it out으로 API를 호출했다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>코드를 저장하면 서버가 자동으로 다시 시작되는 것을 확인했다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>Could not import module "main"</code> 또는 파일을 찾지 못함</td><td><code>main.py</code>가 없는 폴더에서 실행했습니다. 터미널의 현재 위치가 <code>book-api</code>인지 확인합니다.</td></tr><tr><td>포트가 이미 사용 중이라는 오류</td><td>다른 터미널에서 서버가 이미 켜져 있을 수 있습니다. 그 서버를 끄거나 <code>fastapi dev main.py --port 8001</code>처럼 다른 포트를 씁니다.</td></tr><tr><td>저장했는데 결과가 그대로</td><td>파일을 저장했는지(VSCode 탭의 동그라미 표시) 확인하고 브라우저를 새로 고칩니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p2-done</code> 브랜치에 이 파트를 마친 코드가 있습니다. 막혔을 때 비교용으로만 사용하세요.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p2/s1-p2-03.html"><span class="dir">이전</span>S1-P2-03 첫 앱 실행 과정 보기</a>
+  <a class="next" href="../../s1/p2/s1-p2-05.html"><span class="dir">다음</span>S1-P2-05 정리: 서버 실행 흐름</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

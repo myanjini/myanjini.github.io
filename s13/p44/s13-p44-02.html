@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P44-02 인스턴스 시작 과정 보기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P44-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P44 EC2 시작과 접속</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p44-01.html" style="flex:10" data-type="주요 개념" title="EC2 핵심 개념 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p44-02.html" style="flex:10" data-type="주요 개념" title="인스턴스 시작 과정 보기 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s13-p44-03.html" style="flex:20" data-type="실습" title="EC2 만들고 접속하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p44-04.html" style="flex:5" data-type="주요 개념" title="SSH와 Session Manager 비교 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p44-05.html" style="flex:5" data-type="정리" title="정리: EC2 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S13-P44-02</span></div>
+<h1>인스턴스 시작 과정 보기</h1>
+
+<p class="lead">EC2 콘솔의 "인스턴스 시작" 화면은 위에서 아래로 한 페이지에 모든 설정이 나옵니다. 실습 전에 각 칸에 무엇을 넣을지, 왜 그 값인지 정리합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>화면의 칸</th><th>이번 실습 값</th><th>이유</th></tr></thead><tbody><tr><td>이름 및 태그</td><td>이름 <code>book-api-server</code>, 태그 추가 <code>Owner</code> = 내 식별자</td><td>R7. "추가 태그 추가"에서 Owner를 넣고 리소스 유형에 인스턴스와 볼륨을 모두 고릅니다.</td></tr><tr><td>애플리케이션 및 OS 이미지(AMI)</td><td>Amazon Linux 2023 AMI, 아키텍처 64비트(x86)</td><td>SSM 에이전트와 AWS CLI가 들어 있고, IMDSv2만 허용합니다.</td></tr><tr><td>인스턴스 유형</td><td><code>t3.micro</code>(또는 기관 안내)</td><td>소형, x86_64</td></tr><tr><td>키 페어(로그인)</td><td><strong>키 페어 없이 계속 진행</strong></td><td>R3. Session Manager로만 접속합니다.</td></tr><tr><td>네트워크 설정: VPC</td><td><code>book-api-vpc</code></td><td>기본 VPC가 아닌지 확인합니다.</td></tr><tr><td>네트워크 설정: 서브넷</td><td><code>book-api-subnet-public1-ap-northeast-2a</code></td><td>퍼블릭 서브넷, 가용 영역 a</td></tr><tr><td>퍼블릭 IP 자동 할당</td><td><strong>활성화</strong></td><td>7일차에는 내 PC에서 퍼블릭 IP로 접속하고, NAT 없이 서버가 밖으로 나가야 합니다.</td></tr><tr><td>방화벽(보안 그룹)</td><td>기존 보안 그룹 선택: <code>book-api-sg</code></td><td>새 보안 그룹을 만들게 두면 22번을 0.0.0.0/0에 여는 규칙이 기본으로 들어갑니다.</td></tr><tr><td>스토리지</td><td>8GiB gp3(기본값)</td><td>Docker 이미지 몇 개에 충분합니다.</td></tr><tr><td>고급 세부 정보: IAM 인스턴스 프로파일</td><td><code>book-api-ec2-role</code></td><td>Session Manager, ECR, Parameter Store 권한</td></tr><tr><td>고급 세부 정보: 메타데이터 버전</td><td>V2만(토큰 필요)</td><td>Amazon Linux 2023의 기본값입니다. 바뀌어 있지 않은지만 확인합니다.</td></tr><tr><td>고급 세부 정보: 사용자 데이터</td><td>비워 둠</td><td>설치 과정을 직접 해 보기 위해서입니다.</td></tr></tbody></table></div>
+<div class="callout warn"><p class="callout-title">자주 하는 실수</p><p>(1) 네트워크 설정의 "편집"을 누르지 않아 기본 VPC에 만드는 것, (2) 보안 그룹을 "보안 그룹 생성"으로 둔 채 넘어가 22번이 열리는 것, (3) IAM 인스턴스 프로파일을 고르지 않아 Session Manager에 연결되지 않는 것이 가장 흔합니다. "인스턴스 시작"을 누르기 전에 오른쪽 요약 화면에서 세 가지를 확인합니다. IAM 역할은 인스턴스를 만든 뒤에도 "작업, 보안, IAM 역할 수정"으로 붙일 수 있습니다.</p></div>
+
+<h2>Session Manager가 연결되는 조건</h2>
+<p>Session Manager는 서버 안의 SSM 에이전트가 AWS Systems Manager 서비스에 먼저 연결을 맺는 방식입니다. 그래서 인바운드 포트는 필요 없지만, 아래 조건이 모두 맞아야 합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>조건</th><th>이번 구성에서</th></tr></thead><tbody><tr><td>서버에 SSM 에이전트가 설치되어 실행 중</td><td>Amazon Linux 2023에 기본으로 들어 있습니다.</td></tr><tr><td>서버의 IAM 역할에 Systems Manager 권한</td><td><code>AmazonSSMManagedInstanceCore</code></td></tr><tr><td>서버가 Systems Manager 주소(HTTPS 443)로 나갈 수 있음</td><td>퍼블릭 IP + 인터넷 게이트웨이 + 아웃바운드 모두 허용</td></tr><tr><td>내 계정에 세션을 시작할 권한</td><td>기관이 실습 권한에 포함해 두었습니다.</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p44/s13-p44-01.html"><span class="dir">이전</span>S13-P44-01 EC2 핵심 개념</a>
+  <a class="next" href="../../s13/p44/s13-p44-03.html"><span class="dir">다음</span>S13-P44-03 EC2 만들고 접속하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

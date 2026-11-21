@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P12-05 정리: 목록 조회 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P12-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 데이터베이스 활용과 마이그레이션</a><span class="sep">/</span><span>S4-P12 수정, 삭제와 목록 조회 고도화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p12-01.html" style="flex:5" data-type="주요 개념" title="수정과 삭제의 흐름 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s4-p12-02.html" style="flex:15" data-type="실습" title="수정, 삭제 API (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s4-p12-03.html" style="flex:10" data-type="주요 개념" title="검색, 정렬, 페이지네이션 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s4-p12-04.html" style="flex:15" data-type="실습" title="목록 조회 고도화 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s4-p12-05.html" style="flex:5" data-type="정리" title="정리: 목록 조회 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S4-P12-05</span></div>
+<h1>정리: 목록 조회</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>수정은 찾기, 검사하기, 속성 바꾸기, <code>commit</code>, <code>refresh</code> 순서이고, 삭제는 찾기, <code>db.delete</code>, <code>commit</code> 순서입니다.</li>
+  <li>검색 조건은 목록에 모아 <code>where(*conditions)</code>로 겁니다.</li>
+  <li>정렬처럼 SQL 문장 일부가 되는 값은 <code>Literal</code>로 허용한 값만 받습니다.</li>
+  <li>목록 응답에 전체 개수를 함께 주면 클라이언트가 페이지를 계산할 수 있습니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">세션에서 꺼낸 <code>book</code>의 가격을 바꾼 뒤 데이터베이스에 반영하려면 무엇이 꼭 필요한가요?</p><label><input type="radio" name="p12q1" value="1"> <span>1. <code>db.add(book)</code></span></label><label><input type="radio" name="p12q1" value="2"> <span>2. <code>db.commit()</code></span></label><label><input type="radio" name="p12q1" value="3"> <span>3. <code>db.get(Book, 1)</code></span></label><label><input type="radio" name="p12q1" value="4"> <span>4. <code>select(Book)</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>세션이 지켜보는 객체는 속성을 바꾸고 commit하면 반영됩니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">정렬 기준을 <code>sort: str</code>로 받아 그대로 SQL에 넣지 않고 <code>Literal</code>로 제한하는 이유는 무엇인가요?</p><label><input type="radio" name="p12q2" value="1"> <span>1. 정렬 속도가 빨라져서</span></label><label><input type="radio" name="p12q2" value="2"> <span>2. Swagger UI가 Literal만 지원해서</span></label><label><input type="radio" name="p12q2" value="3"> <span>3. 코드가 짧아서</span></label><label><input type="radio" name="p12q2" value="4"> <span>4. 허용하지 않은 문자열이 SQL 문장 일부로 들어가는 것을 막으려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>정렬 열 이름은 값이 아니라 문장 일부라 따로 전달되지 않습니다. 허용 목록으로 막아야 안전합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">가격으로 정렬할 때 <code>Book.id</code>를 두 번째 기준으로 붙이는 이유는 무엇인가요?</p><label><input type="radio" name="p12q3" value="1"> <span>1. 가격을 숫자로 바꾸려고</span></label><label><input type="radio" name="p12q3" value="2"> <span>2. 가격이 같은 도서의 순서를 항상 같게 하려고</span></label><label><input type="radio" name="p12q3" value="3"> <span>3. id가 없으면 오류가 나서</span></label><label><input type="radio" name="p12q3" value="4"> <span>4. 전체 개수를 세려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>순서가 매번 같아야 페이지를 넘길 때 도서가 겹치거나 빠지지 않습니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>S4-P13에서는 저자를 별도 테이블로 분리하고, 도서와 저자를 관계로 연결합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s4/p12/s4-p12-04.html"><span class="dir">이전</span>S4-P12-04 목록 조회 고도화</a>
+  <a class="next" href="../../s4/p13/s4-p13-01.html"><span class="dir">다음</span>S4-P13-01 관계가 필요한 이유</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

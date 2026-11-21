@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P56-05 정리: 8일차 마무리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P56-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. 운영 보안 점검과 장애 대응</a><span class="sep">/</span><span>S16-P56 비용 정리와 미니 프로젝트 준비</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p56-01.html" style="flex:10" data-type="주요 개념" title="비용 확인과 자원 정리 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p56-02.html" style="flex:10" data-type="실습" title="불필요한 자원 정리 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s16-p56-03.html" style="flex:10" data-type="주요 개념" title="미니 프로젝트 안내 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s16-p56-04.html" style="flex:15" data-type="실습" title="주제와 보안 요구사항 정하기 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s16-p56-05.html" style="flex:5" data-type="정리" title="정리: 8일차 마무리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S16-P56-05</span></div>
+<h1>정리: 8일차 마무리</h1>
+
+<h2>8일차 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>시간</th><th>한 일</th><th>남은 산출물</th></tr></thead><tbody><tr><td>오전</td><td>S3, CloudWatch, ALB, 배포 자동화</td><td>서버에 데이터가 없는 배포, 테스트 통과 후 자동 배포</td></tr><tr><td>오후 1</td><td>AWS 보안 점검</td><td><a href="../../appendix/appendix-c.html">부록 C</a> 점검표 작성본(평가 대상), CORS 조치</td></tr><tr><td>오후 2</td><td>장애 대응과 롤백</td><td>장애 대응 기록 두 건</td></tr><tr><td>오후 3</td><td>비용 정리와 프로젝트 준비</td><td><a href="../../appendix/appendix-g.html">부록 G</a> 정리 목록, 주제와 보안 요구사항 초안</td></tr></tbody></table></div>
+
+<p>8일차의 주제는 "운영"이었습니다. 배포는 끝이 아니라 시작이고, 점검하고, 지켜보고, 고장 나면 되돌리고, 다 쓰면 치우는 일까지가 서비스를 만드는 사람의 몫입니다.</p>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">실습 VPC를 지우려는데 "의존 관계가 있어 지울 수 없다"는 오류가 납니다. 가장 먼저 확인할 것은 무엇인가요?</p><label><input type="radio" name="p56q1" value="1"> <span>1. Parameter Store</span></label><label><input type="radio" name="p56q1" value="2"> <span>2. IAM 역할</span></label><label><input type="radio" name="p56q1" value="3"> <span>3. VPC 안에 남은 EC2, RDS, ALB 같은 자원</span></label><label><input type="radio" name="p56q1" value="4"> <span>4. S3 버킷</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>다른 것을 쓰는 쪽(ALB, EC2, RDS)부터 지워야 VPC를 지울 수 있습니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">미니 프로젝트의 범위를 정할 때 가장 우선할 것은 무엇인가요?</p><label><input type="radio" name="p56q2" value="1"> <span>1. 작은 기능을 인증, 권한, 검증, 테스트, 점검, 배포까지 끝내는 것</span></label><label><input type="radio" name="p56q2" value="2"> <span>2. 화면 디자인</span></label><label><input type="radio" name="p56q2" value="3"> <span>3. 외부 API 연동</span></label><label><input type="radio" name="p56q2" value="4"> <span>4. 기능의 수</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>하루 일정에서는 끝까지 마무리한 작은 기능이 평가에서 더 중요합니다.</p></div>
+
+<h2>9일차 준비물</h2>
+<div class="table-wrap"><table><thead><tr><th>준비물</th><th>확인</th></tr></thead><tbody><tr><td>주제와 보안 요구사항 초안(오늘 작성)</td><td>위협 3개 이상, 각각 대책과 테스트 이름</td></tr><tr><td>도서 API 저장소</td><td>최신 코드가 main에 있고 배포 워크플로가 성공 상태</td></tr><tr><td>AWS 자원</td><td>EC2, RDS, ALB가 실행 중이고 ALB의 /health가 200</td></tr><tr><td>로그인</td><td>콘솔과 CLI(<code>aws login</code>) 로그인 가능</td></tr><tr><td><a href="../../appendix/appendix-b.html">부록 B</a>(API 명세서 양식), <a href="../../appendix/appendix-d.html">부록 D</a>(발표 체크리스트)</td><td>교안 부록에서 미리 읽어 두기</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s16/p56/s16-p56-04.html"><span class="dir">이전</span>S16-P56-04 주제와 보안 요구사항 정하기</a>
+  <a class="next" href="../../s17/p57/s17-p57-01.html"><span class="dir">다음</span>S17-P57-01 설계 진행 안내</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

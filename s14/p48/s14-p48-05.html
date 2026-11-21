@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P48-05 정리: ECR | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P48-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 안전한 배포 구성</a><span class="sep">/</span><span>S14-P48 ECR로 이미지 배포</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p48-01.html" style="flex:5" data-type="주요 개념" title="컨테이너 레지스트리와 ECR (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s14-p48-02.html" style="flex:10" data-type="주요 개념" title="이미지 푸시 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s14-p48-03.html" style="flex:25" data-type="실습" title="이미지 푸시와 EC2에서 실행 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s14-p48-04.html" style="flex:5" data-type="주요 개념" title="이미지 태그 전략 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s14-p48-05.html" style="flex:5" data-type="정리" title="정리: ECR (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S14-P48-05</span></div>
+<h1>정리: ECR</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>핵심</th></tr></thead><tbody><tr><td>레지스트리</td><td>이미지는 한 번 만들어 ECR에 올리고, 서버는 받아서 실행만 합니다.</td></tr><tr><td>ECR 저장소</td><td>프라이빗, 태그 변경 불가, 푸시 시 스캔</td></tr><tr><td>로그인</td><td><code>get-login-password</code>로 12시간짜리 암호를 받아 <code>--password-stdin</code>으로 넘깁니다. EC2는 역할로 로그인합니다.</td></tr><tr><td>빌드</td><td>EC2용은 <code>--platform linux/amd64</code>로 만듭니다.</td></tr><tr><td>태그</td><td><code>latest</code> 대신 버전과 커밋 태그를 붙이고, 이전 태그로 되돌립니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">EC2가 ECR에서 이미지를 받을 수 있게 하는 것은 무엇인가요?</p><label><input type="radio" name="p48q1" value="1"> <span>1. EC2에 저장한 액세스 키</span></label><label><input type="radio" name="p48q1" value="2"> <span>2. EC2 역할의 AmazonEC2ContainerRegistryPullOnly 정책</span></label><label><input type="radio" name="p48q1" value="3"> <span>3. 보안 그룹의 443 인바운드 규칙</span></label><label><input type="radio" name="p48q1" value="4"> <span>4. ECR 저장소의 공개 설정</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>서버의 역할이 레지스트리 로그인과 이미지 받기를 허용합니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">Apple Silicon Mac에서 만든 이미지가 EC2에서 <code>exec format error</code>로 실행되지 않습니다. 원인은 무엇인가요?</p><label><input type="radio" name="p48q2" value="1"> <span>1. 보안 그룹이 막음</span></label><label><input type="radio" name="p48q2" value="2"> <span>2. 태그가 latest가 아님</span></label><label><input type="radio" name="p48q2" value="3"> <span>3. ECR 로그인이 만료됨</span></label><label><input type="radio" name="p48q2" value="4"> <span>4. 이미지가 ARM용으로 만들어짐</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden><code>--platform linux/amd64</code>로 다시 만들어 새 태그로 올립니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">ECR 이미지 스캔이 pip-audit과 다르게 더 찾아 주는 것은 무엇인가요?</p><label><input type="radio" name="p48q3" value="1"> <span>1. 내 코드의 SQL 삽입</span></label><label><input type="radio" name="p48q3" value="2"> <span>2. 이미지 안 운영체제 패키지의 알려진 취약점</span></label><label><input type="radio" name="p48q3" value="3"> <span>3. IAM 정책의 오류</span></label><label><input type="radio" name="p48q3" value="4"> <span>4. 보안 그룹 규칙</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>pip-audit은 Python 패키지만, ECR 스캔은 이미지 전체의 패키지를 봅니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>재료가 모두 모였습니다. 다음 파트에서는 ECR 이미지, Parameter Store, RDS를 운영용 Compose 파일 하나로 묶어 도서 API의 운영 배포를 완성하고, 처음부터 끝까지 기능을 확인합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p48/s14-p48-04.html"><span class="dir">이전</span>S14-P48-04 이미지 태그 전략</a>
+  <a class="next" href="../../s14/p49/s14-p49-01.html"><span class="dir">다음</span>S14-P49-01 운영 배포 구성 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

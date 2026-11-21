@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부록 G AWS 자원 정리 체크리스트 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-page="index">
+<header class="topbar">
+  <a class="course" href="../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="index.html">부록</a><span class="sep">/</span><span>부록 G</span></nav>
+</header>
+<main class="page">
+<h1>부록 G. AWS 자원 정리 체크리스트</h1><p>의존 관계 때문에 아래 순서로 삭제합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>자원</th><th>확인 사항</th></tr></thead><tbody><tr><td>1</td><td>ALB와 대상 그룹</td><td>리스너와 대상 그룹까지 삭제</td></tr><tr><td>2</td><td>EC2 인스턴스</td><td>종료 후 EBS 볼륨이 남지 않았는지 확인</td></tr><tr><td>3</td><td>RDS 인스턴스</td><td>최종 스냅샷 생성 여부 결정 후 삭제, 남은 수동 스냅샷 삭제</td></tr><tr><td>4</td><td>ECR 저장소</td><td>이미지와 저장소 삭제</td></tr><tr><td>5</td><td>S3 버킷</td><td>객체를 비운 뒤 버킷 삭제</td></tr><tr><td>6</td><td>탄력적 IP</td><td>할당 해제(사용한 경우)</td></tr><tr><td>7</td><td>CloudWatch</td><td>로그 그룹과 경보 삭제</td></tr><tr><td>8</td><td>Parameter Store</td><td>실습용 파라미터 삭제</td></tr><tr><td>9</td><td>보안 그룹, 서브넷, VPC</td><td>기본 VPC가 아닌 실습 VPC 삭제</td></tr><tr><td>10</td><td>IAM 역할과 OIDC 공급자</td><td>실습용 역할, GitHub OIDC 공급자 삭제</td></tr><tr><td>11</td><td>비용 확인</td><td>비용 탐색기에서 남은 과금 자원이 없는지 확인</td></tr></tbody></table></div><h2>양식 내려받기</h2><ul><li><a href="../assets/files/cleanup-list.md" download>AWS 자원 정리 목록 양식 내려받기(cleanup-list.md)</a></li></ul><p class="when">다른 부록: <a href="appendix-a.html">부록 A</a> <a href="appendix-b.html">부록 B</a> <a href="appendix-c.html">부록 C</a> <a href="appendix-d.html">부록 D</a> <a href="appendix-e.html">부록 E</a> <a href="appendix-f.html">부록 F</a> <a href="appendix-g.html">부록 G</a></p>
+</main>
+</body>
+</html>

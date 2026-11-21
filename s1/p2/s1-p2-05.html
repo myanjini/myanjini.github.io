@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P2-05 정리: 서버 실행 흐름 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P2-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. REST API와 FastAPI 기초</a><span class="sep">/</span><span>S1-P2 개발 환경 구성과 첫 FastAPI 앱</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p2-01.html" style="flex:10" data-type="주요 개념" title="FastAPI와 Uvicorn (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p2-02.html" style="flex:15" data-type="실습" title="개발 환경 구성 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s1-p2-03.html" style="flex:5" data-type="주요 개념" title="첫 앱 실행 과정 보기 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s1-p2-04.html" style="flex:15" data-type="실습" title="첫 API 만들기 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s1-p2-05.html" style="flex:5" data-type="정리" title="정리: 서버 실행 흐름 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S1-P2-05</span></div>
+<h1>정리: 서버 실행 흐름</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>FastAPI는 요청 처리의 반복 작업을 대신해 주는 웹 프레임워크이고, Uvicorn은 포트를 열고 요청을 받아 FastAPI에 넘기는 서버 프로그램입니다.</li>
+  <li>실습은 항상 가상환경을 켠 상태(<code>(.venv)</code> 표시)에서 진행합니다.</li>
+  <li><code>@app.get("/경로")</code> 아래 함수가 그 요청을 처리하고, 딕셔너리를 돌려주면 JSON 응답이 됩니다.</li>
+  <li><code>fastapi dev main.py</code>로 실행하면 저장할 때마다 자동으로 다시 시작되고, <code>/docs</code>에서 API를 시험할 수 있습니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">Uvicorn이 맡는 역할로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p2q1" value="1"> <span>1. Python 패키지를 설치한다.</span></label><label><input type="radio" name="p2q1" value="2"> <span>2. JSON을 HTML로 바꾼다.</span></label><label><input type="radio" name="p2q1" value="3"> <span>3. API 경로와 처리 함수를 정의한다.</span></label><label><input type="radio" name="p2q1" value="4"> <span>4. 포트를 열고 요청을 받아 FastAPI 앱에 넘긴다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>경로와 처리 함수는 FastAPI 코드에 있고, 네트워크에서 요청을 받는 일은 Uvicorn이 합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">FastAPI가 자동으로 만들어 주는 API 문서를 보려면 어느 주소를 열어야 하나요?</p><label><input type="radio" name="p2q2" value="1"> <span>1. <code>/api</code></span></label><label><input type="radio" name="p2q2" value="2"> <span>2. <code>/docs</code></span></label><label><input type="radio" name="p2q2" value="3"> <span>3. <code>/swagger.json</code></span></label><label><input type="radio" name="p2q2" value="4"> <span>4. <code>/health</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden><code>/docs</code>에서 Swagger UI 문서를 볼 수 있고, 그 화면에서 API를 직접 호출할 수 있습니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">가상환경을 쓰는 가장 큰 이유는 무엇인가요?</p><label><input type="radio" name="p2q3" value="1"> <span>1. 인터넷 없이 패키지를 설치하려고</span></label><label><input type="radio" name="p2q3" value="2"> <span>2. 코드를 자동으로 저장하려고</span></label><label><input type="radio" name="p2q3" value="3"> <span>3. Python 실행 속도를 높이려고</span></label><label><input type="radio" name="p2q3" value="4"> <span>4. 프로젝트마다 패키지를 따로 설치해 버전이 섞이지 않게 하려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>가상환경은 프로젝트별 패키지 설치 공간입니다. 다른 프로젝트의 패키지 버전과 충돌하지 않습니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>S1-P3에서는 주소의 일부나 물음표 뒤의 값을 받아 처리하는 방법을 배우고, 도서 목록과 도서 하나를 조회하는 API를 만듭니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p2/s1-p2-04.html"><span class="dir">이전</span>S1-P2-04 첫 API 만들기</a>
+  <a class="next" href="../../s1/p3/s1-p3-01.html"><span class="dir">다음</span>S1-P3-01 경로 연산과 HTTP 메서드</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

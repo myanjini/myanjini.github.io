@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P29-02 소프트웨어 개발보안이란 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P29-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P29 소프트웨어 개발보안과 KISA 가이드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p29-01.html" style="flex:5" data-type="주요 개념" title="4일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s9-p29-02.html" style="flex:10" data-type="주요 개념" title="소프트웨어 개발보안이란 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p29-03.html" style="flex:10" data-type="주요 개념" title="KISA 가이드의 보안약점 분류 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s9-p29-04.html" style="flex:20" data-type="실습" title="도서 API에서 공격 지점 찾기 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s9-p29-05.html" style="flex:5" data-type="정리" title="정리: 개발보안의 틀 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S9-P29-02</span></div>
+<h1>소프트웨어 개발보안이란</h1>
+
+<p class="lead">보안은 서비스를 다 만든 뒤에 덧붙이는 것이 아니라, 만드는 과정 전체에서 챙기는 것입니다. 그 생각을 제도로 정리한 것이 소프트웨어 개발보안입니다.</p>
+
+<h2>보안약점과 보안 취약점</h2>
+<div class="table-wrap"><table><thead><tr><th>용어</th><th>뜻</th><th>예</th></tr></thead><tbody><tr><td>보안약점(weakness)</td><td>공격에 쓰일 수 있는 코드나 설계의 결함</td><td>사용자 입력을 SQL 문장에 그대로 이어 붙인 코드</td></tr><tr><td>보안 취약점(vulnerability)</td><td>보안약점 중 실제로 공격할 수 있는 상태가 된 것</td><td>그 코드가 인터넷에 공개된 API에서 실행되어, 누구나 사용자 정보를 빼낼 수 있는 상태</td></tr></tbody></table></div>
+
+<p>보안약점은 아직 공격받지 않았어도 코드에 남아 있는 "사고의 씨앗"입니다. <strong>소프트웨어 개발보안</strong>은 개발 과정에서 이 씨앗을 찾아 없애는 활동이며, 그중 코드를 안전하게 작성하는 일을 <strong>시큐어코딩</strong>이라고 부릅니다.</p>
+
+<h2>왜 개발 단계에서 하나요</h2>
+<p>보안약점은 늦게 발견할수록 고치는 비용이 커집니다. 코드를 쓸 때 발견하면 한 줄을 고치면 되지만, 운영 중에 사고로 발견하면 원인 분석, 긴급 수정, 피해 복구, 사용자 통지까지 해야 합니다. 그래서 단계마다 할 일을 나눠 둡니다.</p>
+<div class="table-wrap"><table><thead><tr><th>개발 단계</th><th>보안 활동</th><th>이 과정에서</th></tr></thead><tbody><tr><td>요구사항 분석</td><td>보안 요구사항 정의(누가 무엇을 할 수 있는가, 어떤 정보를 보호하는가)</td><td>3일차 권한 표, 9일차 미니 프로젝트 명세서</td></tr><tr><td>설계</td><td>위협을 예상하고 보안 기능을 설계(인증 방식, 데이터 암호화, 접근 통제)</td><td>3일차 토큰 설계, 6일차 AWS 네트워크 설계</td></tr><tr><td>구현</td><td>시큐어코딩, 자동 점검 도구로 코드 검사</td><td>5일차, 6일차 오전</td></tr><tr><td>테스트</td><td>보안 테스트, 보안약점 진단</td><td>오늘 만드는 회귀 테스트, 6일차 진단 실습</td></tr><tr><td>배포와 운영</td><td>비밀정보 관리, 패치, 모니터링</td><td>7일차와 8일차 AWS 단원</td></tr></tbody></table></div>
+
+<h2>공공 정보화사업의 개발보안 제도</h2>
+<p>우리나라는 행정기관과 공공기관이 발주하는 정보화사업에 소프트웨어 개발보안을 의무로 적용합니다. 2012년 12월 개발비 40억 원 이상 사업부터 시작해, 2014년에는 20억 원 이상, 2015년부터는 정보시스템 감리 대상이 되는 모든 사업으로 넓어졌습니다. 감리 과정에서는 보안약점을 제거했는지 확인하고, 이 일을 맡는 전문가로 소프트웨어 보안약점 진단원 제도를 운영합니다.</p>
+<p>제도의 기준이 되는 문서가 행정안전부와 한국인터넷진흥원(KISA)이 펴낸 <strong>소프트웨어 개발보안 가이드</strong>입니다. 공공 사업이 아니더라도 국내 개발자가 보안약점을 정리할 때 가장 널리 참고하는 기준이어서, 이 과정도 이 가이드의 분류를 따릅니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p29/s9-p29-01.html"><span class="dir">이전</span>S9-P29-01 4일차 복습</a>
+  <a class="next" href="../../s9/p29/s9-p29-03.html"><span class="dir">다음</span>S9-P29-03 KISA 가이드의 보안약점 분류</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

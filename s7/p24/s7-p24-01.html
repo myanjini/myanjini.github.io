@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P24-01 인증 흐름 테스트 전략 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P24-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 테스트 자동화와 CI</a><span class="sep">/</span><span>S7-P24 인증 API 테스트와 커버리지</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p24-01.html" style="flex:5" data-type="주요 개념" title="인증 흐름 테스트 전략 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s7-p24-02.html" style="flex:20" data-type="실습" title="인증 테스트 작성 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s7-p24-03.html" style="flex:10" data-type="주요 개념" title="커버리지 측정 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s7-p24-04.html" style="flex:10" data-type="실습" title="부족한 테스트 보완 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s7-p24-05.html" style="flex:5" data-type="정리" title="정리: 인증 테스트 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S7-P24-01</span></div>
+<h1>인증 흐름 테스트 전략</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>인증이 필요한 API를 테스트하고 커버리지로 빠진 부분을 찾을 수 있습니다.</p></div>
+
+<p class="lead">인증과 권한을 시험하려면 서로 다른 사용자가 여럿 필요합니다. 필요할 때마다 사용자를 만들어 주는 fixture를 설계합니다.</p>
+
+<h2>무엇을 시험하나요</h2>
+<p>3일차 시험 표를 떠올리면 시험할 목록이 나옵니다. 정상 흐름만이 아니라 막혀야 할 요청이 정말 막히는지 확인하는 것이 인증 테스트의 핵심입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>분류</th><th>시험할 내용</th><th>필요한 사용자</th></tr></thead><tbody><tr><td>정상</td><td>로그인하면 토큰을 받고, 그 토큰으로 <code>/auth/me</code>가 200</td><td>1명</td></tr><tr><td>인증 실패</td><td>토큰 없음, 위조한 토큰, 틀린 비밀번호는 401</td><td>0~1명</td></tr><tr><td>인가 실패</td><td>남의 도서를 수정하면 403</td><td>2명(주인, 다른 사람)</td></tr><tr><td>관리자</td><td>관리자는 남의 도서를 수정할 수 있음</td><td>2명(주인, 관리자)</td></tr><tr><td>토큰 수명</td><td>리프레시 토큰은 한 번만 쓸 수 있고, 로그아웃하면 재발급할 수 없음</td><td>1명</td></tr></tbody></table></div>
+
+<h2>사용자를 만들어 주는 함수를 주는 fixture</h2>
+<p>앞 파트의 <code>auth_headers</code>는 정해진 사용자 한 명만 만듭니다. 테스트마다 필요한 사용자 수와 역할이 다르므로, 이번에는 <strong>사용자를 만드는 함수</strong>를 돌려주는 fixture를 만듭니다. 이런 fixture를 팩토리(factory) fixture라고 부릅니다.</p>
+<div class="codeblock"><span class="file">tests/conftest.py</span><pre><code>@pytest.fixture
+def make_user(client, db_session):
+    """사용자를 만들고 로그인해 Authorization 헤더를 돌려주는 함수를 줍니다."""
+
+    def _make_user(email: str, role: str = "user") -&gt; dict:
+        password = "test-pass-123"
+        client.post("/auth/signup", json={"email": email, "password": password})
+        if role != "user":
+            user = db_session.scalar(select(User).where(User.email == email))
+            user.role = role
+            db_session.commit()
+        response = client.post("/auth/token", data={"username": email, "password": password})
+        return {"Authorization": f"Bearer {response.json()['access_token']}"}
+
+    return _make_user
+
+
+@pytest.fixture
+def auth_headers(make_user):
+    """일반 사용자 한 명의 Authorization 헤더"""
+    return make_user("tester@example.com")</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>코드</th><th>하는 일</th></tr></thead><tbody><tr><td><code>_make_user(email, role)</code></td><td>가입, 필요하면 역할 변경, 로그인까지 하고 헤더를 돌려줍니다. 테스트 안에서 원하는 만큼 부를 수 있습니다.</td></tr><tr><td><code>db_session</code>으로 역할 변경</td><td>관리자를 만드는 API는 없습니다(S5-P17). 3일차에 <code>make_admin</code> 도구로 데이터베이스를 직접 고쳤던 것처럼, 테스트도 데이터베이스를 직접 고칩니다.</td></tr><tr><td><code>auth_headers</code></td><td><code>make_user</code>를 써서 다시 만듭니다. 이름이 같으므로 도서 테스트는 고치지 않아도 됩니다.</td></tr></tbody></table></div>
+
+<p>테스트에서는 다음처럼 씁니다.</p>
+<div class="codeblock"><pre><code>def test_update_others_book_returns_403(client, make_user, author_id):
+    owner = make_user("owner@example.com")
+    other = make_user("other@example.com")
+    ...</code></pre></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s7/p23/s7-p23-04.html"><span class="dir">이전</span>S7-P23-04 정리: 테스트 격리</a>
+  <a class="next" href="../../s7/p24/s7-p24-02.html"><span class="dir">다음</span>S7-P24-02 인증 테스트 작성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

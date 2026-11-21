@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P11-04 등록, 목록, 상세 API | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P11-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P11 CRUD API 구현: 생성과 조회</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p11-01.html" style="flex:5" data-type="주요 개념" title="DB 세션 의존성 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s3-p11-02.html" style="flex:5" data-type="주요 개념" title="ORM 객체와 Pydantic 변환 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s3-p11-03.html" style="flex:10" data-type="주요 개념" title="생성과 조회 구현 보기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p11-04.html" style="flex:25" data-type="실습" title="등록, 목록, 상세 API (25분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">25분</span></a><a href="s3-p11-05.html" style="flex:5" data-type="정리" title="정리: 생성과 조회 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S3-P11-04</span></div>
+<h1>등록, 목록, 상세 API</h1>
+
+<p class="lead">도서 등록, 목록 조회, 상세 조회를 데이터베이스로 바꿉니다. 이 실습을 마치면 서버를 다시 시작해도 등록한 도서가 남습니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>세션 의존성으로 등록과 조회 API를 데이터베이스와 연결할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>get_db와 SessionDep 추가</h3>
+<p><code>app/database.py</code> 맨 아래에 <code>get_db</code>를 추가합니다.</p>
+<div class="codeblock"><span class="file">app/database.py</span><pre><code>from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+from app.config import settings
+
+# SQLite는 기본적으로 한 스레드에서만 연결을 쓰게 되어 있어 이 옵션을 끕니다.
+connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
+
+engine = create_engine(settings.database_url, connect_args=connect_args)
+SessionLocal = sessionmaker(bind=engine, autoflush=False)
+
+
+class Base(DeclarativeBase):
+    """모든 모델 클래스가 상속하는 기본 클래스입니다."""
+
+
+def get_db():
+    """요청 하나에 세션 하나를 열어 주고, 요청이 끝나면 닫습니다."""
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()</code></pre></div>
+
+<p><code>app/dependencies.py</code>는 연습용 <code>get_resource</code>를 지우고 <code>SessionDep</code>를 추가합니다.</p>
+<div class="codeblock"><span class="file">app/dependencies.py</span><pre><code>from typing import Annotated
+
+from fastapi import Depends, Query
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+
+
+class Pagination:
+    """목록 API가 함께 쓰는 페이지 나누기 값입니다."""
+
+    def __init__(
+        self,
+        skip: int = Query(default=0, ge=0, description="건너뛸 개수"),
+        limit: int = Query(default=10, ge=1, le=100, description="가져올 최대 개수"),
+    ):
+        self.skip = skip
+        self.limit = limit
+
+
+# 타입과 의존성을 한 이름으로 묶어 두면 여러 함수에서 짧게 쓸 수 있습니다.
+PageDep = Annotated[Pagination, Depends()]
+SessionDep = Annotated[Session, Depends(get_db)]</code></pre></div>
+</li><li><h3>응답 모델에 from_attributes 켜기</h3>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code>from pydantic import BaseModel, ConfigDict, Field
+
+
+class BookCreate(BaseModel):
+    """등록과 전체 수정(PUT)에 쓰는 입력 모델"""
+    title: str = Field(min_length=1, max_length=100, examples=["FastAPI 실전"])
+    author: str = Field(min_length=1, max_length=50, examples=["최유나"])
+    price: int = Field(ge=0, le=1_000_000, examples=[27000])
+    isbn: str | None = Field(default=None, pattern=r"^\d{13}$", examples=["9791100000035"])
+
+
+class BookUpdate(BaseModel):
+    """일부 수정(PATCH)에 쓰는 입력 모델. 모든 항목이 선택입니다."""
+    title: str | None = Field(default=None, min_length=1, max_length=100)
+    author: str | None = Field(default=None, min_length=1, max_length=50)
+    price: int | None = Field(default=None, ge=0, le=1_000_000)
+    isbn: str | None = Field(default=None, pattern=r"^\d{13}$")
+
+
+class BookRead(BaseModel):
+    """응답에 쓰는 출력 모델. 여기에 없는 필드는 응답에서 빠집니다."""
+
+    # ORM 객체의 속성(book.title)에서도 값을 읽을 수 있게 합니다.
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    author: str
+    price: int
+    isbn: str | None = None</code></pre></div>
+</li><li><h3>도서 라우터를 데이터베이스로 바꾸기</h3>
+<p><code>app/routers/books.py</code> 전체를 아래 코드로 바꿉니다. 수정(PUT, PATCH)과 삭제(DELETE)는 오후 첫 시간(S4-P12)에 데이터베이스 방식으로 다시 작성하므로 이번에는 빠집니다.</p>
+<div class="codeblock"><span class="file">app/routers/books.py</span><pre><code>from fastapi import APIRouter, status
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.dependencies import PageDep, SessionDep
+from app.errors import AppError
+from app.models import Book
+from app.schemas import BookCreate, BookRead
+
+router = APIRouter(prefix="/books", tags=["도서"])
+
+
+def find_book(db: Session, book_id: int) -&gt; Book:
+    book = db.get(Book, book_id)
+    if book is None:
+        raise AppError(404, "BOOK_NOT_FOUND", f"{book_id}번 도서를 찾을 수 없습니다.")
+    return book
+
+
+def check_isbn_unique(db: Session, isbn: str | None, exclude_id: int | None = None) -&gt; None:
+    if isbn is None:
+        return
+    found = db.scalar(select(Book).where(Book.isbn == isbn))
+    if found is not None and found.id != exclude_id:
+        raise AppError(409, "DUPLICATE_ISBN", "이미 등록된 ISBN입니다.")
+
+
+@router.get("", response_model=list[BookRead], summary="도서 목록 조회")
+def list_books(db: SessionDep, page: PageDep, author: str | None = None):
+    stmt = select(Book)
+    if author is not None:
+        stmt = stmt.where(Book.author == author)
+    stmt = stmt.order_by(Book.id).offset(page.skip).limit(page.limit)
+    return db.scalars(stmt).all()
+
+
+@router.get("/{book_id}", response_model=BookRead, summary="도서 상세 조회",
+            responses={404: {"description": "도서를 찾을 수 없음"}})
+def get_book(db: SessionDep, book_id: int):
+    return find_book(db, book_id)
+
+
+@router.post("", response_model=BookRead, status_code=status.HTTP_201_CREATED, summary="도서 등록",
+             responses={409: {"description": "이미 등록된 ISBN"}})
+def create_book(db: SessionDep, book_in: BookCreate):
+    check_isbn_unique(db, book_in.isbn)
+    book = Book(**book_in.model_dump())
+    db.add(book)      # 저장할 목록에 올립니다.
+    db.commit()       # 데이터베이스에 실제로 저장합니다.
+    db.refresh(book)  # 데이터베이스가 정한 id를 다시 읽어 옵니다.
+    return book</code></pre></div>
+
+<p>바뀐 점은 세 가지입니다. 모든 함수가 <code>db: SessionDep</code>로 세션을 받고, <code>BOOKS</code> 목록 대신 세션으로 데이터를 다루며, 찾는 함수와 중복 검사 함수가 세션을 매개변수로 받습니다.</p>
+</li><li><h3>임시 목록 지우기</h3>
+<p>더는 쓰지 않는 <code>app/data.py</code>를 지웁니다. 다른 파일에 <code>from app.data import</code>가 남아 있지 않은지 VSCode 검색(<code>Ctrl + Shift + F</code>)으로 확인합니다.</p>
+</li><li><h3>도서 등록하고 조회하기</h3>
+<p>Swagger UI에서 <code>POST /books</code>로 세 권을 등록한 뒤 조회합니다. 데이터베이스가 비어 있으므로 1번부터 다시 매겨집니다.</p>
+<div class="codeblock"><pre><code>{"title": "파이썬 첫걸음", "author": "김하늘", "price": 18000, "isbn": "9791100000011"}
+{"title": "웹 개발 입문", "author": "이도윤", "price": 22000}
+{"title": "데이터베이스 기초", "author": "김하늘", "price": 25000}</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>요청</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td><code>GET /books?author=김하늘</code></td><td>1번, 3번</td><td><input data-save="t1" aria-label="내 결과"></td></tr><tr><td><code>GET /books?skip=1&amp;limit=1</code></td><td>2번만</td><td><input data-save="t2" aria-label="내 결과"></td></tr><tr><td><code>GET /books/99</code></td><td>404, BOOK_NOT_FOUND</td><td><input data-save="t3" aria-label="내 결과"></td></tr><tr><td><code>POST /books</code> ISBN 9791100000011로 한 번 더</td><td>409, DUPLICATE_ISBN</td><td><input data-save="t4" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>서버를 다시 시작해도 남아 있는지 확인</h3>
+<p>서버를 <code>Ctrl + C</code>로 끄고 다시 실행한 뒤 <code>GET /books</code>를 호출합니다. 등록한 세 권이 그대로 있으면 성공입니다. 1일차부터 이어진 "다시 시작하면 사라지는" 문제가 해결되었습니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>등록한 도서가 데이터베이스에 저장되어 서버를 다시 시작해도 남는다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>저자 조건과 페이지 나누기가 데이터베이스 조회로 동작한다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>없는 도서는 404, 중복 ISBN은 409로 응답한다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>app/data.py를 지웠다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td>응답 검사 오류로 500이 남</td><td><code>BookRead</code>에 <code>from_attributes=True</code>를 넣었는지 확인합니다.</td></tr><tr><td><code>no such table: books</code></td><td><code>app/main.py</code>의 <code>create_all</code>이 실행되지 않았거나, 다른 폴더에서 실행해 다른 <code>books.db</code>를 보고 있습니다.</td></tr><tr><td>등록은 되는데 다시 시작하면 사라짐</td><td><code>db.commit()</code>을 빠뜨렸습니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p11-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p11/s3-p11-03.html"><span class="dir">이전</span>S3-P11-03 생성과 조회 구현 보기</a>
+  <a class="next" href="../../s3/p11/s3-p11-05.html"><span class="dir">다음</span>S3-P11-05 정리: 생성과 조회</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P57-02 요구사항과 자원 도출 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P57-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P57 설계와 API 명세</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p57-01.html" style="flex:5" data-type="주요 개념" title="설계 진행 안내 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s17-p57-02.html" style="flex:10" data-type="실습" title="요구사항과 자원 도출 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s17-p57-03.html" style="flex:20" data-type="실습" title="API 명세와 보안 요구사항 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s17-p57-04.html" style="flex:10" data-type="실습" title="설계 자기 점검 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s17-p57-05.html" style="flex:5" data-type="정리" title="정리: 설계 확정 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S17-P57-02</span></div>
+<h1>요구사항과 자원 도출</h1>
+
+<p class="lead">API를 바로 적기 전에, 사람들이 이 서비스로 무엇을 하는지 문장으로 씁니다. 문장 속 명사에서 자원이, 동사에서 기능이 나옵니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>사용자 시나리오를 쓰고, 그로부터 자원과 자원 사이의 관계를 정리할 수 있습니다.</p></div>
+
+<h2>사용자 시나리오</h2>
+<p><strong>사용자 시나리오</strong>는 "누가, 무엇을, 왜 하는가"를 한 문장으로 적은 것입니다. "~로서, ~하고 싶다. 그래야 ~할 수 있다"의 모양으로 쓰면 빠뜨리는 것이 적습니다. 정상적인 사용뿐 아니라 "막아야 하는 일"도 시나리오로 적어 두면 보안 요구사항이 저절로 나옵니다.</p>
+<div class="table-wrap"><table><thead><tr><th>번호</th><th>예시 시나리오(스터디 모임 관리)</th></tr></thead><tbody><tr><td>1</td><td>방문자로서, 로그인하지 않고도 모임 목록을 제목으로 검색하고 싶다. 그래야 가입하기 전에 어떤 모임이 있는지 볼 수 있다.</td></tr><tr><td>2</td><td>회원으로서, 제목과 소개, 정원을 정해 모임을 열고 싶다.</td></tr><tr><td>3</td><td>회원으로서, 마음에 드는 모임에 참가 신청을 하고, 원하면 나가고 싶다.</td></tr><tr><td>4</td><td>개설자로서, 내 모임의 내용을 고치고, 다 모이면 모집을 마감하고, 참가자 명단을 보고 싶다.</td></tr><tr><td>5</td><td>회원으로서, 내가 참가한 모임만 모아 보고 싶다.</td></tr><tr><td>6</td><td>(막아야 할 일) 다른 회원이 내 모임을 고치거나 지우면 안 된다. 정원보다 많이 참가되면 안 된다.</td></tr></tbody></table></div>
+
+<h2>명사는 자원, 동사는 기능</h2>
+<p>시나리오에서 반복되는 명사를 고르면 자원이 됩니다. 위 예시에서는 "회원", "모임", "참가"입니다. 회원(User)은 템플릿에 이미 있으므로 새로 만들 자원은 모임(Study)과 참가(Membership) 두 개입니다. 동사(검색하다, 열다, 신청하다, 나가다, 마감하다)는 다음 페이지에서 API가 됩니다.</p>
+<figure><svg viewBox="0 0 730 180" role="img" aria-label="회원 한 명은 모임 여러 개를 열 수 있고(1:N), 회원과 모임은 참가 기록을 사이에 두고 서로 여러 개씩 연결됩니다(N:M)." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="20" y="50" width="150" height="60" rx="8" class="svg-box"/><text x="95.0" y="76.0" text-anchor="middle" class="svg-text">User</text><text x="95.0" y="96.0" text-anchor="middle" class="svg-small">회원(템플릿)</text><rect x="270" y="50" width="170" height="60" rx="8" class="svg-box-accent"/><text x="355.0" y="76.0" text-anchor="middle" class="svg-text">Study</text><text x="355.0" y="96.0" text-anchor="middle" class="svg-small">모임</text><rect x="540" y="50" width="170" height="60" rx="8" class="svg-box-accent"/><text x="625.0" y="76.0" text-anchor="middle" class="svg-text">Membership</text><text x="625.0" y="96.0" text-anchor="middle" class="svg-small">참가 기록</text><line x1="170" y1="70" x2="268" y2="70" class="svg-line" marker-end="url(#arr)"/><text x="219" y="62" text-anchor="middle" class="svg-mono">개설 1:N</text><line x1="538" y1="80" x2="442" y2="80" class="svg-line" marker-end="url(#arr)"/><text x="490" y="100" text-anchor="middle" class="svg-mono">N:1 모임</text><line x1="95" y1="112" x2="95" y2="150" class="svg-line" marker-end="url(#arr)"/><line x1="95" y1="150" x2="625" y2="150" class="svg-line" marker-end="url(#arr)"/><line x1="625" y1="150" x2="625" y2="112" class="svg-line" marker-end="url(#arr)"/><text x="360" y="168" text-anchor="middle" class="svg-mono">참가 1:N</text></svg><figcaption>회원 한 명은 모임 여러 개를 열 수 있고(1:N), 회원과 모임은 참가 기록을 사이에 두고 서로 여러 개씩 연결됩니다(N:M).</figcaption></figure>
+
+<p>회원과 모임처럼 "한 회원이 여러 모임에, 한 모임에 여러 회원이" 연결되는 관계를 <strong>다대다(N:M) 관계</strong>라고 합니다. 데이터베이스에서는 두 테이블 사이에 연결 테이블(Membership)을 두어 표현합니다. 도서 API의 대여(Loan)가 회원과 도서 사이의 연결 테이블이었던 것과 같은 구조입니다(S6-P21).</p>
+<div class="table-wrap"><table><thead><tr><th>자원</th><th>주요 필드와 규칙</th><th>소유자</th><th>관계</th></tr></thead><tbody><tr><td>Study</td><td>title(1~100자), description(최대 1000자), capacity(2~50, 개설자 포함), member_count, is_open</td><td>개설자(owner_id)</td><td>User 1:N</td></tr><tr><td>Membership</td><td>study_id, user_id, joined_at. 한 사람은 한 모임에 한 번만</td><td>참가한 회원</td><td>Study N:1, User N:1</td></tr></tbody></table></div>
+
+<h2>내 프로젝트 정리</h2>
+<p><a href="../../assets/files/api-spec.md" download>API 명세서 양식 내려받기(Markdown)</a>를 열고 "자원과 관계" 표를 채웁니다. 시나리오는 5개 안팎이면 충분하고, 막아야 할 일을 적은 시나리오를 하나 이상 넣습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 값</th></tr></thead><tbody><tr><td>내 시나리오 수(막아야 할 일 포함)</td><td><input data-save="p57_scn" aria-label="내 결과"></td></tr><tr><td>새로 만들 자원(1~2개)</td><td><input data-save="p57_res" aria-label="내 결과"></td></tr><tr><td>자원 사이의 관계</td><td><input data-save="p57_rel" aria-label="내 결과"></td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">자원이 세 개 이상 나왔다면</p><p>하루 일정에서는 자원이 늘어날수록 모델, 스키마, CRUD, 테스트가 그만큼 늘어납니다. 시나리오를 다시 읽고 "오늘 꼭 보여 줄 장면"에 필요 없는 자원은 "범위에서 뺀 것"으로 옮깁니다. 예를 들어 모임 일정, 댓글, 출석은 모두 좋은 기능이지만 오늘은 뺍니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s17/p57/s17-p57-01.html"><span class="dir">이전</span>S17-P57-01 설계 진행 안내</a>
+  <a class="next" href="../../s17/p57/s17-p57-03.html"><span class="dir">다음</span>S17-P57-03 API 명세와 보안 요구사항</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P28-01 로그가 필요한 이유 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P28-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P28 로깅과 모니터링 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p28-01.html" style="flex:10" data-type="주요 개념" title="로그가 필요한 이유 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p28-02.html" style="flex:10" data-type="주요 개념" title="logging 설정과 요청 ID (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p28-03.html" style="flex:20" data-type="실습" title="API에 로깅 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s8-p28-04.html" style="flex:5" data-type="실습" title="헬스 체크 확장 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s8-p28-05.html" style="flex:5" data-type="정리" title="정리: 4일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S8-P28-01</span></div>
+<h1>로그가 필요한 이유</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>구조화된 로그와 요청 ID로 API의 동작과 오류를 추적할 수 있습니다.</p></div>
+
+<p class="lead">서버는 사람이 지켜보지 않는 동안 일합니다. 문제가 생긴 뒤에 무슨 일이 있었는지 알 수 있는 유일한 단서가 로그입니다.</p>
+
+<h2>print 대신 logging</h2>
+<p>2일차 미들웨어는 <code>print</code>로 요청을 기록했습니다. <code>print</code>는 중요도를 구분할 수 없고, 운영할 때 일부만 끄거나 형식을 바꿀 수 없습니다. Python 표준 모듈 <code>logging</code>은 메시지마다 수준을 붙이고, 어디에 어떤 형식으로 쓸지를 한곳에서 정할 수 있습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>수준</th><th>언제 쓰나요</th><th>도서 API의 예</th></tr></thead><tbody><tr><td>DEBUG</td><td>개발 중 자세한 흐름. 운영에서는 보통 끕니다.</td><td>실행한 SQL</td></tr><tr><td>INFO</td><td>정상적으로 일어난 주요 사건</td><td>요청 처리, 도서 대여</td></tr><tr><td>WARNING</td><td>문제는 아니지만 살펴볼 일</td><td>로그인 실패</td></tr><tr><td>ERROR</td><td>요청 하나가 실패한 오류</td><td>처리하지 못한 예외, 데이터베이스 연결 실패</td></tr><tr><td>CRITICAL</td><td>서비스 전체가 멈출 만한 오류</td><td>설정을 읽지 못해 시작 불가</td></tr></tbody></table></div>
+
+<p>설정한 수준보다 낮은 로그는 버립니다. <code>LOG_LEVEL=WARNING</code>으로 실행하면 INFO 로그는 남지 않습니다.</p>
+
+<h2>구조화 로그(JSON)</h2>
+<div class="codeblock"><pre><code># 글자 로그: 사람이 읽기는 쉽지만, 프로그램이 값을 꺼내기 어렵습니다.
+POST /loans 201 20.7ms
+
+# 구조화 로그: 항목마다 이름이 있어 "status가 500인 로그만"처럼 찾기 쉽습니다.
+{"time": "2026-11-21T05:17:36.186+00:00", "level": "INFO", "logger": "app.request", "message": "요청 처리",
+ "request_id": "ad824d09a715491f", "method": "POST", "path": "/loans", "status": 201, "duration_ms": 20.7}</code></pre></div>
+
+<p>로그가 하루에 수만 줄 쌓이면 사람이 눈으로 읽을 수 없고, 검색 도구로 찾습니다. 8일차에 쓸 CloudWatch Logs Insights도 JSON 로그의 항목 이름으로 검색하고 집계합니다. 그래서 한 줄에 JSON 하나를 쓰는 형식을 씁니다.</p>
+
+<h2>로그는 표준 출력으로</h2>
+<p>오후에 업로드 기록을 <code>logs/upload.log</code> 파일에 썼습니다. 컨테이너에서는 파일에 쓰면 컨테이너를 지울 때 함께 사라지고, 여러 컨테이너의 파일을 모아 보기도 어렵습니다. 그래서 컨테이너 앱은 로그를 표준 출력(화면)으로 쓰고, 모으고 보관하는 일은 Docker와 클라우드에 맡깁니다. <code>docker compose logs</code>가 보여 주는 것이 바로 표준 출력입니다.</p>
+
+<h2>로그에 남기면 안 되는 정보</h2>
+<div class="table-wrap"><table><thead><tr><th>정보</th><th>이유</th></tr></thead><tbody><tr><td>비밀번호(틀린 비밀번호 포함)</td><td>틀린 비밀번호는 대개 진짜 비밀번호의 오타라 거의 같습니다.</td></tr><tr><td>액세스 토큰, 리프레시 토큰, <code>Authorization</code> 헤더</td><td>로그를 보는 사람이 그 사용자로 행세할 수 있습니다.</td></tr><tr><td>비밀 키, 데이터베이스 비밀번호</td><td>서버 전체가 위험해집니다.</td></tr><tr><td>주민등록번호, 전화번호 같은 개인정보</td><td>로그는 많은 사람이 보고 오래 보관됩니다. 꼭 필요하면 일부를 가립니다.</td></tr></tbody></table></div>
+
+<p>이 과정에서는 사용자를 이메일 대신 번호(<code>user_id</code>)로 기록하고, 로그인 실패도 입력한 값 없이 "실패했다"는 사실만 남깁니다. 로그 속 민감정보를 자동으로 가리는 방법은 5일차 보안 단원(S10-P35)에서 다룹니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p27/s8-p27-05.html"><span class="dir">이전</span>S8-P27-05 정리: Compose</a>
+  <a class="next" href="../../s8/p28/s8-p28-02.html"><span class="dir">다음</span>S8-P28-02 logging 설정과 요청 ID</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

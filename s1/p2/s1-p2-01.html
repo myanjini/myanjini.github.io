@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P2-01 FastAPI와 Uvicorn | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P2-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. REST API와 FastAPI 기초</a><span class="sep">/</span><span>S1-P2 개발 환경 구성과 첫 FastAPI 앱</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p2-01.html" style="flex:10" data-type="주요 개념" title="FastAPI와 Uvicorn (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p2-02.html" style="flex:15" data-type="실습" title="개발 환경 구성 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s1-p2-03.html" style="flex:5" data-type="주요 개념" title="첫 앱 실행 과정 보기 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s1-p2-04.html" style="flex:15" data-type="실습" title="첫 API 만들기 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s1-p2-05.html" style="flex:5" data-type="정리" title="정리: 서버 실행 흐름 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S1-P2-01</span></div>
+<h1>FastAPI와 Uvicorn</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>가상환경에 FastAPI를 설치하고 첫 API 서버를 실행할 수 있습니다.</p></div>
+
+<p class="lead">API 서버를 만들 때 쓰는 두 도구, FastAPI와 Uvicorn이 각각 무슨 일을 하는지 알아봅니다.</p>
+
+<h2>웹 프레임워크가 필요한 이유</h2>
+<p>API 서버는 매번 비슷한 일을 반복합니다. 요청을 받아 주소와 메서드를 확인하고, 함께 온 데이터를 꺼내 검사하고, 결과를 JSON으로 바꿔 돌려줍니다. 이런 반복 작업을 대신해 주는 도구가 <strong>웹 프레임워크</strong>입니다. 덕분에 우리는 "이 요청이 오면 무엇을 할지"만 작성하면 됩니다.</p>
+
+<h2>FastAPI의 특징</h2>
+<div class="table-wrap"><table><thead><tr><th>특징</th><th>설명</th></tr></thead><tbody><tr><td>타입 힌트로 검증</td><td>함수에 <code>book_id: int</code>처럼 타입을 적으면 FastAPI가 요청 값을 그 타입으로 바꾸고, 바꿀 수 없으면 자동으로 오류를 돌려줍니다.</td></tr><tr><td>자동 API 문서</td><td>작성한 코드를 바탕으로 <code>/docs</code> 주소에 API 문서를 만들어 줍니다. 이 문서 화면에서 API를 직접 호출해 볼 수도 있습니다.</td></tr><tr><td>빠른 성능</td><td>여러 요청을 동시에 처리하는 비동기 방식을 지원해, 기다리는 시간이 많은 서버에서 효율이 좋습니다.</td></tr><tr><td>Python 표준 문법</td><td>새로운 문법을 배우지 않고 Python 함수와 클래스로 작성합니다.</td></tr></tbody></table></div>
+
+<h2>Uvicorn은 무엇을 하나요</h2>
+<p>FastAPI로 작성한 코드는 혼자서 네트워크 요청을 받지 못합니다. 컴퓨터의 포트(예: 8000번)를 열고 요청을 기다렸다가 FastAPI에 넘겨 주는 <strong>서버 프로그램</strong>이 필요하고, 그 역할을 Uvicorn이 맡습니다.</p>
+<p>식당에 비유하면 Uvicorn은 손님을 맞아 주문을 받아 주방에 전달하는 홀 직원이고, FastAPI는 주문서를 보고 음식을 만드는 주방입니다. 메뉴와 조리법(우리가 작성하는 코드)은 주방에 있습니다.</p>
+<figure><svg viewBox="0 0 640 100" role="img" aria-label="Uvicorn이 요청을 받아 FastAPI 앱에 넘기고, 앱이 만든 응답을 다시 브라우저로 보냅니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="10" width="150" height="80" rx="8" class="svg-box"/><text x="85.0" y="46.0" text-anchor="middle" class="svg-text">브라우저</text><text x="85.0" y="66.0" text-anchor="middle" class="svg-small">요청을 보냄</text><rect x="245" y="10" width="150" height="80" rx="8" class="svg-box"/><text x="320.0" y="46.0" text-anchor="middle" class="svg-text">Uvicorn</text><text x="320.0" y="66.0" text-anchor="middle" class="svg-small">127.0.0.1:8000</text><rect x="480" y="10" width="150" height="80" rx="8" class="svg-box-accent"/><text x="555.0" y="46.0" text-anchor="middle" class="svg-text">FastAPI 앱</text><text x="555.0" y="66.0" text-anchor="middle" class="svg-small">main.py</text><line x1="165" y1="50" x2="240" y2="50" class="svg-line" marker-end="url(#arr)"/><line x1="400" y1="50" x2="475" y2="50" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>Uvicorn이 요청을 받아 FastAPI 앱에 넘기고, 앱이 만든 응답을 다시 브라우저로 보냅니다.</figcaption></figure>
+
+<p>Uvicorn과 FastAPI가 주고받는 방식에는 <strong>ASGI</strong>라는 정해진 약속이 있습니다. 이 약속 덕분에 서버 프로그램과 웹 프레임워크를 따로 골라 조합할 수 있습니다. 지금은 이름만 기억해 두면 충분합니다.</p>
+<div class="callout note"><p class="callout-title">우리가 실행할 명령</p><p>이 과정에서는 <code>fastapi dev main.py</code> 명령으로 서버를 실행합니다. 이 명령이 내부에서 Uvicorn을 실행해 주므로 Uvicorn을 따로 실행할 일은 거의 없습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p1/s1-p1-05.html"><span class="dir">이전</span>S1-P1-05 정리: REST API의 구성 요소</a>
+  <a class="next" href="../../s1/p2/s1-p2-02.html"><span class="dir">다음</span>S1-P2-02 개발 환경 구성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

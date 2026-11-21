@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P38-03 보안약점 진단 2 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P38-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P38 보안약점 진단 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p38-01.html" style="flex:5" data-type="주요 개념" title="진단 과제 안내 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p38-02.html" style="flex:20" data-type="실습" title="보안약점 진단 1 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s11-p38-03.html" style="flex:15" data-type="실습" title="보안약점 진단 2 (15분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s11-p38-04.html" style="flex:5" data-type="실습" title="진단 결과 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s11-p38-05.html" style="flex:5" data-type="정리" title="정리: 진단 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S11-P38-03</span></div>
+<h1>보안약점 진단 2</h1>
+
+<p class="lead">나머지 다섯 유형은 코드의 "모양"보다 "상황"에서 드러나는 것이 많습니다. 동시에 요청이 들어오면, 오류가 나면, 값이 없으면 어떻게 되는지를 떠올리며 읽습니다. 마지막에 자동 점검 도구의 결과를 내 진단과 견주어 봅니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>에러처리, 시간 및 상태, 코드오류, 캡슐화, API 오용 유형을 진단하고, 도구 결과를 진단에 반영할 수 있습니다.</p></div>
+
+<h2>길잡이 질문</h2>
+<div class="table-wrap"><table><thead><tr><th>유형</th><th>질문</th></tr></thead><tbody><tr><td>에러처리</td><td>처리하지 못한 예외가 나면 응답에 무엇이 담기나요? 없는 공지 번호를 조회해 보세요. 예외를 잡고 아무것도 하지 않는 곳이 있나요?</td></tr><tr><td>시간 및 상태</td><td>값을 읽고, 계산하고, 다시 쓰는 곳이 있나요? 그 사이에 다른 요청이 끼어들면 어떻게 되나요? 끝나지 않을 수 있는 반복문이 있나요?</td></tr><tr><td>코드오류</td><td>조회 결과가 없을 때를 확인하지 않는 곳이 있나요? 연 것(데이터베이스 연결, 파일)을 닫나요? 밖에서 온 데이터를 객체로 되살리는 곳이 있나요?</td></tr><tr><td>캡슐화</td><td>응답에 필요 이상의 필드가 담기나요? 요청 사이에 공유되는 전역 변수가 있나요? 개발할 때 쓰던 코드나 API가 남아 있나요?</td></tr><tr><td>API 오용</td><td>S11-P37-01의 위험한 함수 표에 있는 함수를 쓰나요? 설치하는 패키지에 알려진 취약점이 있나요?</td></tr></tbody></table></div>
+<details><summary>동시 요청으로 확인해 보기</summary><div class="answer">
+<p>시간 및 상태와 캡슐화의 일부는 동시에 요청을 보내야 드러납니다. 서버를 띄운 채로 다른 터미널에서 Python 대화형 셸을 열어 실행합니다. 공지 번호와 토큰은 자기 것으로 바꿉니다.</p>
+<div class="codeblock"><span class="file">Python 셸</span><pre><code>from concurrent.futures import ThreadPoolExecutor
+import httpx
+like = lambda _: httpx.post("http://127.0.0.1:8000/notices/1/like").json()
+list(ThreadPoolExecutor(10).map(like, range(10)))
+httpx.get("http://127.0.0.1:8000/notices/1").json()["likes"]   # 10이 올랐나요?</code></pre></div>
+</div></details>
+
+<h2>자동 점검 도구와 견주기</h2>
+<p>진단을 어느 정도 마쳤으면 도구를 돌립니다. 도구를 먼저 돌리면 도구가 찾은 것에만 눈이 가서, 도구가 못 찾는 약점을 놓치기 쉽습니다.</p>
+<div class="codeblock term"><pre><code>bandit -r app.py
+pip-audit -r requirements.txt</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>확인할 것</th><th>내 결과</th></tr></thead><tbody><tr><td>bandit이 보고한 결과 수</td><td><input data-save="bc" aria-label="내 결과"></td></tr><tr><td>bandit 결과 가운데 내 진단표에 이미 있던 것</td><td><input data-save="bh" aria-label="내 결과"></td></tr><tr><td>bandit 결과 가운데 새로 진단표에 옮긴 것</td><td><input data-save="bn" aria-label="내 결과"></td></tr><tr><td>bandit 결과 가운데 오탐으로 판정한 것과 이유</td><td><input data-save="bf" aria-label="내 결과"></td></tr><tr><td>pip-audit이 보고한 패키지</td><td><input data-save="pa" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>도구 결과를 진단표에 옮길 때는 S11-P37-03에서처럼 근거를 확인한 뒤에 옮깁니다. 도구가 보고한 규칙 번호(예: B602)와 CWE 번호를 진단 근거에 함께 적어 두면 나중에 찾아보기 좋습니다.</p>
+<div class="qa"><p class="question">생각해 보기. 내 진단표에는 있는데 bandit은 보고하지 않은 약점을 세 가지 골라 보세요. bandit이 왜 못 찾았을까요?</p><textarea data-save="d3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>예를 들어 남의 공지 삭제(부적절한 인가), X-Role 헤더로 관리자 판단, 좋아요 경쟁 조건, 전역 변수 CURRENT_USER, 링크 미리 보기의 SSRF, /debug/config가 있습니다. 이 약점들은 평범한 코드 모양(SQL 실행, 딕셔너리 수정, 요청 보내기)으로 이루어져 있어서, "이 기능은 누가 써야 하는가", "동시에 실행되면 어떻게 되는가" 같은 업무 맥락을 알아야 문제인지 판단할 수 있습니다.</p></div></details></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p38/s11-p38-02.html"><span class="dir">이전</span>S11-P38-02 보안약점 진단 1</a>
+  <a class="next" href="../../s11/p38/s11-p38-04.html"><span class="dir">다음</span>S11-P38-04 진단 결과 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

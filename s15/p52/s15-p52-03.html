@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P52-03 ALB 뒤로 API 옮기기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P52-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P52 로드 밸런서와 HTTPS</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p52-01.html" style="flex:10" data-type="주요 개념" title="ALB와 대상 그룹 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p52-02.html" style="flex:10" data-type="주요 개념" title="ALB 구성 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p52-03.html" style="flex:20" data-type="실습" title="ALB 뒤로 API 옮기기 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s15-p52-04.html" style="flex:5" data-type="주요 개념" title="HTTPS 적용 과정 보기 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s15-p52-05.html" style="flex:5" data-type="정리" title="정리: 로드 밸런서 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S15-P52-03</span></div>
+<h1>ALB 뒤로 API 옮기기</h1>
+
+<p class="lead">ALB를 만들어 도서 API 앞에 두고, EC2 보안 그룹을 ALB에서 오는 요청만 허용하도록 바꿉니다. 마지막에 서버 IP로는 더 이상 직접 접속되지 않는지 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>ALB와 대상 그룹을 구성하고, 서버로 들어오는 길을 ALB 하나로 좁힐 수 있습니다.</p></div>
+<ol class="steps"><li><h3>ALB 보안 그룹, 대상 그룹, ALB 만들기</h3><p>앞 페이지의 표대로 콘솔에서 세 가지를 차례로 만듭니다.</p></li><li><h3>EC2 보안 그룹에 ALB 허용 추가</h3>
+<p><code>book-api-sg</code>의 인바운드 규칙 편집에서 규칙을 하나 더합니다. 소스에는 <code>sg-</code>를 입력해 <code>book-api-alb-sg</code>를 고릅니다.</p>
+<div class="table-wrap"><table><thead><tr><th>유형</th><th>포트</th><th>소스</th><th>설명</th></tr></thead><tbody><tr><td>사용자 지정 TCP</td><td>8000</td><td>book-api-alb-sg</td><td>from ALB</td></tr></tbody></table></div>
+<p>대상 그룹의 대상이 <code>healthy</code>가 될 때까지 30초쯤 기다립니다.</p></li><li><h3>ALB로 접속</h3><div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>aws elbv2 describe-load-balancers --names book-api-alb --query "LoadBalancers[0].[DNSName,State.Code]" --output text
+book-api-alb-1234567890.ap-northeast-2.elb.amazonaws.com	active
+
+aws elbv2 describe-target-health --target-group-arn $(aws elbv2 describe-target-groups --names book-api-tg --query "TargetGroups[0].TargetGroupArn" --output text) --query "TargetHealthDescriptions[].[Target.Id,TargetHealth.State]" --output text
+i-0123456789abcdef0	healthy
+
+ALB=http://book-api-alb-1234567890.ap-northeast-2.elb.amazonaws.com
+curl -s $ALB/health
+{"status":"ok","database":"ok"}</code></pre></div>
+<p>휴대폰의 모바일 데이터로도 열어 봅니다. 이제는 어디서든 열려야 합니다.</p></li><li><h3>서버로 가는 직접 경로 닫기</h3>
+<p><code>book-api-sg</code>에서 "내 IP"의 8000번 규칙을 삭제합니다. 남는 인바운드 규칙은 ALB 보안 그룹에서 오는 8000번 하나입니다.</p>
+<div class="codeblock term"><pre><code>curl -s --max-time 5 http://3.35.120.45:8000/health; echo "exit=$?"
+exit=28
+curl -s $ALB/health
+{"status":"ok","database":"ok"}</code></pre></div>
+<p><code>exit=28</code>은 시간 초과입니다. 서버의 IP로는 내 PC에서도 접속되지 않고, ALB로만 접속됩니다.</p></li><li><h3>진짜 사용자 IP 확인</h3>
+<p>ALB로 틀린 비밀번호 로그인을 한 번 보내고, Logs Insights나 서버의 DB에서 기록된 IP가 내 공인 IP인지 확인합니다. 서버에서는 컨테이너 안에서 확인합니다.</p>
+<div class="codeblock term"><pre><code>docker compose -f compose.prod.yaml exec api python -c "from app.database import SessionLocal; from sqlalchemy import text; print(SessionLocal().execute(text('select ip from login_failures order by id desc limit 1')).first())"
+('203.0.113.25',)</code></pre></div>
+<p><code>FORWARDED_ALLOW_IPS</code>가 빠져 있으면 10.0.1.x나 10.0.2.x(ALB의 사설 IP)가 나옵니다.</p></li><li><h3>헬스 체크 동작 보기</h3>
+<p>서버에서 컨테이너를 잠깐 멈추고, 대상 상태와 ALB 응답을 봅니다. 확인한 뒤 바로 다시 시작합니다.</p>
+<div class="codeblock term"><pre><code>docker compose -f compose.prod.yaml stop
+(30초 뒤 내 PC에서)
+curl -s -o /dev/null -w "%{http_code}\n" $ALB/health
+502
+docker compose -f compose.prod.yaml start</code></pre></div>
+<p>뒤에 정상 대상이 하나도 없으면 ALB는 502나 503을 돌려줍니다. 서버가 한 대뿐이라 대신 받을 곳이 없기 때문입니다. 서버를 두 대 이상 두면 한 대가 멈춰도 서비스가 이어집니다.</p></li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>ALB DNS 이름</td><td><input data-save="albdns" aria-label="내 결과"></td></tr><tr><td>대상 상태</td><td><input data-save="tghealth" aria-label="내 결과"></td></tr><tr><td>서버 IP로 직접 접속한 결과</td><td><input data-save="direct" aria-label="내 결과"></td></tr><tr><td>로그인 실패 기록의 IP</td><td><input data-save="realip" aria-label="내 결과"></td></tr></tbody></table></div>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p52c1"> <span>ALB가 두 가용 영역의 퍼블릭 서브넷에 있다.</span></label></li><li><label><input type="checkbox" data-save="p52c2"> <span>대상 그룹의 헬스 체크 경로가 /health이고 대상이 healthy이다.</span></label></li><li><label><input type="checkbox" data-save="p52c3"> <span>book-api-sg의 인바운드는 book-api-alb-sg에서 오는 8000번 하나뿐이다.</span></label></li><li><label><input type="checkbox" data-save="p52c4"> <span>서버 IP로는 접속되지 않고, ALB 주소로만 접속된다.</span></label></li><li><label><input type="checkbox" data-save="p52c5"> <span>로그인 실패 기록에 ALB가 아닌 내 공인 IP가 남는다.</span></label></li></ul>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p52/s15-p52-02.html"><span class="dir">이전</span>S15-P52-02 ALB 구성 과정 보기</a>
+  <a class="next" href="../../s15/p52/s15-p52-04.html"><span class="dir">다음</span>S15-P52-04 HTTPS 적용 과정 보기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

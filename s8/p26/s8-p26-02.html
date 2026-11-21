@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P26-02 Dockerfile 작성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P26-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P26 Docker로 API 컨테이너화하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p26-01.html" style="flex:10" data-type="주요 개념" title="컨테이너의 개념 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p26-02.html" style="flex:10" data-type="주요 개념" title="Dockerfile 작성 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p26-03.html" style="flex:25" data-type="실습" title="이미지 빌드와 실행 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s8-p26-04.html" style="flex:5" data-type="정리" title="정리: 컨테이너화 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S8-P26-02</span></div>
+<h1>Dockerfile 작성</h1>
+
+<p class="lead">도서 API의 Dockerfile과 .dockerignore를 한 줄씩 읽어 봅니다.</p>
+
+<h2>Dockerfile</h2>
+<p><code>book-api</code> 폴더 바로 아래에 확장자 없이 <code>Dockerfile</code>이라는 이름으로 만듭니다.</p>
+<div class="codeblock"><span class="file">Dockerfile</span><pre><code># 1. 베이스 이미지: Python 3.12가 설치된 가벼운 리눅스
+FROM python:3.12-slim
+
+# 2. Python 실행 설정: .pyc 파일을 만들지 않고, 출력을 모아 두지 않고 바로 내보냅니다.
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+# 3. 컨테이너 안의 작업 폴더
+WORKDIR /app
+
+# 4. 패키지 목록만 먼저 복사해 설치합니다. 코드만 바뀌면 이 단계는 캐시를 씁니다.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 5. 나머지 소스 코드 복사(.dockerignore에 적은 것은 빠집니다)
+COPY . .
+
+# 6. 관리자(root)가 아닌 사용자를 만들고, 이 사용자가 쓸 폴더만 쓰기 권한을 줍니다.
+RUN useradd --create-home appuser \
+    &amp;&amp; mkdir -p uploads logs data \
+    &amp;&amp; chown appuser uploads logs data
+USER appuser
+
+# 7. 컨테이너가 시작할 때 실행할 명령
+EXPOSE 8000
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>명령</th><th>하는 일</th></tr></thead><tbody><tr><td><code>FROM</code></td><td>바탕이 될 이미지입니다. <code>python:3.12-slim</code>은 Python 공식 이미지 중 꼭 필요한 것만 넣은 가벼운 판입니다. 첫 빌드 때 Docker Hub에서 내려받습니다.</td></tr><tr><td><code>ENV</code></td><td>컨테이너 안의 환경 변수입니다. <code>PYTHONUNBUFFERED=1</code>이 없으면 출력이 한동안 모였다가 나와서, 로그가 늦게 보입니다.</td></tr><tr><td><code>WORKDIR</code></td><td>이후 명령을 실행할 폴더입니다. 없으면 만듭니다.</td></tr><tr><td><code>COPY</code></td><td>내 PC의 파일을 이미지 안으로 복사합니다. <code>requirements.txt</code>만 먼저 복사하는 것은 레이어 캐시를 살리기 위해서입니다.</td></tr><tr><td><code>RUN</code></td><td>이미지를 만드는 동안 명령을 실행합니다. <code>--no-cache-dir</code>는 pip가 내려받은 파일을 남기지 않아 이미지를 작게 합니다.</td></tr><tr><td><code>USER</code></td><td>이후 명령과 컨테이너 실행을 이 사용자로 합니다.</td></tr><tr><td><code>EXPOSE</code></td><td>이 컨테이너가 8000번 포트를 쓴다고 알려 주는 표시입니다. 실제로 열려면 실행할 때 <code>-p</code>가 필요합니다.</td></tr><tr><td><code>CMD</code></td><td>컨테이너가 시작할 때 실행할 명령입니다.</td></tr></tbody></table></div>
+
+<h2>왜 0.0.0.0인가요</h2>
+<p>지금까지 <code>uvicorn</code>은 기본값 <code>127.0.0.1</code>에서 실행했습니다. 이 주소는 "같은 컴퓨터 안에서만"이라는 뜻입니다. 컨테이너는 따로 떨어진 컴퓨터처럼 동작하므로 <code>127.0.0.1</code>로 실행하면 컨테이너 밖(내 PC의 브라우저)에서 접속할 수 없습니다. <code>0.0.0.0</code>은 "어디서 오는 연결이든 받는다"는 뜻입니다.</p>
+
+<h2>관리자가 아닌 사용자로 실행</h2>
+<p>컨테이너 안의 기본 사용자는 관리자(root)입니다. API에 보안 구멍이 있어 공격자가 명령을 실행하게 되었을 때, root라면 컨테이너 안의 모든 것을 바꿀 수 있습니다. 그래서 일반 사용자 <code>appuser</code>를 만들어 실행하고, 이 사용자는 업로드(<code>uploads</code>), 기록(<code>logs</code>), SQLite 파일(<code>data</code>) 폴더에만 쓸 수 있게 합니다. 코드 파일은 고칠 수 없습니다. 이렇게 꼭 필요한 권한만 주는 원칙을 <strong>최소 권한</strong>이라고 하며, 5일차 이후 보안과 AWS 단원에서 계속 나옵니다.</p>
+
+<h2>.dockerignore</h2>
+<p><code>COPY . .</code>은 폴더 전체를 복사합니다. 이미지에 들어가면 안 되는 파일은 <code>.dockerignore</code>에 적어 뺍니다. 작성 방법은 <code>.gitignore</code>와 같습니다.</p>
+<div class="codeblock"><span class="file">.dockerignore</span><pre><code># 이미지에 넣지 않을 파일
+.venv/
+.git/
+.github/
+__pycache__/
+*.pyc
+
+# 비밀 값과 내 PC의 데이터
+.env
+*.db
+uploads/
+logs/
+data/
+
+# 테스트와 그 결과물
+tests/
+.pytest_cache/
+.coverage
+htmlcov/</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>뺀 것</th><th>이유</th></tr></thead><tbody><tr><td><code>.env</code></td><td>비밀 키가 이미지에 들어가면 이미지를 받은 누구나 꺼내 볼 수 있습니다. 비밀 값은 실행할 때 환경 변수로 넣습니다.</td></tr><tr><td><code>.venv/</code></td><td>내 PC(Windows나 macOS)용으로 설치한 패키지라 리눅스 컨테이너에서 쓸 수 없습니다. 이미지 안에서 새로 설치합니다.</td></tr><tr><td><code>*.db</code>, <code>uploads/</code></td><td>내 PC의 개발 데이터입니다. 이미지는 코드만 담고, 데이터는 따로 관리합니다.</td></tr><tr><td><code>tests/</code> 등</td><td>실행에 필요 없는 파일을 빼면 이미지가 작아지고 빌드가 빨라집니다.</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p26/s8-p26-01.html"><span class="dir">이전</span>S8-P26-01 컨테이너의 개념</a>
+  <a class="next" href="../../s8/p26/s8-p26-03.html"><span class="dir">다음</span>S8-P26-03 이미지 빌드와 실행</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P59-03 중간 코드 자기 점검 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P59-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P59 구현 2: 인증과 권한</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p59-01.html" style="flex:20" data-type="실습" title="인증 모듈 적용 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s17-p59-02.html" style="flex:20" data-type="실습" title="권한 검사 적용 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s17-p59-03.html" style="flex:5" data-type="실습" title="중간 코드 자기 점검 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s17-p59-04.html" style="flex:5" data-type="정리" title="정리: 진행 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>5분</span><span>S17-P59-03</span></div>
+<h1>중간 코드 자기 점검</h1>
+
+<p class="lead">구현을 계속하기 전에, 지금까지의 코드가 권한과 오류를 제대로 처리하는지 질문으로 점검합니다. 직접 요청을 보내 확인하고 답을 적습니다.</p>
+<div class="qa"><p class="question">질문 1. 다른 사용자가 내 자원을 수정하면 어떤 상태 코드가 나오나요? 그리고 자원은 정말 바뀌지 않았나요?</p><textarea data-save="m1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>예시에서는 403이고, 다시 조회하면 제목이 그대로입니다. 상태 코드만 보고 끝내지 말고 "바뀌지 않았다"까지 확인합니다. 검사를 값을 바꾼 <strong>뒤에</strong> 하는 실수를 하면, 응답은 403인데 값은 이미 바뀌어 있을 수 있습니다. 테스트에서도 같은 순서로 확인합니다(S17-P60-02).</p></div></details></div>
+<div class="qa"><p class="question">질문 2. 없는 번호로 수정하면 어떻게 되나요? 남의 자원과 같은 응답이 나와야 하나요?</p><textarea data-save="m2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>없는 번호는 404입니다. 공개된 자원이라면 남의 것은 403, 없는 것은 404로 달라도 됩니다. 존재를 숨겨야 하는 자원이라면 두 경우 모두 404로 같게 답해야, 번호를 바꿔 가며 남의 자원이 있는지 알아내는 것을 막을 수 있습니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 3. 토큰 없이, 위조한 토큰으로, 만료된 토큰으로 쓰기 API를 부르면 각각 어떤 응답이 나오나요?</p><textarea data-save="m3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>세 경우 모두 401입니다. 토큰이 없으면 <code>NOT_AUTHENTICATED</code>, 위조나 만료면 <code>INVALID_TOKEN</code>이고, 응답 헤더에 <code>WWW-Authenticate: Bearer</code>가 있습니다. 500이 나온다면 토큰 검사 전에 다른 코드가 실행되고 있는 것입니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 4. 요청 본문에 소유자 필드(owner_id 같은 값)를 넣어 보내면 어떻게 되나요?</p><textarea data-save="m4" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>422여야 합니다. 201이 나오고 소유자가 바뀐다면, 입력 모델이 <code>InputModel</code>을 상속하지 않았거나 입력 모델에 그 필드가 들어 있는 것입니다(대량 할당, S9-P32).</p></div></details></div>
+<div class="qa"><p class="question">질문 5. 오류 응답 본문에 SQL, 파일 경로, 트레이스백 같은 내부 정보가 보이나요?</p><textarea data-save="m5" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>보이면 안 됩니다. 템플릿의 오류 처리는 처리하지 못한 예외를 정해진 문구와 요청 ID로만 답합니다. 일부러 500을 일으켜(예: 서비스에 <code>1 / 0</code>을 잠시 넣음) 응답에는 요청 ID만, 로그에는 트레이스백이 남는지 확인하고 원래대로 돌립니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 6. 관리자는 무엇을 할 수 있어야 하나요? 지금 코드에서 그렇게 되나요?</p><textarea data-save="m6" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>명세의 권한 표에 적은 대로입니다. 예시에서는 관리자가 남의 모임을 수정, 삭제하고 명단을 볼 수 있습니다(<code>check_can_modify</code>의 첫 조건). 관리자에게 필요 없는 권한까지 주지 않았는지도 함께 봅니다.</p></div></details></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s17/p59/s17-p59-02.html"><span class="dir">이전</span>S17-P59-02 권한 검사 적용</a>
+  <a class="next" href="../../s17/p59/s17-p59-04.html"><span class="dir">다음</span>S17-P59-04 정리: 진행 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

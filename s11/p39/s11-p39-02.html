@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P39-02 보안약점 조치 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P39-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P39 보안약점 조치와 보안 테스트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p39-01.html" style="flex:5" data-type="주요 개념" title="조치 우선순위 정하기 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p39-02.html" style="flex:20" data-type="실습" title="보안약점 조치 (20분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s11-p39-03.html" style="flex:15" data-type="실습" title="보안 테스트 작성 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s11-p39-04.html" style="flex:5" data-type="주요 개념" title="강사 풀이 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s11-p39-05.html" style="flex:5" data-type="정리" title="정리: 개발 보안 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S11-P39-02</span></div>
+<h1>보안약점 조치</h1>
+
+<p class="lead">진단표의 순서대로 게시판 API의 약점을 고칩니다. 고칠 때마다 해당 보안 테스트를 돌려, 고친 것이 맞는지 바로 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>우선순위대로 보안약점을 조치하고, 보안 테스트로 조치 결과를 확인할 수 있습니다.</p></div>
+<div class="callout note"><p class="callout-title">평가 안내</p><p>이 실습의 결과물은 6일차 실습 결과물 평가(5%) 대상입니다. 진단표(<a href="../../appendix/appendix-f.html">부록 F</a> 형식)의 조치 내용과, 강사가 준 보안 테스트가 통과하는지를 함께 확인합니다.</p></div>
+
+<h2>준비: 보안 테스트 돌려 보기</h2>
+<p>이제 <code>tests</code> 폴더를 엽니다. 테스트 이름 앞의 숫자는 진단표의 번호입니다. 고치기 전이므로 전부 실패합니다.</p>
+<div class="codeblock term"><pre><code>pip install "PyJWT==2.15.1" "pwdlib[argon2]==0.4.2"
+pytest -q
+...
+26 failed in 1.02s</code></pre></div>
+
+<p><code>-k</code> 옵션으로 이름에 특정 글자가 들어간 테스트만 골라 돌릴 수 있습니다. 예를 들어 <code>pytest -q -k "test_20 or test_03"</code>은 20번과 3번 테스트만 실행합니다. Windows에서 3번 테스트가 다르게 동작하면 <code>README.md</code>의 Docker 명령으로 실행합니다.</p>
+<div class="callout warn"><p class="callout-title">테스트를 고치지 않습니다</p><p>테스트가 실패할 때 테스트를 고쳐 통과시키면 조치를 한 것이 아닙니다. 고치는 것은 <code>app.py</code>뿐입니다. 테스트가 이상해 보이면 질문으로 남겨 두고 S11-P39-04에서 확인합니다.</p></div>
+<ol class="steps"><li><h3>1순위: 토큰, 명령어 삽입, yaml, 디버그 코드</h3>
+<p>토큰은 도서 API처럼 서명한 JWT로 바꿉니다(S5-P16). 비밀 키는 환경 변수에서 읽고, 테스트는 <code>conftest.py</code>가 시험용 키를 넣어 줍니다. 사용자 정보는 전역 변수에 담지 않고 의존성 함수가 돌려줍니다. 이렇게 하면 22번도 함께 고쳐집니다.</p>
+<div class="codeblock"><span class="file">app.py(토큰 부분)</span><pre><code>def make_token(user) -&gt; str:
+    payload = {"sub": str(user["id"]), "exp": datetime.now(timezone.utc) + timedelta(minutes=30)}
+    return jwt.encode(payload, SECRET_KEY, algorithm="HS256")  # [20] 서명한 JWT를 씁니다.
+
+
+def current_user(authorization: str | None = Header(None), db: sqlite3.Connection = Depends(get_db)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(401, "로그인이 필요합니다.")
+    try:
+        payload = jwt.decode(authorization.removeprefix("Bearer "), SECRET_KEY, algorithms=["HS256"],
+                             options={"require": ["exp", "sub"]})
+    except jwt.InvalidTokenError:
+        raise HTTPException(401, "토큰이 올바르지 않습니다.")
+    user = db.execute("SELECT id, username, role FROM users WHERE id = ?", (int(payload["sub"]),)).fetchone()
+    if user is None:
+        raise HTTPException(401, "토큰이 올바르지 않습니다.")
+    return dict(user)  # [22] 요청마다 새로 만든 값을 돌려줍니다. 전역 변수에 담지 않습니다.
+
+
+def require_admin(user: dict = Depends(current_user)) -&gt; dict:
+    if user["role"] != "admin":  # [6] 서버가 확인한 역할로만 판단합니다.
+        raise HTTPException(403, "관리자만 할 수 있습니다.")
+    return user</code></pre></div>
+
+<p>명령은 인자 목록으로(S9-P31), YAML은 <code>safe_load</code>로 바꾸고, <code>print</code>와 <code>/debug/config</code>는 지웁니다.</p>
+<div class="codeblock term"><pre><code>pytest -q -k "test_20 or test_03 or test_24 or test_23 or test_22 or test_11"</code></pre></div>
+</li><li><h3>2순위: SQL 삽입, 경로 조작, 인가</h3>
+<p>데이터베이스 연결은 이 단계에서 <code>get_db</code> 의존성으로 바꾸면 19번도 함께 해결됩니다. 공지를 찾는 부분은 None을 확인하는 함수로 모으면 18번과 7번에 같이 씁니다.</p>
+<div class="codeblock"><span class="file">app.py(연결)</span><pre><code>def get_db() -&gt; Iterator[sqlite3.Connection]:
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()  # [19] 요청이 끝나면 성공하든 실패하든 연결을 닫습니다.</code></pre></div>
+<div class="codeblock"><span class="file">app.py(목록)</span><pre><code>SORT_COLUMNS = {"id": "id", "likes": "likes DESC"}
+
+
+@app.get("/notices")
+def list_notices(q: str = Query("", max_length=100), sort: Literal["id", "likes"] = "id",
+                 limit: int = Query(20, ge=1, le=100), db: sqlite3.Connection = Depends(get_db)):
+    # [1] 값은 ? 자리에 따로 넘기고, 정렬 열은 허용 목록에서만 고릅니다.
+    sql = f"SELECT id, title, likes FROM notices WHERE title LIKE ? ORDER BY {SORT_COLUMNS[sort]} LIMIT ?"  # nosec B608
+    return [dict(r) for r in db.execute(sql, (f"%{q}%", limit)).fetchall()]</code></pre></div>
+<div class="codeblock"><span class="file">app.py(공지 찾기)</span><pre><code>def find_notice(db: sqlite3.Connection, notice_id: int):
+    row = db.execute("SELECT * FROM notices WHERE id = ?", (notice_id,)).fetchone()
+    if row is None:  # [18] 결과가 없을 때를 먼저 처리합니다.
+        raise HTTPException(404, "공지를 찾을 수 없습니다.")
+    return row</code></pre></div>
+
+<p>다운로드 경로 검사는 S9-P31의 기준 폴더 검사와 같습니다. 삭제는 작성자나 관리자만 하게 하고, 관리자 판단은 <code>X-Role</code> 헤더 대신 <code>require_admin</code> 의존성으로 합니다.</p>
+<div class="codeblock term"><pre><code>pytest -q -k "test_01 or test_02 or test_06 or test_07 or test_13 or test_18"</code></pre></div>
+</li><li><h3>3순위: 계정 보호</h3>
+<p>비밀번호는 Argon2로 저장하고(S5-P15), 규칙은 Pydantic 필드로, 실패 제한은 S10-P34처럼 비밀번호 확인 전에 검사합니다. 예제를 짧게 하려고 실패 기록을 메모리 딕셔너리에 두지만, 실제 서비스는 도서 API처럼 데이터베이스에 둡니다. 서버를 다시 시작하면 기록이 사라지고, 서버가 여러 대면 서로 기록을 모르기 때문입니다.</p>
+<div class="codeblock"><span class="file">app.py(로그인)</span><pre><code>def check_failures(username: str) -&gt; None:
+    now = time.monotonic()
+    recent = [t for t in login_failures.get(username, []) if now - t &lt; FAILURE_WINDOW]
+    login_failures[username] = recent
+    if len(recent) &gt;= MAX_FAILURES:  # [10] 비밀번호를 확인하기 전에 막습니다.
+        raise HTTPException(429, "로그인 실패가 많습니다. 15분 뒤에 다시 시도하세요.", headers={"Retry-After": "900"})
+
+
+@app.post("/login")
+def login(body: LoginIn, db: sqlite3.Connection = Depends(get_db)):
+    check_failures(body.username)  # [23] 비밀번호를 출력하던 디버그 코드는 지웠습니다.
+    row = db.execute("SELECT * FROM users WHERE username = ?", (body.username,)).fetchone()
+    if row is None or not password_hash.verify(body.password, row["password_hash"]):
+        login_failures.setdefault(body.username, []).append(time.monotonic())
+        raise HTTPException(401, "아이디 또는 비밀번호가 틀렸습니다.")
+    login_failures.pop(body.username, None)
+    return {"access_token": make_token(row), "token_type": "bearer"}</code></pre></div>
+<div class="codeblock term"><pre><code>pytest -q -k "test_08 or test_09 or test_10 or test_12 or test_21"</code></pre></div>
+</li><li><h3>4순위와 5순위</h3>
+<p>링크 미리 보기는 허용 목록과 반복 횟수 제한을, 업로드는 확장자와 크기 제한을, 좋아요는 한 문장 UPDATE를, 전역 예외 처리는 정해진 문구를 씁니다. <code>requirements.txt</code>의 requests는 2.34.2로 올리고 다시 설치합니다.</p>
+<div class="codeblock"><span class="file">app.py(링크 미리 보기)</span><pre><code>@app.get("/link-preview")
+def link_preview(url: str = Query(max_length=300), user: dict = Depends(current_user)):  # [13] 로그인한 사용자만
+    parsed = urlparse(url)
+    if parsed.scheme != "https" or parsed.hostname not in PREVIEW_HOSTS:  # [5] 허용한 사이트만 요청합니다.
+        raise HTTPException(400, "미리 볼 수 없는 주소입니다.")
+    for _ in range(3):  # [15] 다시 시도하는 횟수에 끝을 둡니다.
+        try:
+            res = requests.get(url, timeout=3, allow_redirects=False)
+            return {"status": res.status_code, "head": res.text[:200]}
+        except requests.RequestException:
+            time.sleep(0.5)
+    raise HTTPException(502, "주소에 연결하지 못했습니다.")</code></pre></div>
+<div class="codeblock term"><pre><code>pip install -r requirements.txt
+pytest -q
+...
+26 passed
+pip-audit -r requirements.txt
+No known vulnerabilities found
+bandit -r app.py -ll
+...
+	No issues identified.</code></pre></div>
+</li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>pytest -q</td><td>26 passed</td><td><input data-save="f1" aria-label="내 결과"></td></tr><tr><td>pip-audit -r requirements.txt</td><td>No known vulnerabilities found</td><td><input data-save="f2" aria-label="내 결과"></td></tr><tr><td>bandit -r app.py -ll</td><td>No issues identified.</td><td><input data-save="f3" aria-label="내 결과"></td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">bandit의 남은 결과</p><p><code>-ll</code> 없이 실행하면 Low 결과가 몇 개 남습니다. <code>subprocess</code> 사용(B404, B603), 전체 경로가 아닌 명령 이름(B607), <code>bearer</code>(B105)입니다. 명령과 인자를 목록으로 넘기고 사용자 입력이 들어가지 않으므로 받아들일 수 있는 위험으로 판정합니다. 진단표의 확인 방법 열에 이 판정도 적어 둡니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p39/s11-p39-01.html"><span class="dir">이전</span>S11-P39-01 조치 우선순위 정하기</a>
+  <a class="next" href="../../s11/p39/s11-p39-03.html"><span class="dir">다음</span>S11-P39-03 보안 테스트 작성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

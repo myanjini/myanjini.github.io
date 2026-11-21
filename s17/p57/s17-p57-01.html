@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P57-01 설계 진행 안내 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P57-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P57 설계와 API 명세</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p57-01.html" style="flex:5" data-type="주요 개념" title="설계 진행 안내 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s17-p57-02.html" style="flex:10" data-type="실습" title="요구사항과 자원 도출 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s17-p57-03.html" style="flex:20" data-type="실습" title="API 명세와 보안 요구사항 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s17-p57-04.html" style="flex:10" data-type="실습" title="설계 자기 점검 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s17-p57-05.html" style="flex:5" data-type="정리" title="정리: 설계 확정 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S17-P57-01</span></div>
+<h1>설계 진행 안내</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>보안 요구사항을 포함한 API 명세를 작성할 수 있습니다.</p></div>
+
+<p class="lead">드디어 마지막 날입니다. 오늘은 직접 고른 주제로 작은 API를 설계하고, 구현하고, 점검해 배포합니다. 첫 시간에는 무엇을 만들지 문서로 확정합니다. 설계에 쓰는 50분이 오후의 몇 시간을 아껴 줍니다.</p>
+<div class="callout note"><p class="callout-title">예시 프로젝트와 함께 진행합니다</p><p>오늘 오전 페이지는 <strong>스터디 모임 관리 API</strong>를 예시로 처음부터 끝까지 만들어 보입니다. 예시를 한 단계 읽고, 같은 단계를 내 주제로 해 보는 방식입니다. 예시 코드를 그대로 베끼기보다 "내 주제에서는 이 자리에 무엇이 오는가"를 생각하며 따라갑니다. 예시의 완성 코드는 오전 마지막 페이지(S17-P60-04)에서 내려받아 내 코드와 비교할 수 있습니다.</p></div>
+
+<h2>이번 파트의 산출물</h2>
+<div class="table-wrap"><table><thead><tr><th>산출물</th><th>내용</th><th>평가와의 관계</th></tr></thead><tbody><tr><td>API 명세서(<a href="../../appendix/appendix-b.html">부록 B</a> 양식)</td><td>자원과 관계, API 목록(메서드, URI, 검증 규칙, 상태 코드, 권한), 권한 표</td><td>"명세와 보안 요구사항" 10%</td></tr><tr><td>주요 위협과 보안 요구사항</td><td>3개 이상. 위협마다 대책과 확인할 테스트 이름</td><td>같은 항목. 오후의 테스트와 발표에서도 씁니다.</td></tr><tr><td>구현 순서</td><td>P58부터 P60까지 무엇을 언제 끝낼지</td><td>범위를 지키는 기준</td></tr></tbody></table></div>
+
+<p>어제(S16-P56-04) 적은 주제와 보안 요구사항 초안이 출발점입니다. 초안을 아직 못 썼다면 S16-P56-04의 질문 다섯 개에 먼저 답합니다.</p>
+
+<h2>시간 배분</h2>
+<div class="table-wrap"><table><thead><tr><th>페이지</th><th>할 일</th><th>시간</th></tr></thead><tbody><tr><td>S17-P57-02</td><td>사용자 시나리오를 쓰고 자원과 관계를 정리</td><td>10분</td></tr><tr><td>S17-P57-03</td><td>API 명세와 보안 요구사항 작성</td><td>20분</td></tr><tr><td>S17-P57-04</td><td>점검 질문으로 명세 고치기</td><td>10분</td></tr><tr><td>S17-P57-05</td><td>명세 확정, 구현 순서 확인</td><td>5분</td></tr></tbody></table></div>
+
+<h2>좋은 명세의 조건</h2>
+<p>명세는 "이 문서만 보고 다른 사람이 같은 API를 만들 수 있는가"로 판단합니다. 그러려면 API마다 다음 세 가지가 빠짐없이 있어야 합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>조건</th><th>빠지면 생기는 일</th></tr></thead><tbody><tr><td>누가 부를 수 있는가(인증과 권한)</td><td>남의 자원을 고칠 수 있는 API가 생깁니다. 지금까지 본 보안약점 가운데 가장 흔한 유형입니다.</td></tr><tr><td>무엇을 받는가(검증 규칙)</td><td>길이 제한 없는 문자열, 음수 수량 같은 값이 저장됩니다.</td></tr><tr><td>무엇을 돌려주는가(응답과 상태 코드)</td><td>실패할 때의 상태 코드가 API마다 달라지고, 테스트에서 무엇을 확인할지 정할 수 없습니다.</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s16/p56/s16-p56-05.html"><span class="dir">이전</span>S16-P56-05 정리: 8일차 마무리</a>
+  <a class="next" href="../../s17/p57/s17-p57-02.html"><span class="dir">다음</span>S17-P57-02 요구사항과 자원 도출</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

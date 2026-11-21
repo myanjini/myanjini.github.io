@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P44-01 EC2 핵심 개념 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P44-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P44 EC2 시작과 접속</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p44-01.html" style="flex:10" data-type="주요 개념" title="EC2 핵심 개념 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p44-02.html" style="flex:10" data-type="주요 개념" title="인스턴스 시작 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s13-p44-03.html" style="flex:20" data-type="실습" title="EC2 만들고 접속하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p44-04.html" style="flex:5" data-type="주요 개념" title="SSH와 Session Manager 비교 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p44-05.html" style="flex:5" data-type="정리" title="정리: EC2 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S13-P44-01</span></div>
+<h1>EC2 핵심 개념</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>EC2 인스턴스를 만들고 SSH 포트를 열지 않고 접속할 수 있습니다.</p></div>
+
+<p class="lead">EC2(Elastic Compute Cloud)는 AWS의 가상 서버입니다. 서버 한 대를 띄울 때 고르는 것들(운영체제, 크기, 디스크, 네트워크, 첫 실행 스크립트)의 뜻을 먼저 정리합니다.</p>
+
+<h2>EC2를 이루는 것</h2>
+<div class="table-wrap"><table><thead><tr><th>개념</th><th>뜻</th><th>이번 실습</th></tr></thead><tbody><tr><td>인스턴스</td><td>EC2로 띄운 가상 서버 한 대입니다.</td><td><code>book-api-server</code> 한 대</td></tr><tr><td>AMI(Amazon Machine Image)</td><td>서버를 만들 때 쓰는 원본 이미지입니다. 운영체제와 기본 프로그램이 들어 있습니다. Docker 이미지가 컨테이너의 원본인 것과 비슷합니다.</td><td>Amazon Linux 2023. AWS CLI와 SSM 에이전트(Session Manager용)가 미리 설치되어 있습니다.</td></tr><tr><td>인스턴스 유형</td><td>CPU, 메모리, 네트워크 성능의 조합입니다. <code>t3.micro</code>는 "t 계열(평소에는 적게 쓰고 가끔 몰아 쓰는 용도), 3세대, micro 크기"라는 뜻입니다.</td><td><code>t3.micro</code>(vCPU 2개, 메모리 1GiB) 또는 기관이 허용한 유형</td></tr><tr><td>EBS(Elastic Block Store)</td><td>인스턴스에 붙이는 네트워크 디스크입니다. 인스턴스를 중지해도 데이터가 남습니다.</td><td>루트 볼륨 8GiB gp3(기본값). 인스턴스를 종료하면 함께 삭제</td></tr><tr><td>사용자 데이터</td><td>인스턴스가 처음 부팅할 때 한 번 실행하는 스크립트입니다. 패키지 설치 같은 준비 작업을 자동화합니다.</td><td>이번에는 비워 두고, 설치를 직접 해 봅니다(S13-P45).</td></tr><tr><td>퍼블릭 IP</td><td>인터넷에서 인스턴스에 닿는 공용 주소입니다. 퍼블릭 서브넷에서 "자동 할당"을 켜면 받습니다. 인스턴스를 중지했다 시작하면 바뀝니다.</td><td>자동 할당 켜기. 탄력적 IP(고정 주소)는 쓰지 않습니다.</td></tr><tr><td>인스턴스 프로파일</td><td>인스턴스에 IAM 역할을 붙이는 그릇입니다(S12-P41-03).</td><td><code>book-api-ec2-role</code></td></tr></tbody></table></div>
+
+<h2>인스턴스 유형을 x86으로 고르는 이유</h2>
+<p>EC2에는 Intel과 AMD 계열(x86_64) 프로세서 말고도 AWS가 만든 Graviton(ARM64) 프로세서를 쓰는 유형(<code>t4g</code>, <code>m7g</code> 등)이 있습니다. Graviton은 같은 성능에 값이 싼 편이지만, 컨테이너 이미지가 프로세서 종류에 맞게 만들어져 있어야 합니다. 7일차 오후에 내 PC(대부분 x86_64)에서 만든 이미지를 ECR에 올려 EC2에서 실행하므로, 이번 실습은 x86_64 유형(<code>t3</code>)을 씁니다. Apple Silicon Mac을 쓰는 학생은 S14에서 이미지를 만들 때 <code>--platform linux/amd64</code>를 붙입니다.</p>
+
+<h2>인스턴스의 상태와 요금</h2>
+<div class="table-wrap"><table><thead><tr><th>상태</th><th>뜻</th><th>요금</th></tr></thead><tbody><tr><td>실행 중(running)</td><td>켜져 있습니다.</td><td>인스턴스 시간, EBS, 퍼블릭 IP</td></tr><tr><td>중지됨(stopped)</td><td>꺼져 있지만 EBS 디스크는 남아 있습니다. 다시 시작할 수 있고, 퍼블릭 IP는 바뀝니다.</td><td>EBS만(할당한 탄력적 IP가 있으면 그것도)</td></tr><tr><td>종료됨(terminated)</td><td>삭제되었습니다. 되돌릴 수 없습니다.</td><td>없음("종료 시 삭제"로 설정한 EBS도 함께 삭제)</td></tr></tbody></table></div>
+
+<p>콘솔의 "인스턴스 종료"는 끄는 것이 아니라 <strong>삭제</strong>입니다. 하루 실습이 끝나고 다음 날 이어 쓸 서버는 "중지"하고, 과정이 끝나면 "종료"합니다(<a href="../../appendix/appendix-g.html">부록 G</a>).</p>
+<div class="callout note"><p class="callout-title">인스턴스 메타데이터와 IMDSv2</p><p>인스턴스 안에서는 <code>169.254.169.254</code> 주소로 자기 정보(인스턴스 ID, 붙은 역할의 임시 자격 증명)를 조회할 수 있습니다. Amazon Linux 2023은 토큰을 먼저 받아야 조회되는 IMDSv2만 허용하도록 만들어집니다. 다음 실습에서 직접 확인합니다(S12-P41-04).</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p43/s13-p43-05.html"><span class="dir">이전</span>S13-P43-05 정리: 네트워크 구성</a>
+  <a class="next" href="../../s13/p44/s13-p44-02.html"><span class="dir">다음</span>S13-P44-02 인스턴스 시작 과정 보기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

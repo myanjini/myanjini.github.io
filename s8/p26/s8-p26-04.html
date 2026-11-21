@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P26-04 정리: 컨테이너화 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P26-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P26 Docker로 API 컨테이너화하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p26-01.html" style="flex:10" data-type="주요 개념" title="컨테이너의 개념 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p26-02.html" style="flex:10" data-type="주요 개념" title="Dockerfile 작성 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p26-03.html" style="flex:25" data-type="실습" title="이미지 빌드와 실행 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s8-p26-04.html" style="flex:5" data-type="정리" title="정리: 컨테이너화 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S8-P26-04</span></div>
+<h1>정리: 컨테이너화</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>이미지는 실행에 필요한 모든 것을 담은 읽기 전용 꾸러미이고, 컨테이너는 이미지를 실행한 것입니다.</li>
+  <li>Dockerfile은 한 줄마다 레이어를 만들고, 바뀌지 않은 레이어는 캐시로 재사용합니다. 잘 바뀌지 않는 패키지 설치를 코드 복사보다 먼저 둡니다.</li>
+  <li><code>.dockerignore</code>로 <code>.env</code>, <code>.venv</code>, 개발 데이터를 이미지에서 뺍니다. 비밀 값은 실행할 때 <code>-e</code>로 넘깁니다.</li>
+  <li>컨테이너 안의 서버는 <code>0.0.0.0</code>으로 실행하고, <code>-p 내PC:컨테이너</code>로 포트를 연결합니다.</li>
+  <li>관리자가 아닌 사용자로 실행하고, 쓸 폴더에만 쓰기 권한을 줍니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">코드 한 줄만 고치고 다시 빌드했는데 pip install이 처음부터 다시 실행되었습니다. 가장 알맞은 원인은 무엇인가요?</p><label><input type="radio" name="p26q1" value="1"> <span>1. .dockerignore가 없어서</span></label><label><input type="radio" name="p26q1" value="2"> <span>2. EXPOSE를 빼먹어서</span></label><label><input type="radio" name="p26q1" value="3"> <span>3. Docker Desktop이 오래되어서</span></label><label><input type="radio" name="p26q1" value="4"> <span>4. COPY . . 를 pip install보다 먼저 적어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>코드가 바뀌면 그 COPY 레이어부터 다시 만듭니다. 패키지 설치가 그 뒤에 있으면 함께 다시 실행됩니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q"><code>.env</code>를 이미지에 넣으면 안 되는 이유는 무엇인가요?</p><label><input type="radio" name="p26q2" value="1"> <span>1. 이미지가 커져서</span></label><label><input type="radio" name="p26q2" value="2"> <span>2. 이미지를 받은 누구나 비밀 키를 꺼내 볼 수 있어서</span></label><label><input type="radio" name="p26q2" value="3"> <span>3. Docker가 .env를 읽지 못해서</span></label><label><input type="radio" name="p26q2" value="4"> <span>4. 컨테이너가 시작하지 않아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>이미지는 레지스트리로 공유됩니다. 비밀 값은 실행할 때 환경 변수로 넘깁니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">컨테이너에서 <code>uvicorn app.main:app</code>을 <code>--host</code> 없이 실행하면 어떻게 되나요?</p><label><input type="radio" name="p26q3" value="1"> <span>1. 빌드가 실패한다.</span></label><label><input type="radio" name="p26q3" value="2"> <span>2. 8080번 포트로 바뀐다.</span></label><label><input type="radio" name="p26q3" value="3"> <span>3. 정상적으로 접속된다.</span></label><label><input type="radio" name="p26q3" value="4"> <span>4. 127.0.0.1에서만 받으므로 내 PC 브라우저에서 접속할 수 없다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>127.0.0.1은 컨테이너 안에서만 닿는 주소입니다. 밖에서 받으려면 0.0.0.0으로 실행합니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>컨테이너를 지우니 데이터도 사라졌습니다. S8-P27에서는 데이터베이스를 PostgreSQL 컨테이너로 따로 실행하고, Docker Compose로 API와 함께 띄우며, 데이터를 볼륨에 보관합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p26/s8-p26-03.html"><span class="dir">이전</span>S8-P26-03 이미지 빌드와 실행</a>
+  <a class="next" href="../../s8/p27/s8-p27-01.html"><span class="dir">다음</span>S8-P27-01 다중 컨테이너와 Compose</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

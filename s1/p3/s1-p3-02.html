@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P3-02 타입 힌트와 자동 검증 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P3-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. REST API와 FastAPI 기초</a><span class="sep">/</span><span>S1-P3 라우팅과 파라미터</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p3-01.html" style="flex:10" data-type="주요 개념" title="경로 연산과 HTTP 메서드 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p3-02.html" style="flex:10" data-type="주요 개념" title="타입 힌트와 자동 검증 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s1-p3-03.html" style="flex:20" data-type="실습" title="도서 조회 API 만들기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s1-p3-04.html" style="flex:5" data-type="주요 개념" title="async def와 def (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s1-p3-05.html" style="flex:5" data-type="정리" title="정리: 라우팅 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S1-P3-02</span></div>
+<h1>타입 힌트와 자동 검증</h1>
+
+<p class="lead">주소에 담긴 값을 함수에서 받는 두 가지 방법과, 타입 힌트만으로 값이 검사되는 과정을 강사 화면으로 함께 봅니다.</p>
+
+<h2>경로 파라미터</h2>
+<p>주소 안에 <code>{이름}</code>을 쓰고, 함수에 같은 이름의 매개변수를 만들면 그 자리의 값이 매개변수로 들어옵니다.</p>
+<div class="codeblock"><pre><code>@app.get("/books/{book_id}")
+def get_book(book_id: int):
+    return {"book_id": book_id}</code></pre></div>
+
+<p><code>/books/3</code>으로 요청하면 <code>book_id</code>에 정수 <code>3</code>이 들어옵니다. 주소는 원래 모두 문자열인데, 타입 힌트 <code>int</code>를 보고 FastAPI가 정수로 바꿔 준 것입니다.</p>
+
+<h2>정수가 아닌 값을 보내면</h2>
+<p><code>/books/abc</code>로 요청하면 함수는 실행되지도 않고, FastAPI가 상태 코드 422와 함께 다음 응답을 돌려줍니다.</p>
+<div class="codeblock"><pre><code>{
+  "detail": [
+    {
+      "type": "int_parsing",
+      "loc": ["path", "book_id"],
+      "msg": "Input should be a valid integer, unable to parse string as an integer",
+      "input": "abc"
+    }
+  ]
+}</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>뜻</th></tr></thead><tbody><tr><td><code>loc</code></td><td>문제가 난 위치입니다. 경로(path)의 <code>book_id</code>입니다.</td></tr><tr><td><code>msg</code></td><td>무엇이 문제인지 설명합니다. 정수로 바꿀 수 없다는 뜻입니다.</td></tr><tr><td><code>input</code></td><td>실제로 들어온 값입니다.</td></tr></tbody></table></div>
+
+<p>검사 코드를 한 줄도 쓰지 않았는데 잘못된 입력이 걸러졌습니다. 타입 힌트가 곧 입력 검사 규칙이 된다는 점이 FastAPI의 가장 큰 장점입니다.</p>
+
+<h2>쿼리 파라미터</h2>
+<p>주소에 없는 이름의 매개변수는 쿼리 문자열(<code>?</code> 뒤)에서 값을 받습니다. 기본값을 주면 생략할 수 있는 값이 됩니다.</p>
+<div class="codeblock"><pre><code>@app.get("/books")
+def list_books(author: str | None = None, limit: int = 10):
+    return {"author": author, "limit": limit}</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>요청</th><th>author</th><th>limit</th></tr></thead><tbody><tr><td><code>/books</code></td><td><code>None</code></td><td><code>10</code></td></tr><tr><td><code>/books?author=김하늘</code></td><td><code>"김하늘"</code></td><td><code>10</code></td></tr><tr><td><code>/books?author=김하늘&amp;limit=2</code></td><td><code>"김하늘"</code></td><td><code>2</code></td></tr><tr><td><code>/books?limit=many</code></td><td>-</td><td>422 오류</td></tr></tbody></table></div>
+
+<p><code>str | None = None</code>은 "문자열이거나 값이 없을 수 있고, 기본값은 없음"이라는 뜻입니다. 여러 쿼리 값은 <code>&amp;</code>로 이어서 보냅니다.</p>
+<div class="callout note"><p class="callout-title">FastAPI가 구분하는 규칙</p><p>매개변수 이름이 주소의 <code>{ }</code> 안에 있으면 경로 파라미터, 없으면 쿼리 파라미터입니다. 4교시에 배울 Pydantic 모델 타입이면 요청 본문에서 값을 받습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p3/s1-p3-01.html"><span class="dir">이전</span>S1-P3-01 경로 연산과 HTTP 메서드</a>
+  <a class="next" href="../../s1/p3/s1-p3-03.html"><span class="dir">다음</span>S1-P3-03 도서 조회 API 만들기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

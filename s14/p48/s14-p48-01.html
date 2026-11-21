@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P48-01 컨테이너 레지스트리와 ECR | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P48-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 안전한 배포 구성</a><span class="sep">/</span><span>S14-P48 ECR로 이미지 배포</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p48-01.html" style="flex:5" data-type="주요 개념" title="컨테이너 레지스트리와 ECR (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s14-p48-02.html" style="flex:10" data-type="주요 개념" title="이미지 푸시 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s14-p48-03.html" style="flex:25" data-type="실습" title="이미지 푸시와 EC2에서 실행 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s14-p48-04.html" style="flex:5" data-type="주요 개념" title="이미지 태그 전략 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s14-p48-05.html" style="flex:5" data-type="정리" title="정리: ECR (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S14-P48-01</span></div>
+<h1>컨테이너 레지스트리와 ECR</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>컨테이너 이미지를 ECR에 올리고 EC2에서 받아 실행할 수 있습니다.</p></div>
+
+<p class="lead">컨테이너 레지스트리는 Docker 이미지를 보관하고 나눠 주는 저장소입니다. S8에서 <code>python:3.12-slim</code>을 내려받은 Docker Hub가 공개 레지스트리의 예입니다. 내 서비스의 이미지는 아무나 받을 수 없는 프라이빗 레지스트리에 둡니다.</p>
+
+<h2>레지스트리를 쓰면 달라지는 것</h2>
+<div class="table-wrap"><table><thead><tr><th></th><th>서버에서 빌드(오전)</th><th>레지스트리에서 받기(지금부터)</th></tr></thead><tbody><tr><td>서버에 필요한 것</td><td>소스 코드, Git 접근 권한, 빌드 도구</td><td>이미지를 받을 권한만</td></tr><tr><td>같은 이미지인가</td><td>서버마다 빌드한 시점의 패키지가 달라질 수 있음</td><td>한 번 만든 이미지를 모든 서버가 똑같이 받음</td></tr><tr><td>되돌리기</td><td>이전 커밋을 받아 다시 빌드</td><td>이전 버전 태그의 이미지를 받아 실행</td></tr><tr><td>빌드 부담</td><td>작은 서버의 CPU와 메모리를 씀</td><td>내 PC나 CI가 빌드</td></tr></tbody></table></div>
+
+<h2>Amazon ECR</h2>
+<p>ECR(Elastic Container Registry)은 AWS의 컨테이너 레지스트리입니다. 저장소(repository)를 만들고 그 안에 태그가 붙은 이미지를 올립니다.</p>
+<div class="table-wrap"><table><thead><tr><th>기능</th><th>뜻</th><th>이번 실습</th></tr></thead><tbody><tr><td>프라이빗 저장소</td><td>IAM 권한이 있어야 올리고 받을 수 있습니다.</td><td><code>book-api</code> 저장소</td></tr><tr><td>태그 변경 불가(Immutable)</td><td>이미 있는 태그로 다른 이미지를 올리지 못하게 합니다. <code>1.0.0</code>이 언제나 같은 이미지를 가리키게 됩니다.</td><td>켬</td></tr><tr><td>이미지 스캔</td><td>올린 이미지 안의 운영체제 패키지와 라이브러리에 알려진 취약점이 있는지 검사합니다. 기본 스캔은 추가 요금이 없습니다.</td><td>푸시할 때 스캔</td></tr><tr><td>수명 주기 정책</td><td>오래된 이미지를 규칙에 따라 자동으로 지웁니다.</td><td>개념만(S18 정리 때 직접 삭제)</td></tr><tr><td>암호화</td><td>저장된 이미지는 기본으로 암호화됩니다.</td><td>기본값</td></tr></tbody></table></div>
+
+<p>요금은 저장한 이미지의 용량(GB당 월 요금)과, 다른 리전이나 인터넷으로 내보낸 데이터에 붙습니다. 같은 리전의 EC2가 받는 것은 데이터 전송 요금이 없습니다. 실습 이미지 몇 개는 1GB를 넘지 않습니다.</p>
+<div class="callout note"><p class="callout-title">pip-audit과 이미지 스캔의 차이</p><p>S11의 pip-audit은 <code>requirements.txt</code>의 Python 패키지만 봅니다. ECR 스캔은 이미지 안의 운영체제 패키지(베이스 이미지인 Debian의 라이브러리 등)까지 봅니다. 서로 보는 범위가 다르므로 둘 다 씁니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p47/s14-p47-05.html"><span class="dir">이전</span>S14-P47-05 정리: 비밀정보 관리</a>
+  <a class="next" href="../../s14/p48/s14-p48-02.html"><span class="dir">다음</span>S14-P48-02 이미지 푸시 과정 보기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

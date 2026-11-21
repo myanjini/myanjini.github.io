@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P36-03 동시 대여 경쟁 조건 재현 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P36-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P36 시간 및 상태와 코드오류</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p36-01.html" style="flex:5" data-type="주요 개념" title="5일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p36-02.html" style="flex:10" data-type="주요 개념" title="시간 및 상태와 코드오류 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s11-p36-03.html" style="flex:10" data-type="주요 개념" title="동시 대여 경쟁 조건 재현 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s11-p36-04.html" style="flex:20" data-type="실습" title="경쟁 조건 해결 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s11-p36-05.html" style="flex:5" data-type="정리" title="정리: 시간 및 상태 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S11-P36-03</span></div>
+<h1>동시 대여 경쟁 조건 재현</h1>
+
+<p class="lead">S6에서 "동시에 빌리면 1권뿐인 책이 두 번 빌려질 수 있다"고 경고만 하고 넘어갔습니다. 이번에는 Docker Compose로 띄운 PostgreSQL 환경에서 10명이 동시에 대여해 이 문제를 눈으로 확인합니다.</p>
+
+<h2>문제가 되는 코드</h2>
+<p>현재 대여 서비스는 재고를 확인한 뒤, 메모리에 읽어 둔 값으로 재고를 계산해 저장합니다.</p>
+<div class="codeblock"><span class="file">app/services/books.py</span><pre><code>def change_stock(db: Session, book: Book, change: int, reason: str) -&gt; None:
+    """재고를 바꾸고 기록을 남깁니다. 확정(commit)은 이 함수를 부른 쪽에서 합니다."""
+    if book.stock + change &lt; 0:
+        raise AppError(409, "INSUFFICIENT_STOCK", f"재고가 부족합니다. 현재 재고는 {book.stock}권입니다.")
+    book.stock += change
+    book_repo.add_stock_log(db, book, change, reason)</code></pre></div>
+
+<p><code>book.stock += change</code>는 "지금 데이터베이스의 재고에서 1을 빼라"가 아니라 "내가 읽었던 재고(1)에서 1을 뺀 값(0)을 저장하라"는 뜻입니다. 실제로 데이터베이스에 가는 문장은 <code>UPDATE books SET stock=0 WHERE id=7</code>입니다. 10명이 모두 재고 1을 읽었다면 10명 모두 "재고를 0으로" 저장하고 대여에 성공합니다. 재고는 0으로 멀쩡해 보이지만 대여 기록은 10건이 됩니다. 앞선 변경이 뒤의 변경에 덮여 사라졌다는 뜻에서 이 현상을 <strong>갱신 손실</strong>(lost update)이라고 부릅니다.</p>
+
+<h2>재현 준비</h2>
+<p>컴퓨터가 빠르면 확인과 변경 사이의 틈이 아주 짧아 문제가 잘 나타나지 않습니다. 실습에서는 틈을 일부러 0.2초로 벌립니다. 이 줄은 확인이 끝나면 반드시 지웁니다.</p>
+<div class="codeblock"><span class="file">app/services/loans.py(실습용으로 잠시 바꿉니다)</span><pre><code>import time
+...
+    if book.stock &lt; 1:
+        raise AppError(409, "OUT_OF_STOCK", "남은 재고가 없습니다.")
+
+    time.sleep(0.2)  # 실습용: 검사와 변경 사이를 일부러 벌립니다. 확인 후 반드시 지웁니다.
+
+    change_stock(db, book, -1, "대여")</code></pre></div>
+
+<p>동시에 요청을 보낼 프로그램을 <code>tools/race_test.py</code>로 만듭니다. 10명이 먼저 로그인해 둔 뒤, 스레드 10개로 대여 요청을 한꺼번에 보냅니다. 스레드는 한 프로그램 안에서 동시에 실행되는 작업 단위입니다.</p>
+<div class="codeblock"><span class="file">tools/race_test.py</span><pre><code>"""동시 대여 시험: 재고가 1권인 도서를 10명이 동시에 빌립니다. 사용법: python tools/race_test.py 도서번호"""
+import sys
+from concurrent.futures import ThreadPoolExecutor
+
+import httpx
+
+BASE_URL = "http://127.0.0.1:8000"
+BOOK_ID = int(sys.argv[1])
+PASSWORD = "race-test-pass-1"
+
+
+def login(i: int) -&gt; dict:
+    email = f"race{i}@example.com"
+    httpx.post(f"{BASE_URL}/auth/signup", json={"email": email, "password": PASSWORD})  # 이미 있으면 409, 무시
+    token = httpx.post(f"{BASE_URL}/auth/token", data={"username": email, "password": PASSWORD}).json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
+
+
+def borrow(headers: dict) -&gt; int:
+    return httpx.post(f"{BASE_URL}/loans", json={"book_id": BOOK_ID}, headers=headers, timeout=30).status_code
+
+
+users = [login(i) for i in range(10)]           # 먼저 10명이 모두 로그인해 둡니다.
+with ThreadPoolExecutor(max_workers=10) as pool:  # 10개의 요청을 한꺼번에 보냅니다.
+    results = list(pool.map(borrow, users))
+
+print("응답 상태:", results)
+print("대여 성공(201):", results.count(201))
+print("남은 재고:", httpx.get(f"{BASE_URL}/books/{BOOK_ID}").json()["stock"])</code></pre></div>
+<div class="callout note"><p class="callout-title">왜 PostgreSQL에서 재현하나요</p><p>개발용 SQLite는 한 번에 한 요청만 쓰기를 하도록 데이터베이스 전체를 잠그기 때문에 이 문제가 다른 모습(잠금 오류나 대기)으로 나타납니다. 운영 환경과 같은 PostgreSQL로 재현해야 실제로 일어날 일을 볼 수 있습니다. S8에서 만든 Compose 환경을 그대로 씁니다.</p></div>
+
+<h2>재현</h2>
+<ol class="steps"><li><h3>이미지를 다시 만들고 띄우기</h3><div class="codeblock term"><pre><code>docker compose up -d --build
+docker compose run --rm api alembic upgrade head</code></pre></div>
+<p>관리자 계정(S5-P17의 <code>make_admin</code>)으로 재고가 1권인 도서를 하나 등록하고 번호를 확인합니다. 아래 예에서는 7번입니다.</p></li><li><h3>동시 대여 실행</h3><div class="codeblock term"><pre><code>python tools/race_test.py 7
+응답 상태: [201, 201, 201, 201, 201, 201, 201, 201, 201, 201]
+대여 성공(201): 10
+남은 재고: 0</code></pre></div>
+</li><li><h3>데이터베이스에서 확인</h3><div class="codeblock term"><pre><code>docker compose exec db psql -U bookapi -d bookapi -c "select count(*) from loans where book_id=7"
+ count
+-------
+    10
+(1 row)</code></pre></div>
+</li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인한 것</th><th>기대</th><th>실제</th><th>내 결과</th></tr></thead><tbody><tr><td>대여 성공 수</td><td>1</td><td>10</td><td><input data-save="race1" aria-label="내 결과"></td></tr><tr><td>남은 재고</td><td>0</td><td>0</td><td><input data-save="race2" aria-label="내 결과"></td></tr><tr><td>대여 기록 수</td><td>1</td><td>10</td><td><input data-save="race3" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>재고 숫자만 보면 아무 문제가 없어 보인다는 점이 이 버그를 더 위험하게 만듭니다. 1권뿐인 책을 10명이 빌렸고, 반납이 시작되면 재고는 10권으로 늘어납니다. 재고 기록(stock_logs)의 합계와 실제 재고도 서로 맞지 않게 됩니다.</p>
+<div class="qa"><p class="question">이 결과는 KISA 보안약점과 OWASP API 목록에서 각각 어디에 해당하나요?</p><textarea data-save="p36r" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>KISA 구현 단계의 시간 및 상태 유형, 검사 시점과 사용 시점(TOCTOU)의 경쟁 조건입니다. OWASP API Security Top 10 2023에서는 API6(민감한 업무 흐름에 대한 제한 없는 접근)과 관련이 있습니다. 공격자가 일부러 동시에 요청을 보내 한정된 재고나 쿠폰을 여러 번 가져가는 공격으로 이어질 수 있습니다.</p></div></details></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p36/s11-p36-02.html"><span class="dir">이전</span>S11-P36-02 시간 및 상태와 코드오류</a>
+  <a class="next" href="../../s11/p36/s11-p36-04.html"><span class="dir">다음</span>S11-P36-04 경쟁 조건 해결</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P20-04 응답 뒤에 실행하는 작업 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P20-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P20 파일 업로드와 백그라운드 작업</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p20-01.html" style="flex:10" data-type="주요 개념" title="파일 업로드와 저장 전략 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p20-02.html" style="flex:10" data-type="주요 개념" title="표지 이미지 업로드 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p20-03.html" style="flex:15" data-type="실습" title="업로드 API 구현 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s6-p20-04.html" style="flex:10" data-type="실습" title="응답 뒤에 실행하는 작업 (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s6-p20-05.html" style="flex:5" data-type="정리" title="정리: 파일과 백그라운드 작업 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S6-P20-04</span></div>
+<h1>응답 뒤에 실행하는 작업</h1>
+
+<p class="lead">업로드가 끝날 때마다 기록을 남기려고 합니다. 그런데 기록을 남기는 데 시간이 걸린다면 사용자가 그만큼 기다려야 할까요? 응답을 먼저 보내고 나중에 실행하는 방법을 직접 비교합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>BackgroundTasks로 응답 뒤에 실행할 작업을 등록하고, 응답 시간의 차이를 확인할 수 있습니다.</p></div>
+
+<h2>BackgroundTasks</h2>
+<p>경로 함수에 <code>background_tasks: BackgroundTasks</code> 매개변수를 추가하고 <code>add_task(함수, 인자...)</code>로 할 일을 등록하면, FastAPI가 응답을 보낸 <strong>뒤에</strong> 그 함수를 실행합니다. 알림 메일 보내기, 기록 남기기처럼 사용자가 결과를 기다릴 필요가 없는 일에 씁니다.</p>
+<ol class="steps"><li><h3>기록 함수 추가</h3>
+<p><code>app/services/covers.py</code> 맨 위에 <code>import time</code>과 <code>from datetime import datetime</code>을 추가하고, 맨 아래에 기록 함수를 넣습니다. 기록을 다른 서버로 보내는 데 2초가 걸린다고 가정하는 줄을 실습용으로 함께 넣습니다.</p>
+<div class="codeblock"><span class="file">app/services/covers.py</span><pre><code>def write_upload_log(book_id: int, user_id: int, original_name: str, size: int) -&gt; None:
+    """업로드 기록을 파일에 한 줄씩 남깁니다."""
+    LOG_FILE.parent.mkdir(exist_ok=True)
+    time.sleep(2)  # 실습용: 기록을 다른 서버로 보내는 데 2초 걸린다고 가정합니다.
+    line = f"{datetime.now().isoformat(timespec='seconds')} book={book_id} user={user_id} file={original_name} size={size}\n"
+    with LOG_FILE.open("a", encoding="utf-8") as f:
+        f.write(line)</code></pre></div>
+</li><li><h3>먼저 직접 호출해 보기</h3>
+<div class="codeblock"><span class="file">app/routers/books.py</span><pre><code>def upload_book_cover(db: SessionDep, user: CurrentUserDep, book_id: int, file: UploadFile):
+    book = book_service.upload_cover(db, user, book_id, file)
+    covers.write_upload_log(book.id, user.id, file.filename, file.size)  # 직접 호출
+    return book</code></pre></div>
+
+<p>라우터 가져오기에 <code>from app.services import covers</code>를 추가하고 서버를 다시 시작합니다. 표지를 올리면 Execute를 누른 뒤 응답이 오기까지 2초쯤 걸립니다. 응답 헤더의 <code>x-process-time</code>을 적습니다. 2일차에 만든 처리 시간 미들웨어가 붙인 값입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>방식</th><th>x-process-time</th><th>내 결과</th></tr></thead><tbody><tr><td>직접 호출</td><td>약 2050ms</td><td><input data-save="t1" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>백그라운드로 바꾸기</h3>
+<div class="codeblock"><span class="file">app/routers/books.py</span><pre><code>@router.post("/{book_id}/cover", response_model=BookRead, summary="표지 이미지 업로드",
+             responses={**FORBIDDEN_OR_NOT_FOUND, 413: {"description": "2MB 초과"},
+                        415: {"description": "jpg, jpeg, png가 아님"}})
+def upload_book_cover(db: SessionDep, user: CurrentUserDep, book_id: int, file: UploadFile,
+                      background_tasks: BackgroundTasks):
+    book = book_service.upload_cover(db, user, book_id, file)
+    # 응답을 보낸 뒤에 실행할 일을 등록합니다.
+    background_tasks.add_task(covers.write_upload_log, book.id, user.id, file.filename, file.size)
+    return book</code></pre></div>
+
+<p>가져오기에 <code>BackgroundTasks</code>를 더하고 서버를 다시 시작한 뒤 다시 올립니다.</p>
+<div class="table-wrap"><table><thead><tr><th>방식</th><th>x-process-time</th><th>내 결과</th></tr></thead><tbody><tr><td>백그라운드</td><td>수십 ms</td><td><input data-save="t2" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>응답은 바로 오고, 약 2초 뒤에 <code>logs/upload.log</code>에 한 줄이 추가됩니다. 파일을 열어 확인합니다.</p>
+<div class="codeblock"><span class="file">logs/upload.log</span><pre><code>2026-11-21T13:49:34 book=6 user=1 file=my cover.PNG size=208</code></pre></div>
+</li><li><h3>실습용 지연 지우기</h3>
+<p>확인했으면 <code>time.sleep(2)</code> 줄과 <code>import time</code>을 지웁니다.</p>
+</li></ol>
+
+<h2>BackgroundTasks의 한계</h2>
+<div class="table-wrap"><table><thead><tr><th>한계</th><th>설명</th></tr></thead><tbody><tr><td>같은 서버 안에서 실행</td><td>작업이 오래 걸리면 그만큼 서버의 힘을 씁니다. 동영상 변환처럼 무거운 작업에는 맞지 않습니다.</td></tr><tr><td>사라질 수 있음</td><td>작업이 끝나기 전에 서버가 꺼지면 그 작업은 실행되지 않습니다. 다시 시도해 주지도 않습니다.</td></tr><tr><td>결과를 알려 주지 않음</td><td>응답은 이미 나갔으므로 작업이 실패해도 사용자는 모릅니다.</td></tr></tbody></table></div>
+
+<p>반드시 실행되어야 하거나 무거운 작업은 작업을 줄 세워 두고 다른 프로그램이 처리하는 <strong>작업 큐</strong>(예: Celery, AWS SQS)를 씁니다. 이 과정에서는 다루지 않습니다.</p>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>직접 호출하면 응답이 2초 늦어지고, 백그라운드로 등록하면 바로 오는 것을 비교했다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>logs/upload.log에 업로드 기록이 남는다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>실습용 time.sleep(2)를 지웠다.</span></label></li></ul>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p20/s6-p20-03.html"><span class="dir">이전</span>S6-P20-03 업로드 API 구현</a>
+  <a class="next" href="../../s6/p20/s6-p20-05.html"><span class="dir">다음</span>S6-P20-05 정리: 파일과 백그라운드 작업</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

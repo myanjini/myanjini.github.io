@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P60-03 진행 상황 점검 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P60-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P60 구현 3: 핵심 기능과 테스트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p60-01.html" style="flex:20" data-type="실습" title="주제별 핵심 기능 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s17-p60-02.html" style="flex:20" data-type="실습" title="기능 테스트와 보안 테스트 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s17-p60-03.html" style="flex:5" data-type="실습" title="진행 상황 점검 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s17-p60-04.html" style="flex:5" data-type="정리" title="정리: 오전 마무리 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>5분</span><span>S17-P60-03</span></div>
+<h1>진행 상황 점검</h1>
+
+<p class="lead">오전이 거의 끝났습니다. 지금 상태를 냉정하게 보고, 오후에 꼭 끝낼 것과 버릴 것을 정합니다. 오후 첫 시간은 보안 점검과 배포에 써야 하므로, 기능 구현에 쓸 수 있는 시간은 사실상 지금뿐입니다.</p>
+<div class="qa"><p class="question">질문 1. 최소 요건(S16-P56-03) 여섯 가지 가운데 지금 끝난 것과 남은 것은 무엇인가요?</p><textarea data-save="r1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>1~3번(CRUD와 입력 검증, 인증과 권한, 테스트 3개 이상)은 오전에 끝나 있어야 합니다. 4~6번(보안 점검, AWS 배포, README)은 오후 S18-P61에서 합니다. 1~3번 가운데 남은 것이 있다면 그것이 최우선입니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 2. 남은 시간에 꼭 끝내야 할 기능은 무엇인가요? 그 기능이 없으면 발표 시연이 안 되나요?</p><textarea data-save="r2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>시연 시나리오(로그인, 자원 만들기, 핵심 기능 한 번, 남의 자원에 접근해 막히는 장면)에 필요한 기능만 "꼭"입니다. 예시라면 모임 등록, 참가 신청, 정원 초과 409, 남의 모임 수정 403입니다. 내 모임 목록이나 모집 마감은 없어도 시연이 됩니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 3. 동작은 하지만 테스트가 없는 기능이 있나요? 테스트는 있지만 실패하는 것이 있나요?</p><textarea data-save="r3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>실패하는 테스트를 남긴 채 배포 워크플로를 돌리면 배포가 되지 않습니다. 기능을 고칠 시간이 없다면 그 기능을 빼고(라우터 등록 해제), 범위에서 뺀 것으로 기록합니다. 테스트를 지우거나 건너뛰게 만들어 통과시키지 않습니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 4. 명세와 코드가 다른 곳이 있나요?</p><textarea data-save="r4" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>구현하다 보면 상태 코드나 경로가 바뀌기 마련입니다. 제출물은 명세와 코드가 같아야 하므로, 다른 곳은 명세를 코드에 맞게 고칩니다. Swagger UI(<code>/docs</code>)의 목록과 명세의 API 목록을 나란히 놓고 비교하면 빠릅니다.</p></div></details></div>
+<div class="table-wrap"><table><thead><tr><th>범위 조정</th><th>내 값</th></tr></thead><tbody><tr><td>완성한 기능</td><td><input data-save="p60_done" aria-label="내 결과"></td></tr><tr><td>오후에 마저 할 기능(15분 이내)</td><td><input data-save="p60_next" aria-label="내 결과"></td></tr><tr><td>범위에서 뺀 기능</td><td><input data-save="p60_cut" aria-label="내 결과"></td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s17/p60/s17-p60-02.html"><span class="dir">이전</span>S17-P60-02 기능 테스트와 보안 테스트</a>
+  <a class="next" href="../../s17/p60/s17-p60-04.html"><span class="dir">다음</span>S17-P60-04 정리: 오전 마무리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

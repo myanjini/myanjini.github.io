@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P35-03 안전한 오류 응답 적용 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P35-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 보안기능과 에러처리</a><span class="sep">/</span><span>S10-P35 에러처리, 캡슐화와 정보 노출</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p35-01.html" style="flex:10" data-type="주요 개념" title="에러처리 보안약점 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p35-02.html" style="flex:10" data-type="주요 개념" title="정보가 새는 응답 찾기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s10-p35-03.html" style="flex:20" data-type="실습" title="안전한 오류 응답 적용 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p35-04.html" style="flex:5" data-type="주요 개념" title="캡슐화와 디버그 코드 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p35-05.html" style="flex:5" data-type="정리" title="정리: 5일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S10-P35-03</span></div>
+<h1>안전한 오류 응답 적용</h1>
+
+<p class="lead">앞 페이지에서 찾은 다섯 가지를 모두 고칩니다. 오류 응답은 정해진 모양으로 통일하고, 자세한 내용은 가린 채 로그에만 남깁니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>전역 예외 처리, 입력 값 없는 422 응답, 로그 마스킹, 운영 환경 문서 비활성화를 적용할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>처리하지 못한 오류를 안전한 500으로</h3>
+<p>요청 미들웨어에서 예외를 잡아, 로그에는 자세히 남기고 응답은 정해진 JSON으로 보냅니다. 처리 시간 헤더는 빼고 로그에만 남깁니다.</p>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    request_id_var.set(uuid.uuid4().hex[:16])  # 이 요청에서 남기는 모든 로그에 같은 ID가 붙습니다.
+    start = time.perf_counter()
+    info = {"method": request.method, "path": request.url.path}
+    try:
+        response = await call_next(request)  # 실제 경로 함수가 여기서 실행됩니다.
+    except Exception:
+        # 자세한 내용은 로그에만 남기고, 사용자에게는 정해진 문구와 요청 ID만 보냅니다.
+        logger.exception("처리하지 못한 오류", extra=info)
+        response = JSONResponse(status_code=500, content={
+            "code": "INTERNAL_ERROR",
+            "message": "요청을 처리하지 못했습니다. 문제가 계속되면 요청 ID를 알려 주세요.",
+            "request_id": request_id_var.get(),
+        })
+    duration_ms = round((time.perf_counter() - start) * 1000, 1)
+    response.headers["X-Request-ID"] = request_id_var.get()
+    logger.info("요청 처리", extra={**info, "status": response.status_code, "duration_ms": duration_ms})
+    return response</code></pre></div>
+
+<p>S8에서는 예외를 다시 던져 FastAPI 기본 처리에 맡겼기 때문에 uvicorn도 같은 오류를 한 번 더 기록했습니다. 이제 미들웨어가 직접 응답하므로 오류 로그가 한 번만 남고, 500 응답에도 <code>X-Request-ID</code>가 붙습니다.</p>
+</li><li><h3>422 응답에서 입력 값 빼기</h3>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>@app.exception_handler(RequestValidationError)
+def handle_validation_error(request: Request, exc: RequestValidationError):
+    # 기본 422 응답은 보낸 값(input)을 그대로 되돌려 줍니다. 비밀번호가 응답에 실리지 않게 위치와 이유만 남깁니다.
+    errors = [{"loc": list(e["loc"]), "msg": e["msg"], "type": e["type"]} for e in exc.errors()]
+    return JSONResponse(status_code=422, content={
+        "code": "VALIDATION_ERROR",
+        "message": "요청 값이 올바르지 않습니다.",
+        "errors": errors,
+    })</code></pre></div>
+
+<p>가져오기에 <code>from fastapi.exceptions import RequestValidationError</code>를 추가합니다. 이제 모든 오류 응답이 <code>code</code>와 <code>message</code>를 가진 같은 모양이 됩니다. 앞선 단원의 화면에 나온 422 응답(<code>detail</code> 모양)은 이 시점부터 바뀝니다. 화면 개발자에게도 알려 줍니다.</p>
+</li><li><h3>SQL 오류에서 값 숨기기</h3>
+<div class="codeblock"><span class="file">app/database.py</span><pre><code># hide_parameters=True: 오류 메시지와 로그에 SQL의 값(이메일, 해시 등)을 넣지 않습니다.
+engine = create_engine(settings.database_url, connect_args=connect_args, hide_parameters=True)</code></pre></div>
+
+<p>이제 같은 오류가 <code>[SQL parameters hidden due to hide_parameters=True]</code>로 표시됩니다.</p>
+</li><li><h3>로그 마스킹</h3>
+<p>실수로 로그에 들어간 이메일, 토큰, 비밀번호 해시를 기록 직전에 한 번 더 가립니다. 마스킹은 안전망입니다. 비밀번호 원문처럼 모양으로 알아볼 수 없는 값은 가릴 수 없으므로, 애초에 로그에 넣지 않는 것이 먼저입니다.</p>
+<div class="codeblock"><span class="file">app/privacy.py</span><pre><code># 로그에 섞여 들어오면 가릴 값들
+EMAIL_PATTERN = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
+JWT_PATTERN = re.compile(r"eyJ[\w-]+\.[\w-]+\.[\w-]+")
+PASSWORD_HASH_PATTERN = re.compile(r"\$argon2[a-z]*\$[^\s'\",)]+")
+
+
+def mask_text(text: str) -&gt; str:
+    """글자 속의 이메일, 토큰, 비밀번호 해시를 가립니다."""
+    text = JWT_PATTERN.sub("[TOKEN]", text)
+    text = PASSWORD_HASH_PATTERN.sub("[PASSWORD_HASH]", text)
+    return EMAIL_PATTERN.sub(lambda m: mask_email(m.group()), text)</code></pre></div>
+
+<p><code>app/privacy.py</code> 맨 위에 <code>import re</code>를 추가합니다. <code>app/logging_config.py</code>에서는 메시지, extra 값, 트레이스백 세 곳에 <code>mask_text</code>를 씌웁니다.</p>
+<div class="codeblock"><span class="file">app/logging_config.py</span><pre><code>            "message": mask_text(record.getMessage()),
+            ...
+                data[key] = mask_text(value) if isinstance(value, str) else value
+            ...
+            data["error"] = mask_text(self.formatException(record.exc_info))</code></pre></div>
+</li><li><h3>운영 환경에서 문서 끄기</h3>
+<div class="codeblock"><span class="file">app/config.py</span><pre><code>    app_env: Literal["development", "production"] = "development"  # 운영이면 production</code></pre></div>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code># 운영 환경에서는 API 문서(/docs, /redoc, /openapi.json)를 공개하지 않습니다.
+docs_enabled = settings.app_env != "production"
+
+app = FastAPI(
+    title=settings.app_name,
+    description="도서를 등록하고 조회, 수정, 삭제하는 API입니다.",
+    version="0.1.0",
+    docs_url="/docs" if docs_enabled else None,
+    redoc_url="/redoc" if docs_enabled else None,
+    openapi_url="/openapi.json" if docs_enabled else None,
+)</code></pre></div>
+
+<p>7일차에 AWS에 배포할 때 <code>APP_ENV=production</code>을 넣습니다. 지금 로컬과 Compose는 개발 환경이므로 <code>/docs</code>가 그대로 열립니다.</p>
+</li><li><h3>서버 헤더 빼기</h3>
+<div class="codeblock"><span class="file">Dockerfile</span><pre><code># --no-server-header: 응답에 서버 프로그램 이름(uvicorn)을 알리지 않습니다.
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--no-server-header"]</code></pre></div>
+
+<p>로컬에서도 확인하려면 <code>uvicorn app.main:app --reload --no-server-header</code>로 실행합니다.</p>
+</li><li><h3>다시 확인</h3>
+<p>로컬 서버로 확인한 뒤, 컨테이너에도 반영합니다(<code>docker compose up -d --build</code>).</p>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>비밀번호 <code>pw-leak</code>로 회원가입</td><td>422, <code>"code": "VALIDATION_ERROR"</code>, 응답 어디에도 pw-leak 없음</td><td><input data-save="e1" aria-label="내 결과"></td></tr><tr><td><code>docker compose stop db</code> 뒤 <code>GET /books</code></td><td>500, <code>"code": "INTERNAL_ERROR"</code>, <code>request_id</code>가 응답 헤더와 같음</td><td><input data-save="e2" aria-label="내 결과"></td></tr><tr><td>그때의 ERROR 로그(<code>docker compose logs api</code>)</td><td>"처리하지 못한 오류" 한 건만 있고, 응답의 request_id로 찾을 수 있음</td><td><input data-save="e3" aria-label="내 결과"></td></tr><tr><td>응답 헤더</td><td><code>server</code>, <code>x-process-time</code> 없음</td><td><input data-save="e4" aria-label="내 결과"></td></tr><tr><td><code>APP_ENV=production</code>으로 실행 후 <code>/docs</code></td><td>404</td><td><input data-save="e5" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>운영 환경 확인은 <code>.env</code>에 <code>APP_ENV=production</code>을 잠시 넣고 서버를 다시 시작한 뒤, 확인이 끝나면 지웁니다. 데이터베이스는 <code>docker compose start db</code>로 되돌립니다.</p>
+</li><li><h3>회귀 테스트 추가</h3>
+<p><code>tests/test_attacks.py</code> 위쪽에 <code>from app.privacy import mask_text</code>를 추가하고 덧붙입니다. 첫 테스트는 서비스 함수가 비밀번호가 담긴 예외를 내도 응답에 새지 않는지 확인합니다.</p>
+<div class="codeblock"><span class="file">tests/test_attacks.py</span><pre><code>def test_unexpected_error_hides_details(client, auth_headers, monkeypatch):
+    def broken(*args, **kwargs):
+        raise RuntimeError("database password is pg-secret-0123")
+    monkeypatch.setattr("app.services.books.list_books", broken)
+
+    response = client.get("/books")
+    body = response.json()
+    assert response.status_code == 500
+    assert body["code"] == "INTERNAL_ERROR"
+    assert body["request_id"] == response.headers["X-Request-ID"]
+    assert "pg-secret" not in response.text and "RuntimeError" not in response.text
+
+
+def test_validation_error_does_not_echo_input(client):
+    response = client.post("/auth/signup", json={"email": "new@example.com", "password": "my-pw-123"})
+    assert response.status_code == 422
+    assert response.json()["code"] == "VALIDATION_ERROR"
+    assert "my-pw-123" not in response.text
+
+
+def test_mask_text():
+    line = "user1@example.com eyJhbGciOi.eyJzdWIiOi.abc $argon2id$v=19$m=65536$salt$hash"
+    assert mask_text(line) == "us***@example.com [TOKEN] [PASSWORD_HASH]"</code></pre></div>
+<div class="codeblock term"><pre><code>pytest</code></pre></div>
+<details><summary>tests/test_attacks.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">tests/test_attacks.py</span><pre><code>"""보안약점을 고친 뒤 다시 생기지 않는지 확인하는 테스트"""
+from datetime import datetime, timedelta, timezone
+
+import jwt
+import pytest
+from pydantic import ValidationError
+
+from app.config import Settings
+from app.privacy import mask_text
+from app.routers import files
+from app.services import covers
+from tests.conftest import TEST_KEY
+from tests.helpers import create_book
+
+SQLI = "zz%' UNION SELECT email, hashed_password, 0 FROM users --"
+
+
+def test_report_sql_injection_does_not_leak_users(client, auth_headers, author_id):
+    create_book(client, auth_headers, author_id, title="파이썬 첫걸음", stock=3)
+    response = client.get("/reports/stock", params={"keyword": SQLI}, headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json() == []  # 그런 제목의 도서가 없을 뿐, 사용자 정보는 나오지 않습니다.
+
+
+def test_report_rejects_unknown_order_by(client, auth_headers):
+    response = client.get("/reports/stock", params={"order_by": "stock; DROP TABLE books"}, headers=auth_headers)
+    assert response.status_code == 422
+
+
+@pytest.mark.parametrize("name", ["../.env", "../app/config.py", "/etc/passwd", "..\\.env"])
+def test_download_blocks_path_traversal(client, name):
+    response = client.get("/files/download", params={"name": name})
+    assert response.status_code in (400, 422)
+
+
+def test_download_file(client, tmp_path, monkeypatch):
+    (tmp_path / "guide.txt").write_text("이용 안내", encoding="utf-8")
+    monkeypatch.setattr(files, "FILES_DIR", tmp_path.resolve())
+    response = client.get("/files/download", params={"name": "guide.txt"})
+    assert response.status_code == 200
+    assert response.text == "이용 안내"
+    assert "attachment" in response.headers["content-disposition"]
+
+
+
+def test_responses_have_nosniff_header(client):
+    assert client.get("/health").headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_upload_html_disguised_as_png_returns_415(client, auth_headers, author_id, tmp_path, monkeypatch):
+    monkeypatch.setattr(covers, "COVER_DIR", tmp_path)
+    book = create_book(client, auth_headers, author_id)
+    fake = b"&lt;html&gt;&lt;script&gt;alert(document.cookie)&lt;/script&gt;&lt;/html&gt;"
+    response = client.post(f"/books/{book['id']}/cover", headers=auth_headers,
+                           files={"file": ("cover.png", fake, "image/png")})
+    assert response.status_code == 415
+    assert response.json()["code"] == "INVALID_IMAGE_CONTENT"
+    assert list(tmp_path.iterdir()) == []  # 아무 파일도 저장되지 않았습니다.
+
+
+def test_clean_filename():
+    assert covers.clean_filename("../../etc/passwd") == "passwd"
+    assert covers.clean_filename("a\nb.png") == "ab.png"
+    assert covers.clean_filename("") == "unnamed"
+
+
+
+def test_cannot_read_others_loan(client, make_user, author_id):
+    user1 = make_user("user1@example.com")
+    user3 = make_user("user3@example.com")
+    book = create_book(client, user1, author_id, stock=1)
+    loan = client.post("/loans", json={"book_id": book["id"]}, headers=user1).json()
+
+    assert client.get(f"/loans/{loan['id']}", headers=user1).status_code == 200
+    response = client.get(f"/loans/{loan['id']}", headers=user3)
+    assert response.status_code == 404  # 남의 기록은 있다는 사실도 알려 주지 않습니다.
+
+
+@pytest.mark.parametrize("path", ["/admin/users", "/admin/loans"])
+def test_admin_api_forbidden_for_user(client, auth_headers, path):
+    assert client.get(path, headers=auth_headers).status_code == 403
+
+
+def test_admin_api_for_admin(client, make_user):
+    admin = make_user("admin@example.com", role="admin")
+    response = client.get("/admin/users", headers=admin)
+    assert response.status_code == 200
+    assert "hashed_password" not in response.json()[0]
+
+
+def test_signup_with_role_field_returns_422(client):
+    response = client.post("/auth/signup", json={"email": "x@example.com", "password": "test-pass-123", "role": "admin"})
+    assert response.status_code == 422
+
+
+def test_update_book_with_unknown_field_returns_422(client, auth_headers, author_id):
+    book = create_book(client, auth_headers, author_id)
+    response = client.patch(f"/books/{book['id']}", json={"owner_id": 999}, headers=auth_headers)
+    assert response.status_code == 422
+
+
+def test_weak_secret_key_is_rejected():
+    for weak in ["change-me", "short-key"]:
+        with pytest.raises(ValidationError):
+            Settings(secret_key=weak, _env_file=None)
+
+
+def test_admin_user_list_masks_email(client, make_user):
+    admin = make_user("admin@example.com", role="admin")
+    users = client.get("/admin/users", headers=admin).json()
+    assert users[0]["email"] == "ad***@example.com"
+    detail = client.get(f"/admin/users/{users[0]['id']}", headers=admin).json()
+    assert detail["email"] == "admin@example.com"  # 상세 조회에서만 전체를 보여 줍니다.
+
+
+
+def login(client, email, password):
+    return client.post("/auth/token", data={"username": email, "password": password})
+
+
+def test_login_is_locked_after_five_failures(client, make_user):
+    make_user("user1@example.com")
+    for _ in range(5):
+        assert login(client, "user1@example.com", "wrong-pass-0").status_code == 401
+    response = login(client, "user1@example.com", "test-pass-123")  # 맞는 비밀번호여도 잠깁니다.
+    assert response.status_code == 429
+    assert response.headers["Retry-After"] == "900"
+
+
+def test_successful_login_resets_failures(client, make_user):
+    make_user("user1@example.com")
+    for _ in range(4):
+        login(client, "user1@example.com", "wrong-pass-0")
+    assert login(client, "user1@example.com", "test-pass-123").status_code == 200
+    for _ in range(4):
+        login(client, "user1@example.com", "wrong-pass-0")
+    assert login(client, "user1@example.com", "test-pass-123").status_code == 200
+
+
+@pytest.mark.parametrize("password", ["short-pw1", "password1234", "aaaaaaaaaaaa", "mybook-mybook-1"])
+def test_weak_password_is_rejected(client, password):
+    response = client.post("/auth/signup", json={"email": "mybook@example.com", "password": password})
+    assert response.status_code == 422
+
+
+def make_token(payload: dict, key: str = TEST_KEY, algorithm: str = "HS256") -&gt; str:
+    return jwt.encode(payload, key, algorithm=algorithm)
+
+
+@pytest.mark.parametrize("token", [
+    make_token({"sub": "1", "exp": datetime.now(timezone.utc) - timedelta(minutes=1)}),    # 만료
+    make_token({"sub": "1"}),                                                               # exp 없음
+    make_token({"sub": "1", "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}, "other-key-" * 4),  # 다른 키
+    make_token({"sub": "1", "exp": datetime.now(timezone.utc) + timedelta(minutes=5)}, None, "none"),     # 서명 없음
+])
+def test_invalid_tokens_are_rejected(client, make_user, token):
+    make_user("user1@example.com")
+    response = client.get("/auth/me", headers={"Authorization": f"Bearer {token}"})
+    assert response.status_code == 401
+
+
+
+def test_unexpected_error_hides_details(client, auth_headers, monkeypatch):
+    def broken(*args, **kwargs):
+        raise RuntimeError("database password is pg-secret-0123")
+    monkeypatch.setattr("app.services.books.list_books", broken)
+
+    response = client.get("/books")
+    body = response.json()
+    assert response.status_code == 500
+    assert body["code"] == "INTERNAL_ERROR"
+    assert body["request_id"] == response.headers["X-Request-ID"]
+    assert "pg-secret" not in response.text and "RuntimeError" not in response.text
+
+
+def test_validation_error_does_not_echo_input(client):
+    response = client.post("/auth/signup", json={"email": "new@example.com", "password": "my-pw-123"})
+    assert response.status_code == 422
+    assert response.json()["code"] == "VALIDATION_ERROR"
+    assert "my-pw-123" not in response.text
+
+
+def test_mask_text():
+    line = "user1@example.com eyJhbGciOi.eyJzdWIiOi.abc $argon2id$v=19$m=65536$salt$hash"
+    assert mask_text(line) == "us***@example.com [TOKEN] [PASSWORD_HASH]"</code></pre></div>
+</div></details>
+</li></ol>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>처리하지 못한 오류가 정해진 JSON 500과 요청 ID로 응답되고, 로그는 한 건만 남는다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>422 응답에 보낸 값이 들어 있지 않다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>SQL 오류와 로그에 이메일, 토큰, 해시가 원문으로 남지 않는다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>운영 환경에서는 /docs와 /openapi.json이 꺼지고, server 헤더가 없다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p35-done</code> 브랜치(5일차 완성 코드)에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p35/s10-p35-02.html"><span class="dir">이전</span>S10-P35-02 정보가 새는 응답 찾기</a>
+  <a class="next" href="../../s10/p35/s10-p35-04.html"><span class="dir">다음</span>S10-P35-04 캡슐화와 디버그 코드</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

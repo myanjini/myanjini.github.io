@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P42-04 설계 자기 점검 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P42-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P42 VPC와 네트워크 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p42-01.html" style="flex:15" data-type="주요 개념" title="VPC 구성 요소 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s12-p42-02.html" style="flex:10" data-type="주요 개념" title="보안 그룹과 네트워크 ACL (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p42-03.html" style="flex:15" data-type="실습" title="배포 네트워크 설계 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s12-p42-04.html" style="flex:5" data-type="실습" title="설계 자기 점검 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p42-05.html" style="flex:5" data-type="정리" title="정리: 6일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>5분</span><span>S12-P42-04</span></div>
+<h1>설계 자기 점검</h1>
+
+<p class="lead">설계는 만들기 전에 고치는 것이 가장 쉽습니다. 다음 질문에 내 설계표를 보며 답하고, 예시 답안과 비교합니다. 하나라도 "예"가 나오면 안 되는 질문에 "예"가 나왔다면 설계를 고칩니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>점검 질문으로 설계에서 불필요하게 열린 경로를 찾아 고칠 수 있습니다.</p></div>
+<div class="qa"><p class="question">질문 1. DB에 인터넷에서 바로 닿는 경로가 있나요? 경로가 생기려면 무엇이 갖춰져야 하는지 따져 보세요.</p><textarea data-save="c1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>없어야 합니다. 인터넷에서 RDS에 닿으려면 (1) 퍼블릭 서브넷(인터넷 게이트웨이 경로), (2) RDS의 퍼블릭 액세스 "예"(공용 IP), (3) 보안 그룹의 허용 규칙이 모두 있어야 합니다. 설계에서는 프라이빗 서브넷에 두고, 퍼블릭 액세스는 "아니요"로 만들고(7일차), 보안 그룹은 API 서버의 보안 그룹만 허용하므로 세 겹으로 막혀 있습니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 2. 출처가 <code>0.0.0.0/0</code>인 인바운드 규칙이 있나요? 있다면 꼭 필요한가요?</p><textarea data-save="c2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>7일차 설계에는 없어야 합니다. 8일차에는 ALB 보안 그룹의 80, 443번만 <code>0.0.0.0/0</code>입니다. <a href="../../appendix/appendix-e.html">부록 E</a>의 수칙 4번("0.0.0.0/0 인바운드는 ALB의 HTTP, HTTPS 외에는 열지 않는다")과 맞는지 확인합니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 3. 22번(SSH) 포트를 열었나요? 열지 않으면 서버에 어떻게 들어가나요?</p><textarea data-save="c3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>열지 않습니다. Session Manager는 서버 안의 에이전트가 AWS 쪽으로 먼저 연결을 맺는 방식이라 인바운드 포트가 필요 없습니다. 오늘 만든 역할의 <code>AmazonSSMManagedInstanceCore</code> 정책이 이를 허용합니다. 접속 기록도 남습니다(7일차 S13-P44-04).</p></div></details></div>
+<div class="qa"><p class="question">질문 4. NAT 게이트웨이가 없는데 EC2는 Docker 이미지와 패키지를 어떻게 내려받나요? RDS는 괜찮나요?</p><textarea data-save="c4" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>EC2는 퍼블릭 서브넷에 있고 공용 IP를 가지므로 인터넷 게이트웨이를 통해 밖으로 나갈 수 있습니다(아웃바운드 모두 허용, 응답은 상태 저장으로 들어옴). RDS는 패치와 백업을 AWS가 자체 경로로 처리하므로 인터넷으로 나갈 필요가 없습니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 5. 출처에 IP 대신 보안 그룹을 쓴 규칙은 무엇이고, IP를 쓰면 무엇이 문제인가요?</p><textarea data-save="c5" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>DB 보안 그룹의 출처가 <code>book-api-sg</code>이고, 8일차에는 API 서버 보안 그룹의 출처가 <code>book-api-alb-sg</code>입니다. IP를 쓰면 서버를 다시 만들거나 늘릴 때마다 규칙을 고쳐야 하고, 그 IP 범위 안의 다른 자원까지 허용될 수 있습니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 6. 가용 영역 a 전체에 장애가 나면 무엇이 멈추나요? 지금 설계에서 받아들여도 되나요?</p><textarea data-save="c6" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>EC2와 RDS 주 인스턴스가 모두 a에 있으므로 서비스가 멈춥니다. 실습 비용 때문에 서버 한 대와 단일 AZ RDS를 쓰기로 한 결정이므로, 실습에서는 받아들이고 기록해 둡니다. 실제 서비스라면 EC2를 c에도 두고 ALB로 나누며, RDS는 다중 AZ로 만듭니다(7일차 S13-P46-01).</p></div></details></div>
+<div class="qa"><p class="question">질문 7. 내일 교육장의 공인 IP가 바뀌면 어떻게 되나요?</p><textarea data-save="c7" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>API에 접속할 수 없게 됩니다. 접속이 안 되면 가장 먼저 <code>checkip.amazonaws.com</code>으로 내 IP를 다시 확인하고 보안 그룹 규칙과 비교합니다(7일차 S13-P45-04의 점검 순서). 8일차에 ALB로 바꾸면 이 문제는 사라집니다.</p></div></details></div>
+<div class="table-wrap"><table><thead><tr><th>점검 결과</th><th>내 답</th></tr></thead><tbody><tr><td>설계에서 고친 곳의 수</td><td><input data-save="fixn" aria-label="내 결과"></td></tr><tr><td>고친 내용</td><td><input data-save="fixw" aria-label="내 결과"></td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p42/s12-p42-03.html"><span class="dir">이전</span>S12-P42-03 배포 네트워크 설계</a>
+  <a class="next" href="../../s12/p42/s12-p42-05.html"><span class="dir">다음</span>S12-P42-05 정리: 6일차 마무리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

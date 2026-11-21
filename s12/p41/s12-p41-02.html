@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P41-02 정책 문서 읽기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P41-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P41 IAM과 접근 관리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p41-01.html" style="flex:10" data-type="주요 개념" title="IAM 핵심 개념 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p41-02.html" style="flex:10" data-type="주요 개념" title="정책 문서 읽기 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p41-03.html" style="flex:20" data-type="실습" title="IAM 역할 만들기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s12-p41-04.html" style="flex:5" data-type="주요 개념" title="액세스 키 관리 수칙 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p41-05.html" style="flex:5" data-type="정리" title="정리: IAM (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S12-P41-02</span></div>
+<h1>정책 문서 읽기</h1>
+
+<p class="lead">IAM 정책은 JSON 문서입니다. 몇 가지 요소만 알면 어떤 정책이든 "누가 무엇을 어디에 할 수 있는지" 읽어 낼 수 있습니다. 오늘 만들 역할에 붙일 정책을 예로 읽어 봅니다.</p>
+
+<h2>정책의 구조</h2>
+<div class="codeblock"><span class="file">book-api-read-parameters(정책 문서)</span><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadBookApiParameters",
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter",
+        "ssm:GetParameters"
+      ],
+      "Resource": "arn:aws:ssm:ap-northeast-2:123456789012:parameter/book-api/*"
+    }
+  ]
+}</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>요소</th><th>뜻</th><th>위 정책에서</th></tr></thead><tbody><tr><td>Version</td><td>정책 문법의 판입니다. 항상 <code>"2012-10-17"</code>을 씁니다. 날짜처럼 보이지만 바꾸는 값이 아닙니다.</td><td>2012-10-17</td></tr><tr><td>Statement</td><td>규칙 목록입니다. 규칙을 여러 개 둘 수 있습니다.</td><td>규칙 1개</td></tr><tr><td>Sid</td><td>규칙에 붙이는 이름입니다(선택).</td><td>ReadBookApiParameters</td></tr><tr><td>Effect</td><td>허용(<code>Allow</code>)인지 거부(<code>Deny</code>)인지</td><td>Allow</td></tr><tr><td>Action</td><td>어떤 동작인지. <code>서비스:동작</code> 형식입니다.</td><td>Parameter Store에서 값 하나, 여러 개를 읽는 동작</td></tr><tr><td>Resource</td><td>어떤 자원에 대해서인지. ARN으로 적습니다.</td><td>서울 리전, 이 계정의 <code>/book-api/</code>로 시작하는 파라미터만</td></tr><tr><td>Condition</td><td>추가 조건입니다(선택). 특정 IP에서만, MFA를 했을 때만 같은 조건을 겁니다.</td><td>없음</td></tr></tbody></table></div>
+
+<p><strong>ARN</strong>(Amazon Resource Name)은 AWS 자원의 전체 이름입니다. <code>arn:aws:서비스:리전:계정ID:자원</code> 모양이고, IAM처럼 리전 구분이 없는 서비스는 리전 자리가 비어 있습니다(<code>arn:aws:iam::123456789012:role/book-api-ec2-role</code>). <code>*</code>는 "아무것이나"를 뜻하는 와일드카드입니다.</p>
+
+<h2>AWS가 요청을 판단하는 순서</h2>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>규칙</th></tr></thead><tbody><tr><td>1</td><td>아무 정책도 허용하지 않으면 <strong>거부</strong>합니다(기본 거부).</td></tr><tr><td>2</td><td>어떤 정책이든 <code>Allow</code>로 허용하면 허용 후보가 됩니다.</td></tr><tr><td>3</td><td>어느 한 정책이라도 <code>Deny</code>로 명시하면, 허용이 있어도 <strong>거부</strong>합니다(명시적 거부가 이깁니다).</td></tr><tr><td>4</td><td>권한 경계나 기관의 조직 정책(SCP)이 있으면, 그 범위 안에 있는 허용만 인정합니다.</td></tr></tbody></table></div>
+
+<p>도서 API의 권한 검사와 같은 원칙입니다. 처음에는 모두 막고, 필요한 것만 열고, 막아야 할 것은 확실하게 막습니다.</p>
+
+<h2>최소 권한 원칙</h2>
+<p><strong>최소 권한 원칙</strong>은 일을 하는 데 꼭 필요한 권한만 주는 것입니다. 권한이 넓을수록 실수와 공격의 피해가 커집니다. 아래 정책은 모든 서비스의 모든 동작을 모든 자원에 허용합니다. 이 정책이 붙은 서버가 S11에서 본 SSRF 같은 약점으로 뚫리면, 공격자는 계정 전체를 손에 넣습니다.</p>
+<div class="codeblock"><span class="file">쓰면 안 되는 정책</span><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    { "Effect": "Allow", "Action": "*", "Resource": "*" }
+  ]
+}</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>넓은 권한</th><th>좁힌 권한</th></tr></thead><tbody><tr><td><code>"Action": "ssm:*"</code></td><td><code>ssm:GetParameter</code>, <code>ssm:GetParameters</code>(읽기만)</td></tr><tr><td><code>"Resource": "*"</code></td><td><code>.../parameter/book-api/*</code>(내 서비스의 파라미터만)</td></tr><tr><td>관리자용 관리형 정책(<code>AdministratorAccess</code>)</td><td>용도별 관리형 정책이나 직접 쓴 정책</td></tr></tbody></table></div>
+
+<h2>신뢰 정책: 누가 역할을 맡을 수 있나</h2>
+<p>역할에는 정책이 두 종류 붙습니다. 위에서 본 <strong>권한 정책</strong>은 "역할을 맡은 쪽이 무엇을 할 수 있는가"이고, <strong>신뢰 정책</strong>은 "누가 이 역할을 맡을 수 있는가"입니다. EC2용 역할의 신뢰 정책은 EC2 서비스만 이 역할을 맡을 수 있게 합니다. 콘솔에서 역할을 만들 때 자동으로 만들어집니다.</p>
+<div class="codeblock"><span class="file">신뢰 정책(EC2용 역할)</span><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": { "Service": "ec2.amazonaws.com" },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}</code></pre></div>
+<div class="qa"><p class="question">읽어 보기. 맨 위의 <code>book-api-read-parameters</code> 정책이 붙은 역할로 다음 일을 할 수 있나요? (1) <code>/book-api/SECRET_KEY</code> 읽기 (2) <code>/other-app/DB_PASSWORD</code> 읽기 (3) <code>/book-api/SECRET_KEY</code> 값 바꾸기</p><textarea data-save="pol1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>(1) 됩니다. Action과 Resource가 모두 맞습니다. (2) 안 됩니다. Resource가 <code>/book-api/</code>로 시작하지 않으므로 기본 거부입니다. (3) 안 됩니다. 값을 바꾸는 <code>ssm:PutParameter</code>가 Action에 없습니다. 서버는 비밀 값을 읽기만 하면 되므로 쓰기 권한을 주지 않습니다.</p></div></details></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p41/s12-p41-01.html"><span class="dir">이전</span>S12-P41-01 IAM 핵심 개념</a>
+  <a class="next" href="../../s12/p41/s12-p41-03.html"><span class="dir">다음</span>S12-P41-03 IAM 역할 만들기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

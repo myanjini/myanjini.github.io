@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P10-01 관계형 데이터베이스와 ORM | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P10-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P10 SQLAlchemy ORM 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p10-01.html" style="flex:10" data-type="주요 개념" title="관계형 데이터베이스와 ORM (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p10-02.html" style="flex:10" data-type="주요 개념" title="SQLAlchemy 2.0 핵심 구성 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s3-p10-03.html" style="flex:10" data-type="주요 개념" title="모델 정의와 테이블 생성 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p10-04.html" style="flex:15" data-type="실습" title="Book 모델 만들기 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s3-p10-05.html" style="flex:5" data-type="정리" title="정리: ORM 기초 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S3-P10-01</span></div>
+<h1>관계형 데이터베이스와 ORM</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>SQLAlchemy 2.0의 핵심 구성 요소로 모델을 정의할 수 있습니다.</p></div>
+
+<p class="lead">서버를 다시 시작해도 데이터가 남아 있으려면 데이터를 파일이나 별도 서버에 저장해야 합니다. 이 일을 맡는 관계형 데이터베이스와, Python에서 데이터베이스를 편하게 다루게 해 주는 ORM을 알아봅니다.</p>
+
+<h2>관계형 데이터베이스</h2>
+<p>관계형 데이터베이스는 데이터를 엑셀 표와 비슷한 <strong>테이블</strong>에 저장합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>id</th><th>title</th><th>author</th><th>price</th><th>isbn</th></tr></thead><tbody><tr><td>1</td><td>파이썬 첫걸음</td><td>김하늘</td><td>18000</td><td>9791100000011</td></tr><tr><td>2</td><td>웹 개발 입문</td><td>이도윤</td><td>22000</td><td>(없음)</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>용어</th><th>뜻</th></tr></thead><tbody><tr><td>테이블</td><td>같은 종류의 데이터를 모아 둔 표입니다. 여기서는 <code>books</code> 테이블입니다.</td></tr><tr><td>행(row)</td><td>데이터 하나입니다. 도서 한 권이 한 행입니다.</td></tr><tr><td>열(column)</td><td>데이터의 항목입니다. 제목, 저자, 가격 등입니다.</td></tr><tr><td>기본키(primary key)</td><td>행을 하나로 특정하는 값입니다. 겹치지 않으며 보통 <code>id</code>를 씁니다.</td></tr><tr><td>고유 제약(unique)</td><td>그 열에 같은 값이 두 번 들어가지 못하게 하는 규칙입니다. ISBN에 씁니다.</td></tr></tbody></table></div>
+
+<p>데이터베이스에는 <strong>SQL</strong>이라는 언어로 명령합니다. 예를 들어 <code>SELECT * FROM books WHERE author = '김하늘'</code>은 김하늘 저자의 도서를 모두 가져오라는 뜻입니다.</p>
+
+<h2>ORM</h2>
+<p><strong>ORM</strong>(Object Relational Mapping)은 테이블을 Python 클래스로, 행을 객체로 다루게 해 주는 도구입니다. SQL을 직접 쓰는 대신 Python 코드로 데이터를 다루면 ORM이 SQL로 바꿔 실행합니다. 이 과정에서는 Python에서 가장 널리 쓰는 ORM인 <strong>SQLAlchemy</strong>를 씁니다.</p>
+<div class="table-wrap"><table><thead><tr><th>좋은 점</th><th>주의할 점</th></tr></thead><tbody><tr><td>Python 문법과 자동 완성으로 데이터를 다룹니다.</td><td>실제로 어떤 SQL이 실행되는지 보이지 않아 느린 쿼리를 놓치기 쉽습니다(오후에 N+1 문제로 확인).</td></tr><tr><td>데이터베이스 종류가 바뀌어도 코드를 거의 그대로 씁니다.</td><td>아주 복잡한 조회는 SQL을 직접 쓰는 편이 쉬울 때도 있습니다.</td></tr><tr><td>값을 안전하게 SQL에 넣어 주어 SQL 삽입 공격을 막는 데 도움이 됩니다(5일차).</td><td>ORM이 있어도 SQL 문자열을 직접 조립하면 위험은 그대로입니다.</td></tr></tbody></table></div>
+
+<h2>SQLite와 PostgreSQL</h2>
+<div class="table-wrap"><table><thead><tr><th></th><th>SQLite</th><th>PostgreSQL</th></tr></thead><tbody><tr><td>형태</td><td>파일 하나(<code>books.db</code>)</td><td>별도의 데이터베이스 서버</td></tr><tr><td>설치</td><td>Python에 들어 있어 따로 설치하지 않음</td><td>서버를 설치하거나 실행해야 함</td></tr><tr><td>이 과정에서</td><td>1~3일차 개발</td><td>4일차 Docker, 7일차 AWS RDS</td></tr></tbody></table></div>
+
+<p>SQLAlchemy 덕분에 데이터베이스 주소(<code>DATABASE_URL</code>)만 바꾸면 같은 코드가 PostgreSQL에서도 동작합니다. 앞 파트에서 이 주소를 설정으로 빼 둔 이유입니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p9/s3-p9-05.html"><span class="dir">이전</span>S3-P9-05 정리: 설정과 미들웨어</a>
+  <a class="next" href="../../s3/p10/s3-p10-02.html"><span class="dir">다음</span>S3-P10-02 SQLAlchemy 2.0 핵심 구성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

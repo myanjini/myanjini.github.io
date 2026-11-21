@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P43-05 정리: 네트워크 구성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P43-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P43 VPC와 보안 그룹 만들기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p43-01.html" style="flex:5" data-type="주요 개념" title="6일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s13-p43-02.html" style="flex:10" data-type="주요 개념" title="VPC 생성 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s13-p43-03.html" style="flex:20" data-type="실습" title="실습 VPC 구성 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p43-04.html" style="flex:10" data-type="실습" title="보안 그룹 만들기 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s13-p43-05.html" style="flex:5" data-type="정리" title="정리: 네트워크 구성 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S13-P43-05</span></div>
+<h1>정리: 네트워크 구성</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>만든 것</th><th>핵심</th></tr></thead><tbody><tr><td>실습 VPC</td><td>"VPC 등" 마법사로 VPC, 서브넷 4개, 라우팅 테이블, 인터넷 게이트웨이를 한 번에 만들었습니다. NAT 게이트웨이는 없습니다.</td></tr><tr><td>라우팅</td><td>퍼블릭 라우팅 테이블에만 <code>0.0.0.0/0 → 인터넷 게이트웨이</code>가 있습니다.</td></tr><tr><td>태그</td><td>모든 자원에 Name과 Owner 태그를 붙였습니다.</td></tr><tr><td>book-api-sg</td><td>TCP 8000, 출처 내 IP/32</td></tr><tr><td>book-api-db-sg</td><td>TCP 5432, 출처 book-api-sg</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">"VPC 등" 마법사에서 실습 비용을 지키려면 반드시 확인해야 하는 항목은 무엇인가요?</p><label><input type="radio" name="p43q1" value="1"> <span>1. NAT 게이트웨이 "없음"</span></label><label><input type="radio" name="p43q1" value="2"> <span>2. 가용 영역 수</span></label><label><input type="radio" name="p43q1" value="3"> <span>3. 이름 태그 자동 생성</span></label><label><input type="radio" name="p43q1" value="4"> <span>4. IPv4 CIDR 블록</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>NAT 게이트웨이는 만든 순간부터 시간당 요금이 붙습니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">보안 그룹을 만들 때 VPC를 잘못 골라 기본 VPC에 만들었습니다. 무엇이 문제인가요?</p><label><input type="radio" name="p43q2" value="1"> <span>1. 규칙이 자동으로 지워진다.</span></label><label><input type="radio" name="p43q2" value="2"> <span>2. 문제없다. 보안 그룹은 모든 VPC에서 쓸 수 있다.</span></label><label><input type="radio" name="p43q2" value="3"> <span>3. 실습 VPC의 EC2와 RDS에 그 보안 그룹을 붙일 수 없다.</span></label><label><input type="radio" name="p43q2" value="4"> <span>4. 요금이 두 배로 나온다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>보안 그룹은 만든 VPC 안의 자원에만 붙일 수 있습니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">book-api-db-sg의 출처를 book-api-sg로 지정했을 때 RDS에 접속할 수 있는 것은 무엇인가요?</p><label><input type="radio" name="p43q3" value="1"> <span>1. book-api-sg가 붙은 자원</span></label><label><input type="radio" name="p43q3" value="2"> <span>2. 내 PC</span></label><label><input type="radio" name="p43q3" value="3"> <span>3. 인터넷의 모든 주소</span></label><label><input type="radio" name="p43q3" value="4"> <span>4. VPC 안의 모든 자원</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>출처로 지정한 보안 그룹이 붙은 자원에서 오는 연결만 허용됩니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>다음 파트에서는 이 VPC의 퍼블릭 서브넷에 EC2 서버를 띄웁니다. 6일차에 만든 IAM 역할을 붙이고, SSH 키 없이 Session Manager로 서버에 접속합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p43/s13-p43-04.html"><span class="dir">이전</span>S13-P43-04 보안 그룹 만들기</a>
+  <a class="next" href="../../s13/p44/s13-p44-01.html"><span class="dir">다음</span>S13-P44-01 EC2 핵심 개념</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P8-01 1일차 복습 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P8-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P8 의존성 주입</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p8-01.html" style="flex:5" data-type="주요 개념" title="1일차 복습 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s3-p8-02.html" style="flex:10" data-type="주요 개념" title="의존성 주입의 개념 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s3-p8-03.html" style="flex:10" data-type="주요 개념" title="공통 파라미터 의존성 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p8-04.html" style="flex:20" data-type="실습" title="의존성 활용하기 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s3-p8-05.html" style="flex:5" data-type="정리" title="정리: 의존성 주입 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S3-P8-01</span></div>
+<h1>1일차 복습</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>Depends로 공통 로직을 의존성으로 분리할 수 있습니다.</p></div>
+
+<p class="lead">2일차를 시작하기 전에 1일차에 만든 코드를 짧게 되짚습니다. 오늘 배울 내용은 모두 이 코드 위에 쌓입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>질문</th><th>답</th></tr></thead><tbody><tr><td>클라이언트가 보낸 JSON은 어디서 검사하나요?</td><td><code>app/schemas.py</code>의 입력 모델(<code>BookCreate</code>, <code>BookUpdate</code>)이 검사합니다. 규칙을 어기면 함수가 실행되기 전에 422가 나갑니다.</td></tr><tr><td>응답에 내부 값이 나가지 않게 하는 장치는?</td><td>경로 데코레이터의 <code>response_model=BookRead</code>입니다.</td></tr><tr><td>새 도서를 등록하면 어떤 상태 코드가 나가나요?</td><td>201입니다. 삭제는 204, 없는 도서는 404, ISBN 중복은 409입니다.</td></tr><tr><td>오류 응답의 모양은?</td><td><code>{"code": "...", "message": "..."}</code>입니다. <code>AppError</code>를 내면 예외 처리기가 이 모양으로 바꿉니다.</td></tr><tr><td>서버는 어떻게 실행하나요?</td><td><code>book-api</code> 폴더에서 <code>fastapi dev app/main.py</code>를 실행합니다.</td></tr></tbody></table></div>
+
+<h2>오늘의 흐름</h2>
+<p>오전에는 반복되는 코드를 <strong>의존성</strong>으로 묶고, 설정값을 코드 밖으로 빼낸 뒤, 데이터베이스를 연결합니다. 오후에는 데이터베이스로 수정과 삭제를 완성하고 테이블 사이의 관계를 다룹니다. 하루가 끝나면 서버를 다시 시작해도 데이터가 사라지지 않는 도서 API가 완성됩니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s2/p7/s2-p7-05.html"><span class="dir">이전</span>S2-P7-05 정리: 1일차 마무리</a>
+  <a class="next" href="../../s3/p8/s3-p8-02.html"><span class="dir">다음</span>S3-P8-02 의존성 주입의 개념</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P45-01 서버에 Docker 설치하기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P45-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P45 EC2에서 Docker로 API 실행</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p45-01.html" style="flex:10" data-type="주요 개념" title="서버에 Docker 설치하기 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p45-02.html" style="flex:15" data-type="실습" title="Docker 설치와 소스 받기 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s13-p45-03.html" style="flex:15" data-type="실습" title="컨테이너로 API 실행 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s13-p45-04.html" style="flex:5" data-type="주요 개념" title="접속이 안 될 때 점검 순서 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p45-05.html" style="flex:5" data-type="정리" title="정리: EC2 배포 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S13-P45-01</span></div>
+<h1>서버에 Docker 설치하기</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>EC2에 Docker를 설치하고 도서 API 컨테이너를 실행할 수 있습니다.</p></div>
+
+<p class="lead">S8에서는 Docker Desktop을 설치 프로그램으로 깔았습니다. 서버에는 화면이 없으므로 명령으로 패키지를 설치하고, 서버가 켜질 때 Docker가 자동으로 시작되게 설정합니다. 실습 전에 각 명령의 뜻을 정리합니다.</p>
+
+<h2>패키지 설치: dnf</h2>
+<p>Amazon Linux 2023은 <code>dnf</code>라는 패키지 관리자로 프로그램을 설치합니다. 내 PC의 <code>pip install</code>이 Python 패키지를 PyPI에서 받아 설치하듯, <code>dnf install</code>은 운영체제용 프로그램을 Amazon Linux 저장소에서 받아 설치합니다. 운영체제 전체에 설치하므로 관리자 권한이 필요해 앞에 <code>sudo</code>를 붙입니다.</p>
+<div class="codeblock"><span class="file">설치 명령</span><pre><code>sudo dnf install -y docker git
+sudo systemctl enable --now docker
+sudo usermod -aG docker ssm-user</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>명령</th><th>뜻</th></tr></thead><tbody><tr><td><code>sudo dnf install -y docker git</code></td><td>Docker 엔진과 Git을 설치합니다. <code>-y</code>는 "설치할까요?" 질문에 미리 예라고 답하는 옵션입니다.</td></tr><tr><td><code>sudo systemctl enable --now docker</code></td><td><code>systemctl</code>은 서버의 백그라운드 프로그램(서비스)을 관리합니다. <code>enable</code>은 부팅할 때 자동 시작, <code>--now</code>는 지금 바로 시작입니다.</td></tr><tr><td><code>sudo usermod -aG docker ssm-user</code></td><td><code>ssm-user</code>를 <code>docker</code> 그룹에 추가합니다. 이 그룹에 속한 사용자는 <code>sudo</code> 없이 <code>docker</code> 명령을 쓸 수 있습니다. 그룹 변경은 새로 접속해야 적용됩니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">docker 그룹은 관리자와 같습니다</p><p>docker 그룹에 속한 사용자는 컨테이너를 통해 서버의 모든 파일에 접근할 수 있어 사실상 관리자 권한을 가집니다. 서버에 접속할 수 있는 사람이 이미 <code>sudo</code>를 쓸 수 있는 실습 환경이라 편의를 위해 추가하지만, 여러 사람이 함께 쓰는 서버라면 신중하게 정합니다.</p></div>
+
+<h2>Compose와 Buildx 플러그인</h2>
+<p>Amazon Linux 저장소의 Docker 패키지에는 <code>docker compose</code> 명령을 제공하는 Compose 플러그인이 들어 있지 않습니다. 또 최신 Compose는 이미지를 만들 때 Buildx 플러그인(0.17 이상)을 요구합니다. 그래서 두 플러그인을 GitHub에 공개된 공식 배포 파일로 내려받아 Docker 플러그인 폴더에 넣습니다. 이 과정에서는 오늘 오후(S14)에 운영용 Compose 파일로 서버를 실행할 때 쓰므로 지금 함께 설치해 둡니다.</p>
+<div class="codeblock"><span class="file">플러그인 설치 명령</span><pre><code>sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose \
+  https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+BUILDX_VERSION=v0.39.1
+sudo curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-buildx \
+  https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/lib/docker/cli-plugins/docker-buildx</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>부분</th><th>뜻</th></tr></thead><tbody><tr><td><code>/usr/local/lib/docker/cli-plugins</code></td><td>Docker가 추가 명령(플러그인)을 찾는 폴더입니다. 여기에 있는 <code>docker-compose</code> 파일이 <code>docker compose</code> 명령이 됩니다.</td></tr><tr><td><code>curl -fsSL -o 파일 주소</code></td><td>주소의 파일을 내려받아 저장합니다. <code>-f</code>는 실패하면 오류로 끝내고, <code>-L</code>은 다른 주소로 넘겨주면 따라갑니다.</td></tr><tr><td><code>releases/latest/download/...</code></td><td>Compose의 가장 최신 배포 파일 주소입니다.</td></tr><tr><td><code>BUILDX_VERSION=v0.39.1</code></td><td>Buildx는 파일 이름에 버전이 들어가므로 버전을 정해 받습니다. 더 새 버전이 나왔다면 GitHub의 docker/buildx 배포 페이지에서 확인해 바꿔도 됩니다.</td></tr><tr><td><code>chmod +x</code></td><td>파일에 실행 권한을 줍니다.</td></tr><tr><td><code>linux-x86_64</code>, <code>linux-amd64</code></td><td>서버의 프로세서 종류(x86_64)용 파일입니다. Graviton 서버라면 <code>aarch64</code>, <code>arm64</code>를 받습니다.</td></tr></tbody></table></div>
+
+<h2>소스는 Git으로 받습니다</h2>
+<p>서버에서 이미지를 만들려면 도서 API의 소스 코드가 서버에 있어야 합니다. S7에서 GitHub 저장소에 올려 두었으므로 <code>git clone</code>으로 받습니다. <code>.env</code>와 데이터베이스 파일은 Git에 올리지 않았으므로(<code>.gitignore</code>), 서버에서 따로 만듭니다. 이렇게 소스는 저장소에서, 비밀 값은 서버에서 따로 준비하는 것이 배포의 기본 모양입니다.</p>
+<div class="callout note"><p class="callout-title">서버에서 빌드하는 것은 오늘 오전까지만</p><p>서버에서 소스를 받아 이미지를 만드는 방식은 단계를 눈으로 확인하기 좋지만, 서버마다 빌드 결과가 달라질 수 있고 서버에 Git 접근 권한이 필요합니다. 오늘 오후에는 이미지를 한 번만 만들어 ECR에 올리고, 서버는 그 이미지를 받아 실행만 하도록 바꿉니다(S14-P48).</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p44/s13-p44-05.html"><span class="dir">이전</span>S13-P44-05 정리: EC2</a>
+  <a class="next" href="../../s13/p45/s13-p45-02.html"><span class="dir">다음</span>S13-P45-02 Docker 설치와 소스 받기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

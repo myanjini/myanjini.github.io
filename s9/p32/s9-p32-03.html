@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P32-03 권한 검사 보강 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P32-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P32 보안기능 1: 부적절한 인가와 접근 제어</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p32-01.html" style="flex:10" data-type="주요 개념" title="부적절한 인가 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s9-p32-02.html" style="flex:10" data-type="주요 개념" title="다른 사용자 데이터 조회 재현 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p32-03.html" style="flex:20" data-type="실습" title="권한 검사 보강 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s9-p32-04.html" style="flex:5" data-type="실습" title="응답 필드와 입력 필드 최소화 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s9-p32-05.html" style="flex:5" data-type="정리" title="정리: 접근 제어 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S9-P32-03</span></div>
+<h1>권한 검사 보강</h1>
+
+<p class="lead">대여 상세 조회에서 객체 수준 인가 취약을 재현하고 고칩니다. 관리자 기능은 별도 라우터로 분리해 한 번에 보호합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>대여 API에 소유자 검사를 추가하고, 관리자 기능을 라우터 단위로 분리해 보호할 수 있습니다.</p></div>
+<div class="callout warn"><p class="callout-title">실습용 취약 코드입니다</p><p>이 페이지의 "위험한 코드"는 공격을 직접 확인하려고 일부러 만든 것입니다. 내 PC에서만 실행하고, 확인이 끝나면 바로 안전한 코드로 바꿉니다. Git에 올리거나 서버에 배포하지 않습니다. 공격 실습은 내가 만든 서비스에서만 합니다. 허락받지 않은 남의 서비스에 시도하면 법에 따라 처벌받습니다.</p></div>
+<ol class="steps"><li><h3>위험한 상세 조회 API 추가</h3>
+<p>앞 페이지의 경로 함수를 <code>app/routers/loans.py</code>의 <code>GET /me</code> 아래에, 위험한 <code>get_loan</code>을 <code>app/services/loans.py</code>에 추가합니다. <code>/me</code>보다 아래에 두어야 <code>me</code>가 번호로 해석되지 않습니다. 서비스 파일 위쪽에 <code>from sqlalchemy.orm import Session</code>이 있는지 확인합니다.</p>
+</li><li><h3>공격 재현</h3>
+<p>user1이 도서 하나를 대여해 대여 번호를 확인합니다. Authorize 창에서 user3으로 바꿔 로그인한 뒤 그 번호로 조회합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>계정</th><th>요청</th><th>강화 전 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>user3</td><td><code>GET /loans/(user1의 대여 번호)</code></td><td>200, <code>"user_id": 1</code></td><td><input data-save="b1" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>소유자 검사로 고치기</h3>
+<p>앞 페이지의 <code>find_accessible_loan</code>과 새 <code>get_loan</code>을 넣고, <code>return_book</code>의 처음 네 줄(찾기, 404, 403 검사)을 한 줄로 바꿉니다. 라우터의 반납 API 설명에서 <code>403</code> 항목도 지웁니다.</p>
+<div class="codeblock"><span class="file">app/services/loans.py</span><pre><code>def return_book(db: Session, user: User, loan_id: int) -&gt; Loan:
+    loan = find_accessible_loan(db, user, loan_id)
+    if loan.returned_at is not None:
+        ...</code></pre></div>
+<details><summary>app/services/loans.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/services/loans.py</span><pre><code>"""대여 서비스"""
+import logging
+from datetime import datetime, timezone
+
+from sqlalchemy.orm import Session
+
+from app.errors import AppError
+from app.models import Loan, User
+from app.repositories import loans as loan_repo
+from app.services.books import change_stock, find_book
+
+MAX_ACTIVE_LOANS = 3  # 한 사람이 동시에 빌릴 수 있는 권수
+logger = logging.getLogger(__name__)
+
+
+def borrow(db: Session, user: User, book_id: int) -&gt; Loan:
+    book = find_book(db, book_id)
+    if loan_repo.find_active(db, user.id, book.id) is not None:
+        raise AppError(409, "ALREADY_LOANED", "이미 빌린 도서입니다. 반납한 뒤 다시 빌릴 수 있습니다.")
+    if loan_repo.count_active(db, user.id) &gt;= MAX_ACTIVE_LOANS:
+        raise AppError(409, "LOAN_LIMIT_EXCEEDED", f"한 번에 {MAX_ACTIVE_LOANS}권까지 빌릴 수 있습니다.")
+    if book.stock &lt; 1:
+        raise AppError(409, "OUT_OF_STOCK", "남은 재고가 없습니다.")
+
+    # 재고 감소, 재고 기록, 대여 기록을 하나의 트랜잭션으로 묶습니다.
+    change_stock(db, book, -1, "대여")
+    loan = loan_repo.add(db, Loan(user_id=user.id, book_id=book.id))
+    db.commit()
+    db.refresh(loan)
+    logger.info("도서 대여", extra={"user_id": user.id, "book_id": book.id, "loan_id": loan.id})
+    return loan
+
+
+def find_accessible_loan(db: Session, user: User, loan_id: int) -&gt; Loan:
+    """본인이나 관리자가 볼 수 있는 대여 기록만 돌려줍니다. 남의 기록은 없는 것처럼 404로 답합니다."""
+    loan = loan_repo.get(db, loan_id)
+    if loan is None or (loan.user_id != user.id and user.role != "admin"):
+        raise AppError(404, "LOAN_NOT_FOUND", f"{loan_id}번 대여 기록을 찾을 수 없습니다.")
+    return loan
+
+
+def get_loan(db: Session, user: User, loan_id: int) -&gt; Loan:
+    return find_accessible_loan(db, user, loan_id)
+
+
+def return_book(db: Session, user: User, loan_id: int) -&gt; Loan:
+    loan = find_accessible_loan(db, user, loan_id)
+    if loan.returned_at is not None:
+        raise AppError(409, "ALREADY_RETURNED", "이미 반납한 도서입니다.")
+
+    loan.returned_at = datetime.now(timezone.utc)
+    change_stock(db, loan.book, 1, "반납")
+    db.commit()
+    db.refresh(loan)
+    logger.info("도서 반납", extra={"user_id": user.id, "book_id": loan.book_id, "loan_id": loan.id})
+    return loan
+
+
+def my_loans(db: Session, user: User) -&gt; list[Loan]:
+    return loan_repo.list_by_user(db, user.id)</code></pre></div>
+</div></details>
+</li><li><h3>관리자 기능 분리</h3>
+<p>관리자만 쓰는 기능을 일반 라우터 사이사이에 두면 검사를 빠뜨리기 쉽습니다. <code>/admin</code> 아래로 모으고, 라우터를 만들 때 <code>dependencies</code>로 관리자 검사를 한 번에 겁니다. 이 라우터에 새 API를 추가하면 자동으로 보호됩니다.</p>
+<div class="codeblock"><span class="file">app/repositories/users.py</span><pre><code>"""사용자 저장소"""
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.models import User
+
+
+def list_users(db: Session, skip: int, limit: int) -&gt; list[User]:
+    return list(db.scalars(select(User).order_by(User.id).offset(skip).limit(limit)).all())</code></pre></div>
+<div class="codeblock"><span class="file">app/repositories/loans.py</span><pre><code>def list_all(db: Session, skip: int, limit: int) -&gt; list[Loan]:
+    stmt = select(Loan).options(selectinload(Loan.book)).order_by(Loan.id.desc()).offset(skip).limit(limit)
+    return list(db.scalars(stmt).all())</code></pre></div>
+<div class="codeblock"><span class="file">app/routers/admin.py</span><pre><code>from fastapi import APIRouter, Depends
+
+from app.dependencies import PageDep, SessionDep, require_admin
+from app.repositories import loans as loan_repo
+from app.repositories import users as user_repo
+from app.schemas import LoanRead, UserRead
+
+# 이 라우터의 모든 API에 관리자 검사를 한 번에 겁니다.
+router = APIRouter(prefix="/admin", tags=["관리자"], dependencies=[Depends(require_admin)])
+
+
+@router.get("/users", response_model=list[UserRead], summary="전체 사용자 목록")
+def list_users(db: SessionDep, page: PageDep):
+    return user_repo.list_users(db, page.skip, page.limit)
+
+
+@router.get("/loans", response_model=list[LoanRead], summary="전체 대여 목록")
+def list_loans(db: SessionDep, page: PageDep):
+    return loan_repo.list_all(db, page.skip, page.limit)</code></pre></div>
+
+<p><code>app/repositories/loans.py</code>의 함수는 파일 맨 아래에 추가합니다. <code>app/main.py</code>에서 <code>admin</code>을 가져와 <code>app.include_router(admin.router)</code>를 추가합니다.</p>
+</li><li><h3>다시 확인</h3>
+<div class="table-wrap"><table><thead><tr><th>계정</th><th>요청</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>user3</td><td><code>GET /loans/(user1의 대여 번호)</code></td><td>404, <code>LOAN_NOT_FOUND</code></td><td><input data-save="b2" aria-label="내 결과"></td></tr><tr><td>user3</td><td><code>GET /loans/99999</code></td><td>위와 똑같은 404</td><td><input data-save="b3" aria-label="내 결과"></td></tr><tr><td>user1</td><td><code>GET /loans/(내 대여 번호)</code></td><td>200</td><td><input data-save="b4" aria-label="내 결과"></td></tr><tr><td>user3</td><td><code>POST /loans/(user1의 대여 번호)/return</code></td><td>404(3일차에는 403)</td><td><input data-save="b5" aria-label="내 결과"></td></tr><tr><td>user1</td><td><code>GET /admin/users</code></td><td>403</td><td><input data-save="b6" aria-label="내 결과"></td></tr><tr><td>user2(관리자)</td><td><code>GET /admin/users</code>, <code>GET /admin/loans</code></td><td>200. 응답에 비밀번호 해시 없음</td><td><input data-save="b7" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>테스트 고치고 추가하기</h3>
+<p>반납 정책이 바뀌었으므로 <code>tests/test_loans.py</code>의 <code>test_return_others_loan_returns_403</code>을 <code>..._returns_404</code>로 이름을 바꾸고 기대 값을 404로 고칩니다. 정책을 바꾸면 테스트도 함께 바꾸는 것이 정상입니다. 그리고 회귀 테스트를 덧붙입니다.</p>
+<div class="codeblock"><span class="file">tests/test_attacks.py</span><pre><code>def test_cannot_read_others_loan(client, make_user, author_id):
+    user1 = make_user("user1@example.com")
+    user3 = make_user("user3@example.com")
+    book = create_book(client, user1, author_id, stock=1)
+    loan = client.post("/loans", json={"book_id": book["id"]}, headers=user1).json()
+
+    assert client.get(f"/loans/{loan['id']}", headers=user1).status_code == 200
+    response = client.get(f"/loans/{loan['id']}", headers=user3)
+    assert response.status_code == 404  # 남의 기록은 있다는 사실도 알려 주지 않습니다.
+
+
+@pytest.mark.parametrize("path", ["/admin/users", "/admin/loans"])
+def test_admin_api_forbidden_for_user(client, auth_headers, path):
+    assert client.get(path, headers=auth_headers).status_code == 403
+
+
+def test_admin_api_for_admin(client, make_user):
+    admin = make_user("admin@example.com", role="admin")
+    response = client.get("/admin/users", headers=admin)
+    assert response.status_code == 200
+    assert "hashed_password" not in response.json()[0]</code></pre></div>
+<div class="codeblock term"><pre><code>pytest</code></pre></div>
+</li></ol>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>번호만 바꿔 남의 대여 기록을 읽는 공격을 재현했다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>상세 조회와 반납이 같은 소유자 검사 함수를 쓰고, 남의 기록은 404로 답한다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>/admin 라우터에 관리자 검사를 한 번에 걸었다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>test_loans.py의 반납 테스트를 404로 고치고 모든 테스트가 통과한다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p32-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p32/s9-p32-02.html"><span class="dir">이전</span>S9-P32-02 다른 사용자 데이터 조회 재현</a>
+  <a class="next" href="../../s9/p32/s9-p32-04.html"><span class="dir">다음</span>S9-P32-04 응답 필드와 입력 필드 최소화</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

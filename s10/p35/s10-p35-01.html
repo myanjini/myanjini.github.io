@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P35-01 에러처리 보안약점 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P35-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 보안기능과 에러처리</a><span class="sep">/</span><span>S10-P35 에러처리, 캡슐화와 정보 노출</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p35-01.html" style="flex:10" data-type="주요 개념" title="에러처리 보안약점 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p35-02.html" style="flex:10" data-type="주요 개념" title="정보가 새는 응답 찾기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s10-p35-03.html" style="flex:20" data-type="실습" title="안전한 오류 응답 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p35-04.html" style="flex:5" data-type="주요 개념" title="캡슐화와 디버그 코드 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p35-05.html" style="flex:5" data-type="정리" title="정리: 5일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S10-P35-01</span></div>
+<h1>에러처리 보안약점</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>오류 응답과 로그를 통한 정보 노출을 막을 수 있습니다.</p></div>
+
+<p class="lead">오류는 반드시 일어납니다. 문제는 오류가 났을 때 무엇을 보여 주고, 무엇을 기록하고, 어떻게 처리하느냐입니다.</p>
+
+<h2>에러처리 보안약점 3가지</h2>
+<div class="table-wrap"><table><thead><tr><th>KISA 보안약점</th><th>뜻</th><th>예</th></tr></thead><tbody><tr><td>오류 메시지를 통한 정보 노출</td><td>오류 응답에 내부 정보가 담겨 공격자에게 단서를 줍니다.</td><td>스택 트레이스, SQL 문장, 파일 경로, 라이브러리 버전</td></tr><tr><td>오류 상황 대응 부재</td><td>오류를 잡고도 아무것도 하지 않아 잘못된 상태로 계속 진행합니다.</td><td><code>except: pass</code></td></tr><tr><td>부적절한 예외 처리</td><td>너무 넓게 잡거나 잘못 처리해 진짜 문제를 숨깁니다.</td><td>모든 예외를 잡아 200으로 응답</td></tr></tbody></table></div>
+
+<h2>나쁜 예와 고친 예</h2>
+<div class="codeblock"><span class="file">나쁜 예</span><pre><code># 오류 상황 대응 부재: 파일 삭제가 실패해도 아무도 모릅니다.
+try:
+    path.unlink()
+except Exception:
+    pass
+
+# 부적절한 예외 처리: 오류인데 성공처럼 응답합니다.
+try:
+    book_service.delete_book(db, user, book_id)
+except Exception as e:
+    return {"result": "ok", "error": str(e)}   # 내부 메시지까지 그대로 내보냅니다.</code></pre></div>
+<div class="codeblock"><span class="file">고친 예</span><pre><code># 예상한 상황만 좁게 잡고, 처리하지 못한 예외는 위로 올려 전역 처리기에 맡깁니다.
+path.unlink(missing_ok=True)          # 파일이 없는 상황은 정상으로 봅니다.
+
+try:
+    data = file.file.read(MAX_COVER_SIZE + 1)
+except OSError:
+    logger.exception("업로드 파일 읽기 실패")  # 자세한 내용은 로그에만
+    raise AppError(400, "UPLOAD_FAILED", "파일을 읽지 못했습니다.")  # 사용자에게는 정해진 문구만</code></pre></div>
+
+<h2>원칙: 응답과 로그를 나눕니다</h2>
+<div class="table-wrap"><table><thead><tr><th></th><th>사용자에게 가는 응답</th><th>로그</th></tr></thead><tbody><tr><td>목적</td><td>무엇을 하면 되는지 알려 줍니다.</td><td>개발자가 원인을 찾게 합니다.</td></tr><tr><td>담는 것</td><td>정해진 오류 코드와 문구, 요청 ID</td><td>예외 종류, 트레이스백, 요청 정보</td></tr><tr><td>담지 않는 것</td><td>트레이스백, SQL, 경로, 버전</td><td>비밀번호, 토큰, 개인정보 원문</td></tr></tbody></table></div>
+
+<p>두 쪽을 이어 주는 것이 요청 ID입니다. 사용자는 요청 ID만 알려 주면 되고, 개발자는 그 ID로 로그에서 자세한 내용을 찾습니다(S8-P28).</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p34/s10-p34-05.html"><span class="dir">이전</span>S10-P34-05 정리: 인증 강화</a>
+  <a class="next" href="../../s10/p35/s10-p35-02.html"><span class="dir">다음</span>S10-P35-02 정보가 새는 응답 찾기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

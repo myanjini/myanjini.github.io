@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P36-02 시간 및 상태와 코드오류 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P36-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P36 시간 및 상태와 코드오류</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p36-01.html" style="flex:5" data-type="주요 개념" title="5일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p36-02.html" style="flex:10" data-type="주요 개념" title="시간 및 상태와 코드오류 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s11-p36-03.html" style="flex:10" data-type="주요 개념" title="동시 대여 경쟁 조건 재현 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s11-p36-04.html" style="flex:20" data-type="실습" title="경쟁 조건 해결 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s11-p36-05.html" style="flex:5" data-type="정리" title="정리: 시간 및 상태 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S11-P36-02</span></div>
+<h1>시간 및 상태와 코드오류</h1>
+
+<p class="lead">지금까지 다룬 보안약점은 대부분 "요청 하나"를 들여다보면 찾을 수 있었습니다. 시간 및 상태 유형은 요청 여러 개가 동시에 들어오거나 시간이 흐를 때 드러나고, 코드오류 유형은 평소에는 멀쩡하다가 드문 상황에서 터집니다.</p>
+
+<h2>시간 및 상태: 검사 시점과 사용 시점</h2>
+<p>프로그램은 흔히 "확인하고, 그 결과를 믿고 행동"합니다. 재고가 있는지 확인하고 재고를 줄이는 식입니다. 그런데 확인한 시점과 행동하는 시점 사이에 다른 요청이 같은 데이터를 바꾸면, 확인한 결과는 이미 사실이 아닙니다. 이 문제를 <strong>검사 시점과 사용 시점의 경쟁 조건</strong>(TOCTOU, Time Of Check to Time Of Use)이라고 합니다. 여러 요청이 같은 자원을 먼저 차지하려고 경쟁한다고 해서 경쟁 조건이라고 부릅니다.</p>
+<figure><svg viewBox="0 0 650 190" role="img" aria-label="두 요청이 모두 "재고 1"을 확인한 뒤 각자 대여를 마칩니다. 둘 다 확인 단계는 정상으로 통과했습니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="20" y="20" width="130" height="50" rx="8" class="svg-box"/><text x="85.0" y="41.0" text-anchor="middle" class="svg-text">요청 A</text><text x="85.0" y="61.0" text-anchor="middle" class="svg-small">재고 1 확인</text><rect x="20" y="120" width="130" height="50" rx="8" class="svg-box"/><text x="85.0" y="141.0" text-anchor="middle" class="svg-text">요청 B</text><text x="85.0" y="161.0" text-anchor="middle" class="svg-small">재고 1 확인</text><rect x="250" y="20" width="150" height="50" rx="8" class="svg-box"/><text x="325.0" y="41.0" text-anchor="middle" class="svg-text">A: 재고를 0으로</text><text x="325.0" y="61.0" text-anchor="middle" class="svg-small">대여 성공</text><rect x="250" y="120" width="150" height="50" rx="8" class="svg-box"/><text x="325.0" y="141.0" text-anchor="middle" class="svg-text">B: 재고를 0으로</text><text x="325.0" y="161.0" text-anchor="middle" class="svg-small">대여 성공</text><rect x="480" y="70" width="150" height="50" rx="8" class="svg-box-accent"/><text x="555.0" y="91.0" text-anchor="middle" class="svg-text">결과</text><text x="555.0" y="111.0" text-anchor="middle" class="svg-small">1권을 2명이 대여</text><line x1="150" y1="45" x2="248" y2="45" class="svg-line" marker-end="url(#arr)"/><line x1="150" y1="145" x2="248" y2="145" class="svg-line" marker-end="url(#arr)"/><line x1="400" y1="45" x2="478" y2="90" class="svg-line" marker-end="url(#arr)"/><line x1="400" y1="145" x2="478" y2="100" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>두 요청이 모두 "재고 1"을 확인한 뒤 각자 대여를 마칩니다. 둘 다 확인 단계는 정상으로 통과했습니다.</figcaption></figure>
+
+<p>이 문제는 요청을 하나씩 보내는 테스트로는 절대 드러나지 않습니다. 사용자가 몰리는 시간, 예를 들어 인기 도서가 들어온 날에만 나타나기 때문에 "가끔 재고가 안 맞는다"는 식의 찾기 어려운 버그가 됩니다.</p>
+<div class="table-wrap"><table><thead><tr><th>상황</th><th>무엇이 어긋나나요</th></tr></thead><tbody><tr><td>마지막 재고를 동시에 대여</td><td>재고보다 많이 빌려집니다.</td></tr><tr><td>좋아요 수를 읽고 1을 더해 저장</td><td>동시에 누른 좋아요가 사라집니다.</td></tr><tr><td>쿠폰 사용 여부를 확인하고 사용 처리</td><td>쿠폰 하나를 여러 번 씁니다.</td></tr><tr><td>잔액을 확인하고 출금</td><td>잔액보다 많이 출금됩니다.</td></tr></tbody></table></div>
+
+<p>해결의 원칙은 하나입니다. <strong>확인과 변경을 떼어 놓지 않고, 데이터베이스가 한 번에 처리하게 합니다.</strong> 다음 두 페이지에서 도서 API로 직접 재현하고 고칩니다.</p>
+
+<h2>시간 및 상태: 종료되지 않는 반복</h2>
+<p>끝나는 조건이 없는 반복문이나 재귀 함수는 서버의 일꾼(스레드)을 붙잡고 놓아 주지 않습니다. 이런 요청이 몇 개만 쌓여도 서버가 다른 요청에 답하지 못합니다. 실수로 자주 만드는 모양은 "성공할 때까지 다시 시도"입니다.</p>
+<div class="codeblock"><span class="file">잘못된 예</span><pre><code>while True:                      # 상대 서버가 계속 실패하면 끝나지 않습니다.
+    try:
+        return requests.get(url)
+    except requests.RequestException:
+        continue</code></pre></div>
+<div class="codeblock"><span class="file">바른 예</span><pre><code>for attempt in range(3):         # 다시 시도하는 횟수에 끝을 둡니다.
+    try:
+        return requests.get(url, timeout=3)  # 한 번 기다리는 시간에도 끝을 둡니다.
+    except requests.RequestException:
+        time.sleep(0.5 * (attempt + 1))      # 조금씩 더 기다렸다가 다시 시도합니다.
+raise AppError(502, "UPSTREAM_FAILED", "외부 서버에 연결하지 못했습니다.")</code></pre></div>
+
+<p>사용자가 반복 횟수를 정하게 하는 것도 같은 문제입니다. 도서 API는 목록 조회의 <code>limit</code>을 100 이하로 묶어 두었습니다(S3-P10). 한 번에 처리하는 양과 시간에 항상 상한을 둡니다.</p>
+
+<h2>코드오류: None 처리</h2>
+<p>KISA 가이드는 이 약점을 Null 포인터 역참조라고 부릅니다. Python에서는 값이 없음을 뜻하는 <code>None</code>에서 속성을 꺼낼 때 일어납니다. 조회 결과가 없으면 <code>None</code>이 오는데, 이를 확인하지 않고 쓰면 <code>AttributeError</code>나 <code>TypeError</code>가 나서 500 오류가 됩니다. 전역 예외 처리가 없던 시절이라면 트레이스백까지 새어 나갔을 것입니다.</p>
+<div class="codeblock"><span class="file">잘못된 예</span><pre><code>book = db.get(Book, book_id)     # 없는 번호면 None
+return book.title                # AttributeError: 'NoneType' object has no attribute 'title'</code></pre></div>
+
+<p>도서 API는 처음부터 <code>find_book</code>에서 <code>None</code>을 먼저 확인하고 404를 냈습니다(S4). "없을 수 있는 값"을 돌려주는 함수(<code>db.get</code>, <code>scalar_one_or_none</code>, 딕셔너리의 <code>get</code>, <code>fetchone</code>)를 쓴 바로 다음 줄에서 확인하는 습관을 들입니다.</p>
+
+<h2>코드오류: 자원 해제</h2>
+<p>데이터베이스 연결, 열린 파일, 네트워크 연결은 개수가 정해진 자원입니다. 다 쓰고 닫지 않으면 조금씩 쌓이다가 어느 순간 "연결할 수 없음" 오류로 서비스가 멈춥니다. 특히 중간에 예외가 나면 닫는 코드까지 가지 못하는 경우가 많습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>자원</th><th>도서 API에서 닫는 방법</th></tr></thead><tbody><tr><td>데이터베이스 세션</td><td><code>get_db</code>의 <code>try</code>와 <code>finally</code>(S3). 예외가 나도 <code>finally</code>는 실행됩니다.</td></tr><tr><td>파일</td><td><code>with open(...)</code>(S6). 블록을 벗어나면 자동으로 닫힙니다.</td></tr><tr><td>외부 HTTP 연결</td><td><code>with httpx.Client() as client:</code>처럼 <code>with</code>로 씁니다.</td></tr></tbody></table></div>
+
+<p>코드오류 유형에는 이 밖에 해제된 자원 사용, 초기화되지 않은 변수 사용, 신뢰할 수 없는 데이터의 역직렬화가 있습니다. Python은 닫힌 파일을 읽거나 값을 넣지 않은 변수를 쓰면 바로 예외를 내므로 앞의 두 가지는 C 언어보다 덜 위험합니다. 역직렬화는 다음 파트(S11-P37)에서 위험한 함수와 함께 다룹니다.</p>
+<div class="quiz" data-answer="1"><p class="q">다음 가운데 요청을 하나씩 보내는 테스트로는 찾기 가장 어려운 약점은 무엇인가요?</p><label><input type="radio" name="p36q0" value="1"> <span>1. 검사 시점과 사용 시점의 경쟁 조건</span></label><label><input type="radio" name="p36q0" value="2"> <span>2. None 확인 누락</span></label><label><input type="radio" name="p36q0" value="3"> <span>3. 트레이스백 노출</span></label><label><input type="radio" name="p36q0" value="4"> <span>4. SQL 삽입</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>경쟁 조건은 요청 여러 개가 같은 순간에 들어올 때만 나타납니다. 그래서 동시에 요청을 보내는 시험이 따로 필요합니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p36/s11-p36-01.html"><span class="dir">이전</span>S11-P36-01 5일차 복습</a>
+  <a class="next" href="../../s11/p36/s11-p36-03.html"><span class="dir">다음</span>S11-P36-03 동시 대여 경쟁 조건 재현</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

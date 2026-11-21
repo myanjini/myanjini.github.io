@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P14-01 왜 마이그레이션인가 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P14-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 데이터베이스 활용과 마이그레이션</a><span class="sep">/</span><span>S4-P14 Alembic 마이그레이션</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p14-01.html" style="flex:10" data-type="주요 개념" title="왜 마이그레이션인가 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s4-p14-02.html" style="flex:10" data-type="주요 개념" title="Alembic 설정 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s4-p14-03.html" style="flex:20" data-type="실습" title="리비전 생성과 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s4-p14-04.html" style="flex:5" data-type="주요 개념" title="마이그레이션 운영 수칙 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s4-p14-05.html" style="flex:5" data-type="정리" title="정리: 2일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S4-P14-01</span></div>
+<h1>왜 마이그레이션인가</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>Alembic으로 스키마 변경 이력을 만들고 적용할 수 있습니다.</p></div>
+
+<p class="lead">앞 파트에서 테이블 구조를 바꾸려고 데이터베이스 파일을 지웠습니다. 개발 중에는 괜찮지만 실제 서비스라면 사고입니다. 데이터를 지키면서 테이블 구조를 바꾸는 방법이 마이그레이션입니다.</p>
+
+<h2>create_all이 할 수 없는 일</h2>
+<div class="table-wrap"><table><thead><tr><th>상황</th><th>create_all</th></tr></thead><tbody><tr><td>새 테이블 만들기</td><td>할 수 있음</td></tr><tr><td>기존 테이블에 열 추가</td><td>하지 못함</td></tr><tr><td>열 이름이나 타입 바꾸기</td><td>하지 못함</td></tr><tr><td>바뀐 내용을 기록하고 되돌리기</td><td>하지 못함</td></tr></tbody></table></div>
+
+<h2>스키마 버전 관리</h2>
+<p>테이블 구조를 <strong>스키마</strong>라고 합니다. 마이그레이션 도구는 Git이 코드 변경을 기록하듯 스키마 변경을 기록합니다. 변경 하나하나를 <strong>리비전</strong>이라는 파일로 남기고, 파일마다 "적용하는 방법(upgrade)"과 "되돌리는 방법(downgrade)"이 들어 있습니다.</p>
+<figure><svg viewBox="0 0 640 110" role="img" aria-label="리비전은 앞 리비전을 가리키며 사슬처럼 이어집니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="20" width="180" height="70" rx="8" class="svg-box"/><text x="100.0" y="51.0" text-anchor="middle" class="svg-text">리비전 1</text><text x="100.0" y="71.0" text-anchor="middle" class="svg-small">저자, 도서 테이블 생성</text><rect x="230" y="20" width="180" height="70" rx="8" class="svg-box"/><text x="320.0" y="51.0" text-anchor="middle" class="svg-text">리비전 2</text><text x="320.0" y="71.0" text-anchor="middle" class="svg-small">출간 연도 열 추가</text><rect x="450" y="20" width="180" height="70" rx="8" class="svg-box-accent"/><text x="540.0" y="51.0" text-anchor="middle" class="svg-text">리비전 3</text><text x="540.0" y="71.0" text-anchor="middle" class="svg-small">다음 변경</text><line x1="195" y1="55" x2="225" y2="55" class="svg-line" marker-end="url(#arr)"/><line x1="415" y1="55" x2="445" y2="55" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>리비전은 앞 리비전을 가리키며 사슬처럼 이어집니다.</figcaption></figure>
+
+<p>데이터베이스 안에는 <code>alembic_version</code>이라는 작은 테이블이 생겨 "지금 몇 번 리비전까지 적용되었는지"를 기억합니다. 그래서 개발자 PC, 테스트 서버, 운영 서버가 각자 어디까지 적용되었든 같은 명령(<code>alembic upgrade head</code>)으로 최신 상태를 맞출 수 있습니다. 7일차 AWS 배포에서도 이 명령을 그대로 씁니다.</p>
+<p>이 과정에서는 SQLAlchemy를 만든 팀이 만든 마이그레이션 도구인 <strong>Alembic</strong>을 씁니다.</p>
+
+<h2>마이그레이션 작업의 순서</h2>
+<p>테이블 구조를 바꿀 때는 항상 같은 순서를 따릅니다. 다음 페이지부터 이 순서를 그대로 실습합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>하는 일</th><th>명령 또는 파일</th></tr></thead><tbody><tr><td>1</td><td>모델을 고칩니다.</td><td><code>app/models.py</code></td></tr><tr><td>2</td><td>모델과 데이터베이스의 차이로 리비전을 만듭니다.</td><td><code>alembic revision --autogenerate -m "설명"</code></td></tr><tr><td>3</td><td>만들어진 리비전 파일을 열어 의도와 같은지 검토합니다.</td><td><code>migrations/versions/</code></td></tr><tr><td>4</td><td>데이터베이스에 적용합니다.</td><td><code>alembic upgrade head</code></td></tr><tr><td>5</td><td>모델과 리비전 파일을 함께 커밋합니다.</td><td><code>git add</code>, <code>git commit</code></td></tr></tbody></table></div>
+
+<h2>데이터베이스가 기억하는 버전</h2>
+<p>적용을 마친 데이터베이스에서 <code>alembic_version</code> 테이블을 열어 보면 값이 하나 들어 있습니다.</p>
+<div class="codeblock term"><pre><code>python -c "import sqlite3; print(sqlite3.connect('books.db').execute('select * from alembic_version').fetchall())"
+[('10c68672ec78',)]</code></pre></div>
+
+<p>이 값은 마지막으로 적용한 리비전 파일의 <code>Revision ID</code>와 같습니다(값은 사람마다 다릅니다). <code>alembic upgrade head</code>는 이 값 다음의 리비전만 골라 적용하므로, 같은 명령을 여러 번 실행해도 이미 적용한 변경을 다시 하지 않습니다. 이 테이블을 손으로 고치거나 지우면 Alembic이 현재 상태를 잘못 알게 되므로 건드리지 않습니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s4/p13/s4-p13-05.html"><span class="dir">이전</span>S4-P13-05 정리: 관계 매핑</a>
+  <a class="next" href="../../s4/p14/s4-p14-02.html"><span class="dir">다음</span>S4-P14-02 Alembic 설정</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

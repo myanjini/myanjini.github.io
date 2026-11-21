@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P23-01 fixture와 테스트 격리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P23-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 테스트 자동화와 CI</a><span class="sep">/</span><span>S7-P23 테스트 DB와 fixture</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p23-01.html" style="flex:10" data-type="주요 개념" title="fixture와 테스트 격리 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s7-p23-02.html" style="flex:10" data-type="주요 개념" title="테스트용 DB 연결 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s7-p23-03.html" style="flex:25" data-type="실습" title="테스트 환경 구성 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s7-p23-04.html" style="flex:5" data-type="정리" title="정리: 테스트 격리 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S7-P23-01</span></div>
+<h1>fixture와 테스트 격리</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>fixture와 의존성 재정의로 테스트를 서로 격리할 수 있습니다.</p></div>
+
+<p class="lead">좋은 테스트는 언제, 어디서, 몇 번을 실행해도 같은 결과를 냅니다. 이를 위해 테스트를 서로 떼어 놓는 방법과, 그 도구인 fixture를 배웁니다.</p>
+
+<h2>테스트 격리</h2>
+<p>앞 파트의 테스트는 개발용 데이터베이스를 함께 썼기 때문에 서로 영향을 주었습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>문제</th><th>앞 파트에서 본 모습</th></tr></thead><tbody><tr><td>앞선 실행이 남긴 데이터</td><td>두 번째 실행에서 같은 ISBN 때문에 409</td></tr><tr><td>미리 있어야 하는 데이터</td><td>user1과 1번 저자가 없는 컴퓨터에서는 실패</td></tr><tr><td>개발 데이터 오염</td><td>실행할 때마다 "테스트 도서"가 쌓임</td></tr><tr><td>느슨한 검증</td><td>도서가 몇 권 있을지 몰라 <code>total &gt;= 0</code>으로만 검사</td></tr></tbody></table></div>
+
+<p>해결 방법은 <strong>테스트마다 빈 데이터베이스를 새로 만들고, 테스트가 끝나면 버리는 것</strong>입니다. 이렇게 테스트끼리 영향을 주지 않게 하는 것을 <strong>테스트 격리</strong>라고 합니다. 격리된 테스트는 실행 순서를 바꿔도, 하나만 골라 실행해도 결과가 같습니다.</p>
+
+<h2>fixture</h2>
+<p><strong>fixture</strong>는 테스트에 필요한 준비물을 만들어 주는 함수입니다. 테스트 함수의 매개변수에 fixture 이름을 적으면 pytest가 테스트 전에 그 함수를 실행해 결과를 넣어 줍니다. 2일차의 의존성 주입과 같은 생각입니다.</p>
+<div class="codeblock"><pre><code>import pytest
+
+
+@pytest.fixture
+def numbers():
+    print("준비")       # 테스트 전에 실행
+    yield [1, 2, 3]     # 이 값이 테스트에 들어갑니다.
+    print("정리")       # 테스트가 끝나면 실행(실패해도 실행)
+
+
+def test_sum(numbers):  # 매개변수 이름 = fixture 이름
+    assert sum(numbers) == 6</code></pre></div>
+
+<p><code>yield</code> 앞은 준비, 뒤는 정리입니다. <code>get_db</code>가 세션을 열고 닫던 것과 같은 모양입니다. fixture는 다른 fixture를 매개변수로 받을 수도 있어, 준비물을 쌓아 올릴 수 있습니다.</p>
+
+<h2>fixture의 범위</h2>
+<div class="table-wrap"><table><thead><tr><th>scope</th><th>몇 번 만드나요</th><th>어디에 쓰나요</th></tr></thead><tbody><tr><td><code>function</code>(기본값)</td><td>테스트 함수마다 새로</td><td>데이터베이스처럼 테스트가 바꾸는 준비물. 이 과정은 모두 이 범위를 씁니다.</td></tr><tr><td><code>module</code></td><td>테스트 파일마다 한 번</td><td>만드는 데 오래 걸리고 테스트가 바꾸지 않는 준비물</td></tr><tr><td><code>session</code></td><td>pytest 실행 전체에서 한 번</td><td>외부 서버 연결처럼 가장 무거운 준비물</td></tr></tbody></table></div>
+
+<p>범위를 넓히면 빨라지지만 테스트끼리 준비물을 함께 쓰게 되어 격리가 약해집니다. 처음에는 기본값(function)을 쓰고, 정말 느릴 때만 넓힙니다.</p>
+
+<h2>conftest.py</h2>
+<p>여러 테스트 파일이 함께 쓰는 fixture는 <code>tests/conftest.py</code>에 둡니다. pytest가 이 파일을 자동으로 읽으므로 테스트 파일에서 따로 가져오지 않아도 됩니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s7/p22/s7-p22-05.html"><span class="dir">이전</span>S7-P22-05 정리: 테스트 기초</a>
+  <a class="next" href="../../s7/p23/s7-p23-02.html"><span class="dir">다음</span>S7-P23-02 테스트용 DB 연결</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

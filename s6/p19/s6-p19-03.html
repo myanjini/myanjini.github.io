@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P19-03 서비스 계층 적용 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P19-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P19 계층 분리와 트랜잭션</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p19-01.html" style="flex:10" data-type="주요 개념" title="라우터, 서비스, 저장소 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p19-02.html" style="flex:10" data-type="주요 개념" title="서비스 계층으로 옮기기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p19-03.html" style="flex:20" data-type="실습" title="서비스 계층 적용 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s6-p19-04.html" style="flex:5" data-type="실습" title="계층 분리의 득과 실 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s6-p19-05.html" style="flex:5" data-type="정리" title="정리: 계층 분리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S6-P19-03</span></div>
+<h1>서비스 계층 적용</h1>
+
+<p class="lead">도서 API를 세 계층으로 나누고 재고 기능을 추가합니다. 마지막에는 일부러 오류를 내서 트랜잭션이 정말 "전부 아니면 전무"로 동작하는지 눈으로 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>라우터, 서비스, 저장소를 분리하고, 도서 등록과 재고 기록을 하나의 트랜잭션으로 처리할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>모델에 재고와 재고 기록 추가</h3>
+<p>서버를 끄고 <code>app/models.py</code>를 고칩니다. 가져오기에 <code>func</code>를 더하고, <code>Book</code>의 <code>owner_id</code> 아래에 두 줄을, 파일 맨 아래에 <code>StockLog</code>를 추가합니다.</p>
+<div class="codeblock"><span class="file">app/models.py</span><pre><code>from sqlalchemy import ForeignKey, String, func</code></pre></div>
+<div class="codeblock"><span class="file">app/models.py</span><pre><code>    # 재고 수량. 기존 도서는 0권으로 시작합니다.
+    stock: Mapped[int] = mapped_column(default=0, server_default="0")
+    # 이 도서의 재고 기록. 도서를 지우면 기록도 함께 지웁니다.
+    stock_logs: Mapped[list["StockLog"]] = relationship(cascade="all, delete-orphan")</code></pre></div>
+<div class="codeblock"><span class="file">app/models.py</span><pre><code>class StockLog(Base):
+    """재고가 언제, 얼마나, 왜 바뀌었는지 남기는 기록입니다."""
+
+    __tablename__ = "stock_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    book_id: Mapped[int] = mapped_column(ForeignKey("books.id"))
+    change: Mapped[int]  # 늘어나면 양수, 줄어들면 음수
+    reason: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())  # 데이터베이스가 현재 시각을 넣습니다.</code></pre></div>
+
+<p><code>stock_logs</code>의 <code>cascade="all, delete-orphan"</code>은 도서를 지울 때 그 도서의 재고 기록도 함께 지우라는 뜻입니다. 기록이 남아 있으면 지워진 도서를 가리키는 행이 생기기 때문입니다.</p>
+</li><li><h3>리비전 만들고 확인</h3>
+<div class="codeblock term"><pre><code>alembic revision --autogenerate -m "add stock and stock_logs"</code></pre></div>
+
+<p>리비전 파일에서 <code>stock</code> 열을 추가하는 줄을 찾습니다.</p>
+<div class="codeblock"><pre><code>batch_op.add_column(sa.Column('stock', sa.Integer(), server_default='0', nullable=False))</code></pre></div>
+
+<p><code>nullable=False</code>(값이 꼭 있어야 함)인 열을 이미 행이 있는 테이블에 추가하므로 기본값이 필요합니다. 모델에 적은 <code>server_default="0"</code> 덕분에 기존 도서는 재고 0으로 채워집니다. 2일차 S4-P14-04의 수칙 "값이 꼭 있어야 하는 열을 추가할 때는 기본값을 정한다"가 적용된 모습입니다. 확인했으면 적용합니다.</p>
+<div class="codeblock term"><pre><code>alembic upgrade head</code></pre></div>
+</li><li><h3>스키마 추가</h3>
+<p><code>BookCreate</code>의 <code>published_year</code> 아래와 <code>BookRead</code>의 <code>author</code> 위에 한 줄씩 추가하고, <code>BookPage</code> 위에 <code>StockChange</code>를 추가합니다. 수정용 <code>BookUpdate</code>에는 <code>stock</code>을 넣지 않습니다. 재고는 기록을 남기는 재고 변경 API로만 바꾸게 하기 위해서입니다.</p>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code># BookCreate
+stock: int = Field(default=0, ge=0, le=1000, examples=[3])  # 처음 들여오는 수량
+
+# BookRead
+stock: int</code></pre></div>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code>class StockChange(BaseModel):
+    """재고 변경 요청 본문"""
+    change: int = Field(ge=-1000, le=1000, examples=[5])  # 늘릴 때 양수, 줄일 때 음수
+    reason: str = Field(min_length=1, max_length=20, examples=["입고"])</code></pre></div>
+</li><li><h3>get_db에 rollback 추가</h3>
+<p><code>app/database.py</code>의 <code>get_db</code>를 앞 페이지의 코드로 바꿉니다.</p>
+</li><li><h3>저장소 만들기</h3>
+<p><code>app/repositories</code> 폴더를 만들고 빈 <code>__init__.py</code>, 앞 페이지의 <code>books.py</code>, 그리고 아래 <code>authors.py</code>를 넣습니다.</p>
+<div class="codeblock"><span class="file">app/repositories/authors.py</span><pre><code>"""저자 저장소"""
+from sqlalchemy.orm import Session
+
+from app.models import Author
+
+
+def get(db: Session, author_id: int) -&gt; Author | None:
+    return db.get(Author, author_id)</code></pre></div>
+</li><li><h3>서비스 만들기</h3>
+<p><code>app/services</code> 폴더를 만들고 빈 <code>__init__.py</code>와 <code>books.py</code>를 넣습니다. 검사 함수들은 라우터에 있던 코드에서 쿼리 부분만 저장소 호출로 바꾼 것입니다.</p>
+<details><summary>app/services/books.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/services/books.py</span><pre><code>"""도서 서비스: 규칙 검사와 트랜잭션(commit)을 맡습니다. HTTP 요청과 응답은 모릅니다."""
+from sqlalchemy.orm import Session
+
+from app.errors import AppError
+from app.models import Book, User
+from app.repositories import authors as author_repo
+from app.repositories import books as book_repo
+from app.schemas import BookCreate, BookUpdate, StockChange
+
+
+def find_book(db: Session, book_id: int) -&gt; Book:
+    book = book_repo.get(db, book_id)
+    if book is None:
+        raise AppError(404, "BOOK_NOT_FOUND", f"{book_id}번 도서를 찾을 수 없습니다.")
+    return book
+
+
+def check_isbn_unique(db: Session, isbn: str | None, exclude_id: int | None = None) -&gt; None:
+    if isbn is None:
+        return
+    found = book_repo.get_by_isbn(db, isbn)
+    if found is not None and found.id != exclude_id:
+        raise AppError(409, "DUPLICATE_ISBN", "이미 등록된 ISBN입니다.")
+
+
+def check_author_exists(db: Session, author_id: int | None) -&gt; None:
+    if author_id is None:
+        return
+    if author_repo.get(db, author_id) is None:
+        raise AppError(422, "INVALID_AUTHOR", f"{author_id}번 저자가 없습니다.")
+
+
+def check_can_modify(book: Book, user: User) -&gt; None:
+    """도서를 등록한 사람이나 관리자만 수정, 삭제할 수 있습니다."""
+    if user.role == "admin" or book.owner_id == user.id:
+        return
+    raise AppError(403, "FORBIDDEN", "이 도서를 수정하거나 삭제할 권한이 없습니다.")
+
+
+def change_stock(db: Session, book: Book, change: int, reason: str) -&gt; None:
+    """재고를 바꾸고 기록을 남깁니다. 확정(commit)은 이 함수를 부른 쪽에서 합니다."""
+    if book.stock + change &lt; 0:
+        raise AppError(409, "INSUFFICIENT_STOCK", f"재고가 부족합니다. 현재 재고는 {book.stock}권입니다.")
+    book.stock += change
+    book_repo.add_stock_log(db, book, change, reason)
+
+
+def create_book(db: Session, user: User, book_in: BookCreate) -&gt; Book:
+    check_isbn_unique(db, book_in.isbn)
+    check_author_exists(db, book_in.author_id)
+    book = book_repo.add(db, Book(**book_in.model_dump(exclude={"stock"}), owner_id=user.id))
+    if book_in.stock &gt; 0:
+        change_stock(db, book, book_in.stock, "입고")
+    db.commit()  # 도서 등록과 재고 기록을 한 번에 확정합니다.
+    db.refresh(book)
+    return book
+
+
+def list_books(db: Session, q: str | None, author_id: int | None, sort: str,
+               skip: int, limit: int) -&gt; dict:
+    items, total = book_repo.search(db, q, author_id, sort, skip, limit)
+    return {"items": items, "total": total, "skip": skip, "limit": limit}
+
+
+def update_book(db: Session, user: User, book_id: int, book_in: BookUpdate) -&gt; Book:
+    book = find_book(db, book_id)
+    check_can_modify(book, user)
+    changes = book_in.model_dump(exclude_unset=True, exclude_none=True)
+    check_isbn_unique(db, changes.get("isbn"), exclude_id=book_id)
+    check_author_exists(db, changes.get("author_id"))
+    for field, value in changes.items():
+        setattr(book, field, value)
+    db.commit()
+    db.refresh(book)
+    return book
+
+
+def delete_book(db: Session, user: User, book_id: int) -&gt; None:
+    book = find_book(db, book_id)
+    check_can_modify(book, user)
+    book_repo.delete(db, book)  # 재고 기록도 함께 지워집니다(cascade).
+    db.commit()
+
+
+def adjust_stock(db: Session, user: User, book_id: int, data: StockChange) -&gt; Book:
+    book = find_book(db, book_id)
+    check_can_modify(book, user)
+    change_stock(db, book, data.change, data.reason)
+    db.commit()
+    db.refresh(book)
+    return book</code></pre></div>
+</div></details>
+</li><li><h3>라우터를 얇게 바꾸기</h3>
+<p><code>app/routers/books.py</code>를 아래 전체 코드로 바꿉니다. 경로 함수마다 서비스 함수를 한 번 부르는 것이 전부입니다. 재고 변경 API(<code>POST /books/{book_id}/stock</code>)가 새로 생겼습니다.</p>
+<details><summary>app/routers/books.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/routers/books.py</span><pre><code>from typing import Literal
+
+from fastapi import APIRouter, Query, status
+
+from app.dependencies import CurrentUserDep, PageDep, SessionDep
+from app.schemas import BookCreate, BookPage, BookRead, BookUpdate, StockChange
+from app.services import books as book_service
+
+router = APIRouter(prefix="/books", tags=["도서"])
+
+FORBIDDEN_OR_NOT_FOUND = {401: {"description": "로그인 필요"}, 403: {"description": "권한 없음"},
+                          404: {"description": "도서를 찾을 수 없음"}}
+
+
+@router.get("", response_model=BookPage, summary="도서 목록 조회")
+def list_books(
+    db: SessionDep,
+    page: PageDep,
+    q: str | None = Query(default=None, max_length=50, description="제목에 들어간 글자로 검색"),
+    author_id: int | None = Query(default=None, description="저자 번호"),
+    sort: Literal["id", "price", "-price"] = Query(default="id", description="정렬 기준"),
+):
+    return book_service.list_books(db, q, author_id, sort, page.skip, page.limit)
+
+
+@router.get("/{book_id}", response_model=BookRead, summary="도서 상세 조회",
+            responses={404: {"description": "도서를 찾을 수 없음"}})
+def get_book(db: SessionDep, book_id: int):
+    return book_service.find_book(db, book_id)
+
+
+@router.post("", response_model=BookRead, status_code=status.HTTP_201_CREATED, summary="도서 등록",
+             responses={401: {"description": "로그인 필요"}, 409: {"description": "이미 등록된 ISBN"}})
+def create_book(db: SessionDep, user: CurrentUserDep, book_in: BookCreate):
+    return book_service.create_book(db, user, book_in)
+
+
+@router.patch("/{book_id}", response_model=BookRead, summary="도서 일부 수정",
+              responses={**FORBIDDEN_OR_NOT_FOUND, 409: {"description": "이미 등록된 ISBN"}})
+def update_book(db: SessionDep, user: CurrentUserDep, book_id: int, book_in: BookUpdate):
+    return book_service.update_book(db, user, book_id, book_in)
+
+
+@router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT, summary="도서 삭제",
+               responses=FORBIDDEN_OR_NOT_FOUND)
+def delete_book(db: SessionDep, user: CurrentUserDep, book_id: int):
+    book_service.delete_book(db, user, book_id)
+
+
+@router.post("/{book_id}/stock", response_model=BookRead, summary="재고 변경",
+             responses={**FORBIDDEN_OR_NOT_FOUND, 409: {"description": "재고 부족"}})
+def adjust_stock(db: SessionDep, user: CurrentUserDep, book_id: int, data: StockChange):
+    return book_service.adjust_stock(db, user, book_id, data)</code></pre></div>
+</div></details>
+</li><li><h3>기존 기능과 재고 확인</h3>
+<p>서버를 실행하고 Authorize로 user1이 로그인합니다. 먼저 기존 기능이 그대로인지 확인합니다. 계층을 나누는 작업은 동작을 바꾸지 않고 구조만 바꾸는 것이므로, 결과가 달라지면 옮기다가 실수한 것입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>요청</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td><code>GET /books</code></td><td>200. 기존 도서는 <code>"stock": 0</code></td><td><input data-save="t1" aria-label="내 결과"></td></tr><tr><td><code>POST /books</code> <code>{"title": "트랜잭션 입문", "author_id": 1, "price": 21000, "stock": 3}</code></td><td>201, <code>"stock": 3</code>. 새 번호를 기억합니다(이 교안에서는 6).</td><td><input data-save="t2" aria-label="내 결과"></td></tr><tr><td><code>POST /books/6/stock</code> <code>{"change": -5, "reason": "분실"}</code></td><td>409, <code>INSUFFICIENT_STOCK</code>, 현재 재고는 3권입니다.</td><td><input data-save="t3" aria-label="내 결과"></td></tr><tr><td><code>POST /books/6/stock</code> <code>{"change": 2, "reason": "추가 입고"}</code></td><td>200, <code>"stock": 5</code></td><td><input data-save="t4" aria-label="내 결과"></td></tr><tr><td><code>PATCH /books/6</code> <code>{"price": 22000}</code></td><td>200</td><td><input data-save="t5" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>재고 기록이 쌓였는지 확인합니다. <code>(6, 3, '입고')</code>, <code>(6, 2, '추가 입고')</code> 두 줄이 나와야 합니다. 409로 실패한 요청은 기록을 남기지 않았습니다.</p>
+<div class="codeblock term"><pre><code>python -c "import sqlite3; print(sqlite3.connect('books.db').execute('select book_id, change, reason from stock_logs').fetchall())"</code></pre></div>
+</li><li><h3>일부러 실패시켜 보기</h3>
+<p><code>app/services/books.py</code>의 <code>create_book</code>에서 <code>book_repo.add</code> 바로 아래에 한 줄을 넣고 서버를 다시 시작합니다.</p>
+<div class="codeblock"><span class="file">app/services/books.py</span><pre><code>    book = book_repo.add(db, Book(**book_in.model_dump(exclude={"stock"}), owner_id=user.id))
+    raise RuntimeError("실습용으로 일부러 낸 오류")  # 확인 후 반드시 지웁니다.</code></pre></div>
+
+<p><code>POST /books</code>로 <code>{"title": "실패 실험", "author_id": 1, "price": 1000, "stock": 2}</code>를 보내면 500 오류가 납니다. <code>GET /books?q=실패</code>로 찾아보면 <code>total</code>이 0입니다. <code>flush</code>로 INSERT까지 실행했지만 확정하지 않았으므로 <code>rollback</code>으로 사라졌습니다.</p>
+</li><li><h3>중간에 commit하면 어떻게 되는지 보기</h3>
+<p>이번에는 오류 줄 위에 <code>db.commit()</code>을 넣습니다.</p>
+<div class="codeblock"><span class="file">app/services/books.py</span><pre><code>    book = book_repo.add(db, Book(**book_in.model_dump(exclude={"stock"}), owner_id=user.id))
+    db.commit()  # 잘못된 예: 중간에 확정
+    raise RuntimeError("실습용으로 일부러 낸 오류")  # 확인 후 반드시 지웁니다.</code></pre></div>
+
+<p>같은 요청을 보내면 역시 500이지만, <code>GET /books?q=실패</code>에 "실패 실험" 도서가 <code>"stock": 0</code>으로 남아 있습니다. 재고 3권도, 입고 기록도 없는 어중간한 데이터입니다. 트랜잭션 중간에 확정하면 이런 일이 생깁니다. 확인했으면 넣었던 두 줄을 <strong>반드시 지우고</strong>, 남은 "실패 실험" 도서는 <code>DELETE</code>로 지웁니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>routers, services, repositories 세 폴더로 나눴고 기존 기능이 그대로 동작한다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>저장소 함수에는 commit이 없고, 서비스 함수마다 commit이 한 번씩 있다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>재고가 0보다 작아지는 변경은 409로 막히고 기록도 남지 않는다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>commit 전에 오류가 나면 flush한 INSERT도 사라지는 것을 확인했다.</span></label></li><li><label><input type="checkbox" data-save="check5"> <span>실습용으로 넣은 오류 줄과 commit 줄을 지웠다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>ModuleNotFoundError: No module named 'app.services'</code></td><td>폴더 이름 철자를 확인합니다. <code>services</code>, <code>repositories</code>처럼 복수형입니다.</td></tr><tr><td><code>ImportError: cannot import name 'books' from partially initialized module</code></td><td>저장소가 서비스를 가져오는 등 호출 방향을 거꾸로 가져왔습니다. 저장소는 <code>app.models</code>만 가져옵니다.</td></tr><tr><td>리비전 적용 중 <code>Cannot add a NOT NULL column with default value NULL</code></td><td>모델의 <code>server_default="0"</code>이 빠졌습니다. 리비전 파일을 지우고 모델을 고친 뒤 다시 만듭니다.</td></tr><tr><td>도서를 지우면 <code>FOREIGN KEY constraint failed</code></td><td><code>stock_logs</code> 관계의 <code>cascade</code>가 빠졌습니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p19-done</code> 브랜치에 있습니다. 저자 라우터는 이번에 나누지 않았습니다. 다음 페이지의 질문에서 그 이유를 생각해 봅니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p19/s6-p19-02.html"><span class="dir">이전</span>S6-P19-02 서비스 계층으로 옮기기</a>
+  <a class="next" href="../../s6/p19/s6-p19-04.html"><span class="dir">다음</span>S6-P19-04 계층 분리의 득과 실</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P16-02 OAuth2 Password Flow | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P16-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P16 OAuth2 Password Flow와 JWT</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p16-01.html" style="flex:10" data-type="주요 개념" title="JWT의 구조 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s5-p16-02.html" style="flex:5" data-type="주요 개념" title="OAuth2 Password Flow (5분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s5-p16-03.html" style="flex:10" data-type="주요 개념" title="로그인과 토큰 발급 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p16-04.html" style="flex:20" data-type="실습" title="로그인 API 구현 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s5-p16-05.html" style="flex:5" data-type="정리" title="정리: 토큰 발급 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S5-P16-02</span></div>
+<h1>OAuth2 Password Flow</h1>
+
+<p class="lead">로그인 요청을 어떤 모양으로 받고 토큰을 어떤 모양으로 돌려줄지는 이미 정해진 표준이 있습니다. FastAPI는 그 표준에 맞춘 도구 두 가지를 제공합니다.</p>
+
+<h2>OAuth2와 Password Flow</h2>
+<p><strong>OAuth2</strong>는 토큰을 발급하고 사용하는 방법을 정한 표준입니다. 여러 방식(flow)이 있는데, 그중 <strong>Password Flow</strong>는 사용자가 아이디와 비밀번호를 우리 서버에 직접 보내고 토큰을 받는 가장 단순한 방식입니다. 우리 서비스의 화면이 우리 API에 로그인하는 경우처럼, 로그인 화면과 API를 같은 팀이 만들 때 씁니다.</p>
+<figure><svg viewBox="0 0 640 200" role="img" aria-label="Password Flow. 로그인으로 토큰을 받고, 이후 요청에는 토큰을 헤더에 넣습니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="30" width="130" height="150" rx="8" class="svg-box"/><text x="75.0" y="101.0" text-anchor="middle" class="svg-text">클라이언트</text><text x="75.0" y="121.0" text-anchor="middle" class="svg-small">웹 화면, 앱</text><rect x="500" y="30" width="130" height="150" rx="8" class="svg-box-accent"/><text x="565.0" y="110.0" text-anchor="middle" class="svg-text">도서 API</text><line x1="145" y1="60" x2="495" y2="60" class="svg-line" marker-end="url(#arr)"/><text x="320" y="52" text-anchor="middle" class="svg-mono">1. POST /auth/token (username, password)</text><line x1="495" y1="105" x2="145" y2="105" class="svg-line" marker-end="url(#arr)"/><text x="320" y="97" text-anchor="middle" class="svg-mono">2. access_token</text><line x1="145" y1="150" x2="495" y2="150" class="svg-line" marker-end="url(#arr)"/><text x="320" y="142" text-anchor="middle" class="svg-mono">3. 보호된 API + Bearer 토큰</text></svg><figcaption>Password Flow. 로그인으로 토큰을 받고, 이후 요청에는 토큰을 헤더에 넣습니다.</figcaption></figure>
+
+<h2>FastAPI가 주는 두 도구</h2>
+<div class="table-wrap"><table><thead><tr><th>도구</th><th>어디에 쓰나요</th><th>하는 일</th></tr></thead><tbody><tr><td><code>OAuth2PasswordRequestForm</code></td><td>로그인 API (1번)</td><td>요청 본문에서 <code>username</code>과 <code>password</code>를 꺼내 줍니다. 표준에 따라 JSON이 아니라 <strong>폼(form) 형식</strong>으로 받습니다.</td></tr><tr><td><code>OAuth2PasswordBearer</code></td><td>보호된 API (3번)</td><td>요청 헤더 <code>Authorization: Bearer 토큰</code>에서 토큰 부분만 꺼내 줍니다. 토큰을 받는 주소(<code>tokenUrl</code>)도 Swagger UI에 알려 줍니다.</td></tr></tbody></table></div>
+
+<p>폼 형식은 HTML 로그인 화면이 전송하는 형식으로, 본문이 <code>username=user1%40example.com&amp;password=practice-pass-1</code>처럼 생겼습니다. 1일차에 설치한 <code>fastapi[standard]</code>에 폼을 읽는 모듈(python-multipart)이 들어 있습니다.</p>
+<div class="callout note"><p class="callout-title">username 칸에 이메일을 넣습니다</p><p>표준은 입력 칸 이름을 <code>username</code>으로 정해 두었습니다. 이름을 바꾸면 Swagger UI와 다른 도구가 우리 로그인 API를 알아보지 못하므로, 칸 이름은 그대로 두고 그 안에 이메일을 넣습니다.</p></div>
+
+<p>이번 파트에서는 1번과 2번, 즉 로그인과 토큰 발급을 만듭니다. 3번은 S5-P17에서 만듭니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p16/s5-p16-01.html"><span class="dir">이전</span>S5-P16-01 JWT의 구조</a>
+  <a class="next" href="../../s5/p16/s5-p16-03.html"><span class="dir">다음</span>S5-P16-03 로그인과 토큰 발급</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P13-03 저자와 도서 연결하기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P13-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 데이터베이스 활용과 마이그레이션</a><span class="sep">/</span><span>S4-P13 관계 매핑</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p13-01.html" style="flex:5" data-type="주요 개념" title="관계가 필요한 이유 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s4-p13-02.html" style="flex:10" data-type="주요 개념" title="1:N 관계와 외래키 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s4-p13-03.html" style="flex:10" data-type="주요 개념" title="저자와 도서 연결하기 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s4-p13-04.html" style="flex:20" data-type="실습" title="저자 API와 관계 조회 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s4-p13-05.html" style="flex:5" data-type="정리" title="정리: 관계 매핑 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S4-P13-03</span></div>
+<h1>저자와 도서 연결하기</h1>
+
+<p class="lead">Author 모델을 추가하고 도서와 연결한 뒤, 응답에서 저자 정보를 중첩해 보여 주는 과정을 강사 화면으로 봅니다.</p>
+<h2>모델</h2>
+<div class="codeblock"><span class="file">app/models.py</span><pre><code>from sqlalchemy import ForeignKey, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.database import Base
+
+
+class Author(Base):
+    __tablename__ = "authors"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    name: Mapped[str] = mapped_column(String(50), unique=True)
+
+    # 이 저자가 쓴 도서 목록. Book.author와 서로 연결됩니다.
+    books: Mapped[list["Book"]] = relationship(back_populates="author")
+
+
+class Book(Base):
+    __tablename__ = "books"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(100))
+    price: Mapped[int]
+    isbn: Mapped[str | None] = mapped_column(String(13), unique=True)
+
+    # 테이블에 저장되는 열: 저자의 번호
+    author_id: Mapped[int] = mapped_column(ForeignKey("authors.id"))
+    # 파이썬에서 쓰는 속성: 저자 객체
+    author: Mapped["Author"] = relationship(back_populates="books")</code></pre></div>
+
+<p>도서의 <code>author</code>는 이제 글자가 아니라 관계입니다. 저자 이름은 <code>authors</code> 테이블에만 있습니다.</p>
+
+<h2>요청과 응답 모델</h2>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code>class AuthorRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
+class BookCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+    author_id: int = Field(gt=0)      # 저자 이름 대신 저자 번호를 받습니다.
+    ...
+
+
+class BookRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+    ...
+    author: AuthorRead                # 저자를 객체째 담습니다.</code></pre></div>
+
+<p>등록할 때는 번호(<code>author_id</code>)를 받고, 돌려줄 때는 번호와 이름이 담긴 저자 객체를 넣습니다. 응답 모델 안에 다른 응답 모델을 넣는 것을 <strong>중첩 모델</strong>이라고 합니다. <code>book.author</code>가 <code>Author</code> 객체이므로 <code>AuthorRead</code>가 그 속성을 읽어 바꿉니다.</p>
+<div class="codeblock"><pre><code>{
+  "id": 1,
+  "title": "파이썬 첫걸음",
+  "price": 18000,
+  "isbn": "9791100000011",
+  "author": { "id": 1, "name": "김하늘" }
+}</code></pre></div>
+
+<h2>없는 저자 번호를 보내면</h2>
+<div class="codeblock"><pre><code>def check_author_exists(db: Session, author_id: int | None) -&gt; None:
+    """요청에 적힌 저자 번호가 실제로 있는지 확인합니다."""
+    if author_id is None:
+        return
+    if db.get(Author, author_id) is None:
+        raise AppError(422, "INVALID_AUTHOR", f"{author_id}번 저자가 없습니다.")</code></pre></div>
+
+<p>이 오류는 422로 보냅니다. 요청 주소의 도서가 없는 것(404)이 아니라, 요청 본문에 적힌 값이 유효하지 않은 것이기 때문입니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s4/p13/s4-p13-02.html"><span class="dir">이전</span>S4-P13-02 1:N 관계와 외래키</a>
+  <a class="next" href="../../s4/p13/s4-p13-04.html"><span class="dir">다음</span>S4-P13-04 저자 API와 관계 조회</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P31-03 업로드 API 보안 강화 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P31-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P31 입력데이터 검증 2: XSS, 파일 업로드, 명령어 삽입</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p31-01.html" style="flex:10" data-type="주요 개념" title="크로스사이트 스크립트와 API (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s9-p31-02.html" style="flex:10" data-type="주요 개념" title="위험한 형식 파일 업로드 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p31-03.html" style="flex:20" data-type="실습" title="업로드 API 보안 강화 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s9-p31-04.html" style="flex:5" data-type="주요 개념" title="명령어 삽입과 SSRF (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s9-p31-05.html" style="flex:5" data-type="정리" title="정리: 입력데이터 검증 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S9-P31-03</span></div>
+<h1>업로드 API 보안 강화</h1>
+
+<p class="lead">이미지로 위장한 HTML 파일이 3일차 업로드 API를 통과하는 것을 직접 확인하고, 내용 기반 검사를 추가해 막습니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>업로드 API에 파일 내용 기반 형식 검사, 파일 이름 다듬기, nosniff 헤더를 적용할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>위장 파일 만들고 올려 보기</h3>
+<div class="codeblock term"><pre><code>python -c "open('cover.png', 'wb').write(b'&lt;html&gt;&lt;script&gt;alert(document.cookie)&lt;/script&gt;&lt;/html&gt;')"</code></pre></div>
+
+<p>서버를 실행하고 user1으로 로그인해, 내가 등록한 도서에 <code>cover.png</code>를 올립니다. 3일차 코드에서는 200과 함께 <code>cover_url</code>이 돌아옵니다. <code>uploads/covers</code> 폴더에서 새로 생긴 파일을 메모장으로 열면 HTML이 그대로 들어 있습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>강화 전 응답 상태</td><td><input data-save="u1" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>nosniff 헤더 추가</h3>
+<p>앞 파트의 <code>add_security_headers</code> 미들웨어를 <code>app/main.py</code>의 다른 미들웨어 아래에 추가합니다. 이제 모든 응답에 <code>x-content-type-options: nosniff</code>가 붙고, 위장 파일을 열어도 브라우저는 <code>image/png</code>로만 다루어 깨진 이미지로 보여 줍니다.</p>
+</li><li><h3>업로드 검사 강화</h3>
+<p><code>app/services/covers.py</code>를 고칩니다.</p>
+<ol>
+  <li><code>ALLOWED_EXTENSIONS</code>를 "확장자: 저장할 확장자" 딕셔너리로 바꿉니다.</li>
+  <li><code>SIGNATURES</code>와 <code>detect_image_type</code>을 추가합니다.</li>
+  <li><code>read_cover</code>를 앞 페이지의 코드로 바꿉니다.</li>
+  <li><code>clean_filename</code>을 추가합니다.</li>
+</ol>
+<div class="codeblock"><span class="file">app/services/covers.py</span><pre><code># 허용하는 확장자와, 그 확장자일 때 내용이 되어야 하는 형식
+ALLOWED_EXTENSIONS = {".jpg": ".jpg", ".jpeg": ".jpg", ".png": ".png"}</code></pre></div>
+<details><summary>app/services/covers.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/services/covers.py</span><pre><code>"""표지 파일 저장소: 파일 검사와 저장, 삭제를 맡습니다. 데이터베이스는 다루지 않습니다."""
+import logging
+import uuid
+from pathlib import Path
+
+from fastapi import UploadFile
+
+from app.config import settings
+from app.errors import AppError
+
+# 허용하는 확장자와, 그 확장자일 때 내용이 되어야 하는 형식
+ALLOWED_EXTENSIONS = {".jpg": ".jpg", ".jpeg": ".jpg", ".png": ".png"}
+MAX_COVER_SIZE = 2 * 1024 * 1024  # 2MB
+COVER_DIR = Path(settings.upload_dir) / "covers"
+COVER_URL_PREFIX = "/covers/"
+logger = logging.getLogger(__name__)
+
+
+# 파일 앞부분에 들어 있는 형식 표시(매직 넘버)와, 그 형식으로 저장할 확장자
+SIGNATURES = {
+    b"\x89PNG\r\n\x1a\n": ".png",
+    b"\xff\xd8\xff": ".jpg",
+}
+
+
+def detect_image_type(data: bytes) -&gt; str | None:
+    """파일 내용의 앞부분을 보고 png인지 jpg인지 판단합니다."""
+    for signature, ext in SIGNATURES.items():
+        if data.startswith(signature):
+            return ext
+    return None
+
+
+def read_cover(file: UploadFile) -&gt; tuple[bytes, str]:
+    """확장자, 크기, 내용을 검사하고, 파일 내용과 저장할 확장자를 돌려줍니다."""
+    expected = ALLOWED_EXTENSIONS.get(Path(file.filename or "").suffix.lower())
+    if expected is None:
+        raise AppError(415, "UNSUPPORTED_FILE_TYPE", "jpg, jpeg, png 파일만 올릴 수 있습니다.")
+    data = file.file.read(MAX_COVER_SIZE + 1)  # 한도보다 1바이트 더 읽어 보면 넘었는지 알 수 있습니다.
+    if len(data) &gt; MAX_COVER_SIZE:
+        raise AppError(413, "FILE_TOO_LARGE", "파일 크기는 2MB를 넘을 수 없습니다.")
+    if not data:
+        raise AppError(422, "EMPTY_FILE", "빈 파일입니다.")
+    if detect_image_type(data) != expected:
+        raise AppError(415, "INVALID_IMAGE_CONTENT", "파일 내용이 확장자에 맞는 이미지가 아닙니다.")
+    return data, expected  # 저장할 때는 확인한 형식의 확장자를 씁니다.
+
+
+def clean_filename(name: str | None) -&gt; str:
+    """기록에 남길 원래 파일 이름에서 경로와 제어 문자를 없애고 길이를 줄입니다."""
+    name = (name or "").replace("\\", "/").rsplit("/", 1)[-1]  # 폴더 부분을 떼어 냅니다.
+    name = "".join(ch for ch in name if ch.isprintable())   # 줄바꿈 같은 보이지 않는 문자를 지웁니다.
+    return name[:100] or "unnamed"
+
+
+def save_cover(data: bytes, ext: str) -&gt; str:
+    """겹치지 않는 새 이름으로 저장하고, 브라우저에서 열 주소를 돌려줍니다."""
+    filename = f"{uuid.uuid4().hex}{ext}"
+    (COVER_DIR / filename).write_bytes(data)
+    return COVER_URL_PREFIX + filename
+
+
+def remove_cover(cover_url: str | None) -&gt; None:
+    """저장해 둔 표지 파일을 지웁니다. 없으면 아무것도 하지 않습니다."""
+    if cover_url:
+        (COVER_DIR / Path(cover_url).name).unlink(missing_ok=True)
+
+
+def write_upload_log(book_id: int, user_id: int, original_name: str, size: int) -&gt; None:
+    """업로드 기록을 로그로 남깁니다."""
+    logger.info("표지 업로드", extra={"book_id": book_id, "user_id": user_id,
+                                      "original_name": original_name, "size": size})</code></pre></div>
+</div></details>
+
+<p>라우터에서는 로그에 다듬은 이름을 넘깁니다.</p>
+<div class="codeblock"><span class="file">app/routers/books.py</span><pre><code>    background_tasks.add_task(covers.write_upload_log, book.id, user.id,
+                              covers.clean_filename(file.filename), file.size)</code></pre></div>
+</li><li><h3>다시 올려 보기</h3>
+<div class="table-wrap"><table><thead><tr><th>올리는 파일</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>위장한 <code>cover.png</code></td><td>415, <code>INVALID_IMAGE_CONTENT</code>. 저장되는 파일 없음</td><td><input data-save="u2" aria-label="내 결과"></td></tr><tr><td>진짜 png 이미지</td><td>200</td><td><input data-save="u3" aria-label="내 결과"></td></tr><tr><td>진짜 jpg 이미지를 <code>photo.jpeg</code>로</td><td>200, 저장 주소가 <code>.jpg</code>로 끝남</td><td><input data-save="u4" aria-label="내 결과"></td></tr><tr><td>png 이미지의 이름을 <code>.jpg</code>로 바꿔서</td><td>415. 확장자와 내용이 다릅니다.</td><td><input data-save="u5" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>강화 전에 저장된 위장 파일은 <code>uploads/covers</code>에서 지웁니다. 실제 서비스였다면 이미 올라간 파일들도 같은 검사로 다시 점검해야 합니다.</p>
+</li><li><h3>회귀 테스트 추가</h3>
+<p><code>tests/test_attacks.py</code> 가져오기에 <code>from app.services import covers</code>를 추가하고 덧붙입니다.</p>
+<div class="codeblock"><span class="file">tests/test_attacks.py</span><pre><code>def test_responses_have_nosniff_header(client):
+    assert client.get("/health").headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_upload_html_disguised_as_png_returns_415(client, auth_headers, author_id, tmp_path, monkeypatch):
+    monkeypatch.setattr(covers, "COVER_DIR", tmp_path)
+    book = create_book(client, auth_headers, author_id)
+    fake = b"&lt;html&gt;&lt;script&gt;alert(document.cookie)&lt;/script&gt;&lt;/html&gt;"
+    response = client.post(f"/books/{book['id']}/cover", headers=auth_headers,
+                           files={"file": ("cover.png", fake, "image/png")})
+    assert response.status_code == 415
+    assert response.json()["code"] == "INVALID_IMAGE_CONTENT"
+    assert list(tmp_path.iterdir()) == []  # 아무 파일도 저장되지 않았습니다.
+
+
+def test_clean_filename():
+    assert covers.clean_filename("../../etc/passwd") == "passwd"
+    assert covers.clean_filename("a\nb.png") == "ab.png"
+    assert covers.clean_filename("") == "unnamed"</code></pre></div>
+<div class="codeblock term"><pre><code>pytest</code></pre></div>
+</li></ol>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>확장자만 바꾼 HTML 파일이 강화 전에는 통과하는 것을 확인했다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>파일 앞부분의 매직 넘버로 형식을 확인하고, 확장자와 다르면 415로 거절한다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>모든 응답에 nosniff 헤더가 붙는다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>로그에 남기는 파일 이름에서 경로와 줄바꿈을 지운다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p31-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p31/s9-p31-02.html"><span class="dir">이전</span>S9-P31-02 위험한 형식 파일 업로드</a>
+  <a class="next" href="../../s9/p31/s9-p31-04.html"><span class="dir">다음</span>S9-P31-04 명령어 삽입과 SSRF</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

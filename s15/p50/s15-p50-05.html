@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P50-05 정리: S3 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P50-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P50 S3로 업로드 파일 저장</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p50-01.html" style="flex:5" data-type="주요 개념" title="7일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s15-p50-02.html" style="flex:10" data-type="주요 개념" title="S3 핵심 개념 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p50-03.html" style="flex:10" data-type="주요 개념" title="boto3로 S3 사용하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s15-p50-04.html" style="flex:20" data-type="실습" title="업로드 API를 S3로 전환 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s15-p50-05.html" style="flex:5" data-type="정리" title="정리: S3 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S15-P50-05</span></div>
+<h1>정리: S3</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>핵심</th></tr></thead><tbody><tr><td>S3</td><td>버킷(전 세계에서 유일한 이름)과 객체(키로 찾음). 서버가 몇 대든 같은 저장소를 씁니다.</td></tr><tr><td>기본 보안</td><td>퍼블릭 액세스 차단, ACL 비활성화, 기본 암호화를 그대로 둡니다.</td></tr><tr><td>미리 서명된 URL</td><td>비공개 객체를 정해진 시간만 내려받게 합니다. 짧게(5분) 두고 로그에 남기지 않습니다.</td></tr><tr><td>코드</td><td>저장 위치만 설정으로 바꾸고, 파일 검사와 API 주소는 그대로 둡니다. 키는 서버가 만든 이름만 허용합니다.</td></tr><tr><td>권한</td><td>역할에 이 버킷 <code>covers/*</code>의 Put, Get, Delete만 줍니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">표지 버킷을 공개하지 않고도 브라우저가 이미지를 볼 수 있는 이유는 무엇인가요?</p><label><input type="radio" name="p50q1" value="1"> <span>1. 도서 API가 짧은 시간만 유효한 미리 서명된 URL을 만들어 주어서</span></label><label><input type="radio" name="p50q1" value="2"> <span>2. 브라우저가 IAM 역할을 써서</span></label><label><input type="radio" name="p50q1" value="3"> <span>3. 버킷 정책에 0.0.0.0/0을 허용해서</span></label><label><input type="radio" name="p50q1" value="4"> <span>4. S3가 이미지 파일은 자동으로 공개해서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>서명된 URL은 만든 쪽의 권한으로, 정해진 시간 동안만 동작합니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q"><code>/covers/{filename}</code>에서 이름 모양을 정규식으로 먼저 검사하는 이유로 가장 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p50q2" value="1"> <span>1. 정규식이 빨라서</span></label><label><input type="radio" name="p50q2" value="2"> <span>2. S3 요금을 줄이려고</span></label><label><input type="radio" name="p50q2" value="3"> <span>3. 사용자 입력이 S3 키에 섞여 의도하지 않은 객체를 가리키지 않게 하려고</span></label><label><input type="radio" name="p50q2" value="4"> <span>4. 이미지가 아니면 S3가 오류를 내서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>서버가 만든 이름만 받는 허용 목록입니다. S9-P31의 경로 조작 방어와 같은 생각입니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">EC2 역할에 <code>s3:GetObject</code>가 없으면 무슨 일이 생기나요?</p><label><input type="radio" name="p50q3" value="1"> <span>1. 미리 서명된 URL은 만들어지지만, 그 URL로 받으면 AccessDenied가 난다</span></label><label><input type="radio" name="p50q3" value="2"> <span>2. 버킷이 공개된다</span></label><label><input type="radio" name="p50q3" value="3"> <span>3. 아무 일도 없다</span></label><label><input type="radio" name="p50q3" value="4"> <span>4. 업로드가 실패한다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>URL을 만드는 것은 계산일 뿐이고, 실제로 받을 때 서명한 쪽의 권한을 확인합니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>다음 파트에서는 서버 디스크에 쌓이던 로그를 CloudWatch Logs로 보내고, 요청 ID로 한 요청의 흐름을 찾아보며, 서버에 문제가 생기면 메일로 알려 주는 경보를 만듭니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p50/s15-p50-04.html"><span class="dir">이전</span>S15-P50-04 업로드 API를 S3로 전환</a>
+  <a class="next" href="../../s15/p51/s15-p51-01.html"><span class="dir">다음</span>S15-P51-01 CloudWatch 개요</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

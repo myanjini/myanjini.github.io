@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P14-03 리비전 생성과 적용 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P14-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 데이터베이스 활용과 마이그레이션</a><span class="sep">/</span><span>S4-P14 Alembic 마이그레이션</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p14-01.html" style="flex:10" data-type="주요 개념" title="왜 마이그레이션인가 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s4-p14-02.html" style="flex:10" data-type="주요 개념" title="Alembic 설정 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s4-p14-03.html" style="flex:20" data-type="실습" title="리비전 생성과 적용 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s4-p14-04.html" style="flex:5" data-type="주요 개념" title="마이그레이션 운영 수칙 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s4-p14-05.html" style="flex:5" data-type="정리" title="정리: 2일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S4-P14-03</span></div>
+<h1>리비전 생성과 적용</h1>
+
+<p class="lead">Alembic으로 테이블을 처음부터 만들고, 데이터를 지키면서 새 열을 추가해 봅니다. 되돌리기도 직접 실행합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>리비전을 자동 생성하고, 검토한 뒤 적용하고 되돌릴 수 있습니다.</p></div>
+<ol class="steps"><li><h3>설치, 초기화, env.py 수정</h3>
+<p>서버를 끄고 앞 페이지대로 <code>alembic</code> 설치, <code>alembic init migrations</code>, <code>env.py</code> 수정, <code>app/main.py</code>의 <code>create_all</code> 삭제를 마칩니다.</p>
+</li><li><h3>마지막으로 한 번 데이터베이스 지우기</h3>
+<p>지금의 <code>books.db</code>는 <code>create_all</code>이 만든 것이라 Alembic 기록이 없습니다. Alembic이 처음부터 만들도록 한 번만 더 지웁니다. 이번이 마지막입니다.</p>
+</li><li><h3>첫 리비전 자동 생성</h3>
+<div class="codeblock term"><pre><code>alembic revision --autogenerate -m "create authors and books"</code></pre></div>
+
+<p>출력에 <code>Detected added table 'authors'</code>, <code>Detected added table 'books'</code>가 보이고, <code>migrations/versions</code>에 파일이 하나 생깁니다. 파일을 열어 <code>upgrade</code>에 두 테이블을 만드는 코드가, <code>downgrade</code>에 두 테이블을 지우는 코드가 있는지 확인합니다.</p>
+<details><summary>자동 생성된 upgrade 함수 예시 보기</summary><div class="answer"><div class="codeblock"><pre><code>def upgrade() -&gt; None:
+    op.create_table('authors',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(length=50), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
+    op.create_table('books',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('title', sa.String(length=100), nullable=False),
+    sa.Column('price', sa.Integer(), nullable=False),
+    sa.Column('isbn', sa.String(length=13), nullable=True),
+    sa.Column('author_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['author_id'], ['authors.id'], ),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('isbn')
+    )</code></pre></div>
+</div></details>
+</li><li><h3>적용하고 데이터 넣기</h3>
+<div class="codeblock term"><pre><code>alembic upgrade head</code></pre></div>
+
+<p><code>head</code>는 가장 최신 리비전을 뜻합니다. 서버를 실행하고 S4-P13-04처럼 저자 세 명과 도서 네 권을 등록합니다. 이 데이터가 다음 단계에서 살아남는지 볼 것입니다.</p>
+</li><li><h3>모델에 출간 연도 추가</h3>
+<div class="codeblock"><span class="file">app/models.py</span><pre><code>    isbn: Mapped[str | None] = mapped_column(String(13), unique=True)
+    published_year: Mapped[int | None]  # 출간 연도. 기존 도서에는 값이 없으므로 None을 허용합니다.</code></pre></div>
+
+<p>응답과 요청에서도 쓰도록 스키마의 <code>BookCreate</code>, <code>BookUpdate</code>, <code>BookRead</code>에 같은 항목을 추가합니다.</p>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code># BookCreate, BookUpdate
+published_year: int | None = Field(default=None, ge=1900, le=2100)
+
+# BookRead
+published_year: int | None = None</code></pre></div>
+
+<p>이 상태에서 서버만 다시 시작하고 <code>GET /books</code>를 부르면 오류가 납니다. 모델에는 열이 있는데 데이터베이스에는 아직 없기 때문입니다. 마이그레이션이 필요한 순간입니다.</p>
+</li><li><h3>두 번째 리비전 생성과 검토</h3>
+<div class="codeblock term"><pre><code>alembic revision --autogenerate -m "add published_year to books"</code></pre></div>
+
+<p><code>Detected added column 'books.published_year'</code>가 보이면, 새 리비전 파일을 열어 내용을 확인합니다.</p>
+<div class="codeblock"><pre><code>def upgrade() -&gt; None:
+    with op.batch_alter_table('books', schema=None) as batch_op:
+        batch_op.add_column(sa.Column('published_year', sa.Integer(), nullable=True))
+
+
+def downgrade() -&gt; None:
+    with op.batch_alter_table('books', schema=None) as batch_op:
+        batch_op.drop_column('published_year')</code></pre></div>
+
+<p>기존 도서에는 출간 연도가 없으므로 <code>nullable=True</code>(값 없음 허용)인지 꼭 확인합니다.</p>
+</li><li><h3>적용하고 데이터 확인</h3>
+<div class="codeblock term"><pre><code>alembic upgrade head
+alembic current
+alembic history</code></pre></div>
+
+<p><code>current</code>는 지금 적용된 리비전을, <code>history</code>는 리비전 사슬을 보여 줍니다. 서버에서 <code>GET /books</code>를 부르면 등록했던 도서가 그대로 있고, <code>published_year</code>가 <code>null</code>로 붙어 있습니다. 데이터를 지우지 않고 열을 추가했습니다. <code>PATCH /books/1</code>로 <code>{"published_year": 2024}</code>를 보내 값도 넣어 봅니다.</p>
+</li><li><h3>되돌리고 다시 적용하기</h3>
+<div class="codeblock term"><pre><code>alembic downgrade -1
+alembic upgrade head</code></pre></div>
+
+<p><code>-1</code>은 한 단계 뒤로라는 뜻입니다. 되돌리면 <code>published_year</code> 열이 사라지고, 다시 적용하면 열이 생깁니다. 하지만 1번 도서에 넣었던 2024는 돌아오지 않습니다. 열을 지우는 순간 그 열의 데이터도 함께 사라지기 때문입니다.</p>
+</li><li><h3>패키지 목록 갱신</h3>
+<div class="codeblock term"><pre><code>pip freeze &gt; requirements.txt</code></pre></div>
+
+<p><code>migrations</code> 폴더와 <code>alembic.ini</code>는 Git에 함께 올립니다. 다른 사람도 <code>alembic upgrade head</code> 한 번으로 같은 테이블을 만들 수 있어야 하기 때문입니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>app/main.py에 create_all이 없다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>migrations/versions에 리비전 파일이 두 개 있다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>열을 추가한 뒤에도 기존 도서 데이터가 남아 있다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>downgrade를 하면 그 열의 데이터가 사라진다는 것을 확인했다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td>자동 생성했는데 변경이 감지되지 않음</td><td><code>env.py</code>의 <code>target_metadata</code>가 그대로 <code>None</code>이거나 <code>from app import models</code>가 빠졌습니다.</td></tr><tr><td><code>No module named 'app'</code></td><td><code>book-api</code> 폴더가 아닌 곳에서 alembic 명령을 실행했습니다.</td></tr><tr><td><code>table authors already exists</code></td><td><code>create_all</code>이 만든 데이터베이스가 남아 있습니다. 2단계처럼 지우고 다시 <code>upgrade head</code>를 실행합니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p14-done</code> 브랜치(2일차 완성 코드)에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s4/p14/s4-p14-02.html"><span class="dir">이전</span>S4-P14-02 Alembic 설정</a>
+  <a class="next" href="../../s4/p14/s4-p14-04.html"><span class="dir">다음</span>S4-P14-04 마이그레이션 운영 수칙</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

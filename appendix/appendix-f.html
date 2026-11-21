@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부록 F 보안약점 진단, 조치 결과표 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-page="index">
+<header class="topbar">
+  <a class="course" href="../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="index.html">부록</a><span class="sep">/</span><span>부록 F</span></nav>
+</header>
+<main class="page">
+<h1>부록 F. 보안약점 진단, 조치 결과표</h1><div class="table-wrap"><table><thead><tr><th>번호</th><th>보안약점 유형</th><th>보안약점 항목</th><th>위치(파일, 함수)</th><th>위험도</th><th>진단 근거</th><th>조치 내용</th><th>확인 방법(테스트)</th></tr></thead><tbody><tr><td>예</td><td>입력데이터 검증 및 표현</td><td>SQL 삽입</td><td>routers/books.py, search_books</td><td>높음</td><td>정렬 컬럼을 문자열로 조립</td><td>허용 목록 검사와 바인딩 적용</td><td>test_search_rejects_injection</td></tr><tr><td>예</td><td>보안기능</td><td>부적절한 인가</td><td>routers/loans.py, get_loan</td><td>높음</td><td>대여 기록 조회 시 소유자 검사 없음</td><td>소유자 검사 의존성 추가</td><td>test_other_user_loan_forbidden</td></tr><tr><td>예</td><td>에러처리</td><td>오류 메시지 정보 노출</td><td>main.py</td><td>중간</td><td>DB 예외 메시지가 응답에 포함</td><td>전역 예외 처리기로 일반화</td><td>test_db_error_hides_detail</td></tr></tbody></table></div><h2>양식 내려받기</h2><ul><li><a href="../assets/files/project-diagnosis.md" download>자기 진단표 양식 내려받기(project-diagnosis.md)</a></li></ul><p class="when">다른 부록: <a href="appendix-a.html">부록 A</a> <a href="appendix-b.html">부록 B</a> <a href="appendix-c.html">부록 C</a> <a href="appendix-d.html">부록 D</a> <a href="appendix-e.html">부록 E</a> <a href="appendix-f.html">부록 F</a> <a href="appendix-g.html">부록 G</a></p>
+</main>
+</body>
+</html>

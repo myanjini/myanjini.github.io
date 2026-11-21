@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P9-02 Settings 클래스 적용 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P9-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P9 설정 관리와 미들웨어</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p9-01.html" style="flex:10" data-type="주요 개념" title="설정과 비밀정보 분리 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p9-02.html" style="flex:15" data-type="실습" title="Settings 클래스 적용 (15분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s3-p9-03.html" style="flex:5" data-type="주요 개념" title="미들웨어와 CORS (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s3-p9-04.html" style="flex:15" data-type="실습" title="CORS와 요청 로깅 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s3-p9-05.html" style="flex:5" data-type="정리" title="정리: 설정과 미들웨어 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S3-P9-02</span></div>
+<h1>Settings 클래스 적용</h1>
+
+<p class="lead">설정 파일과 <code>.env</code>를 만들고, 앱이 설정값을 읽어 쓰도록 바꿉니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>pydantic-settings로 설정을 분리하고, 비밀 값은 Git에 올라가지 않게 관리할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>패키지 확인</h3>
+<div class="codeblock term"><pre><code>pip show pydantic-settings</code></pre></div>
+
+<p>정보가 나오면 이미 설치된 것입니다. <code>not found</code>가 나오면 설치합니다.</p>
+<div class="codeblock term"><pre><code>pip install pydantic-settings</code></pre></div>
+</li><li><h3>config.py 만들기</h3>
+<p>앞 페이지의 <code>app/config.py</code>를 그대로 작성합니다.</p>
+</li><li><h3>.env.example과 .gitignore 만들기</h3>
+<p><code>book-api</code> 폴더(가장 바깥)에 두 파일을 만듭니다.</p>
+<div class="codeblock"><span class="file">.env.example</span><pre><code># 이 파일을 .env로 복사한 뒤 값을 채웁니다. .env는 Git에 올리지 않습니다.
+APP_NAME=도서 관리 API
+DATABASE_URL=sqlite:///./books.db
+SECRET_KEY=change-me
+CORS_ORIGINS=["http://localhost:5173"]</code></pre></div>
+<div class="codeblock"><span class="file">.gitignore</span><pre><code># 가상환경
+.venv/
+
+# 비밀정보가 들어 있는 설정 파일
+.env
+
+# 실행하면 생기는 파일
+__pycache__/
+*.db</code></pre></div>
+</li><li><h3>.env 만들고 비밀 키 채우기</h3>
+<p>예시 파일을 복사해 <code>.env</code>를 만듭니다.</p>
+<div class="codeblock term"><pre><code>copy .env.example .env</code></pre></div>
+
+<p>macOS에서는 <code>cp .env.example .env</code>입니다. 다음 명령으로 추측하기 어려운 비밀 키를 만들고, 출력된 값을 <code>.env</code>의 <code>SECRET_KEY=</code> 뒤에 붙여 넣습니다.</p>
+<div class="codeblock term"><pre><code>python -c "import secrets; print(secrets.token_hex(32))"</code></pre></div>
+
+<p><code>secrets</code>는 보안에 쓰는 난수를 만드는 Python 표준 모듈입니다. 비밀 키는 직접 지어내지 않고 이렇게 만듭니다.</p>
+</li><li><h3>main.py에서 설정 쓰기</h3>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>from app.config import settings
+
+app = FastAPI(
+    title=settings.app_name,
+    ...
+)
+
+
+@app.get("/", tags=["기본"])
+def read_root():
+    return {"message": f"{settings.app_name}에 오신 것을 환영합니다."}</code></pre></div>
+
+<p><code>.env</code>의 <code>APP_NAME</code>을 바꾸고 서버를 다시 시작하면 문서 제목이 바뀌는 것을 확인합니다. <code>.env</code>는 <code>.py</code> 파일이 아니라서 고쳐도 서버가 자동으로 다시 시작되지 않으니, <code>Ctrl + C</code>로 끄고 다시 실행합니다.</p>
+</li><li><h3>비밀 키가 없을 때 확인</h3>
+<p><code>.env</code>의 <code>SECRET_KEY</code> 줄 앞에 <code>#</code>을 붙여 주석으로 만들고 서버를 다시 실행해 봅니다.</p>
+<div class="codeblock term"><pre><code>pydantic_core._pydantic_core.ValidationError: 1 validation error for Settings
+secret_key
+  Field required [type=missing, input_value={...}, input_type=dict]</code></pre></div>
+
+<p>서버가 시작하지 않고 어떤 설정이 빠졌는지 알려 줍니다. 확인했으면 <code>#</code>을 지워 원래대로 돌립니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>app/config.py, .env.example, .gitignore, .env가 있다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>.env의 SECRET_KEY에 생성한 값이 들어 있다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>.gitignore에 .env가 들어 있다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>SECRET_KEY가 없으면 서버가 시작하지 않는 것을 확인했다.</span></label></li></ul>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p9/s3-p9-01.html"><span class="dir">이전</span>S3-P9-01 설정과 비밀정보 분리</a>
+  <a class="next" href="../../s3/p9/s3-p9-03.html"><span class="dir">다음</span>S3-P9-03 미들웨어와 CORS</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P29-03 KISA 가이드의 보안약점 분류 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P29-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P29 소프트웨어 개발보안과 KISA 가이드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p29-01.html" style="flex:5" data-type="주요 개념" title="4일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s9-p29-02.html" style="flex:10" data-type="주요 개념" title="소프트웨어 개발보안이란 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p29-03.html" style="flex:10" data-type="주요 개념" title="KISA 가이드의 보안약점 분류 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s9-p29-04.html" style="flex:20" data-type="실습" title="도서 API에서 공격 지점 찾기 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s9-p29-05.html" style="flex:5" data-type="정리" title="정리: 개발보안의 틀 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S9-P29-03</span></div>
+<h1>KISA 가이드의 보안약점 분류</h1>
+
+<p class="lead">KISA 가이드가 보안약점을 어떻게 나누는지 보고, 웹 API에 초점을 맞춘 국제 기준인 OWASP API Security Top 10과 비교합니다.</p>
+
+<h2>설계 단계와 구현 단계</h2>
+<p>2021년판 소프트웨어 개발보안 가이드는 설계 단계에서 갖춰야 할 보안 요구항목 20개와, 구현 단계에서 없애야 할 보안약점 49개를 제시합니다. 설계 단계 항목은 입력데이터 검증 및 표현, 보안기능, 에러처리, 세션통제의 4개 유형으로, 구현 단계 보안약점은 다음 7개 유형으로 나뉩니다.</p>
+<div class="table-wrap"><table><thead><tr><th>구현 단계 유형</th><th>개수</th><th>대표 보안약점</th><th>이 과정</th></tr></thead><tbody><tr><td>입력데이터 검증 및 표현</td><td>17</td><td>SQL 삽입, 경로 조작 및 자원 삽입, 크로스사이트 스크립트, 운영체제 명령어 삽입, 위험한 형식 파일 업로드, 서버사이드 요청 위조</td><td>S9-P30, S9-P31</td></tr><tr><td>보안기능</td><td>16</td><td>적절한 인증 없는 중요 기능 허용, 부적절한 인가, 중요정보 평문 저장, 취약한 암호화 알고리즘 사용, 하드코드된 중요정보</td><td>S9-P32, S10</td></tr><tr><td>시간 및 상태</td><td>2</td><td>경쟁 조건(검사 시점과 사용 시점), 종료되지 않는 반복</td><td>S11-P36</td></tr><tr><td>에러처리</td><td>3</td><td>오류 메시지를 통한 정보 노출, 오류 상황 대응 부재, 부적절한 예외 처리</td><td>S10-P35</td></tr><tr><td>코드오류</td><td>5</td><td>Null 포인터 역참조, 부적절한 자원 해제, 신뢰할 수 없는 데이터의 역직렬화</td><td>S11-P36</td></tr><tr><td>캡슐화</td><td>4</td><td>제거되지 않고 남은 디버그 코드, 잘못된 세션에 의한 데이터 정보 노출</td><td>S10-P35, S9-P32-04</td></tr><tr><td>API 오용</td><td>2</td><td>DNS 조회에 의존한 보안 결정, 취약한 API 사용</td><td>S11-P37(안전하지 않은 함수와 취약한 패키지 점검)</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">가이드의 판과 언어별 가이드</p><p>보안약점의 이름과 개수는 가이드의 판마다 조금씩 바뀝니다. 실제 업무에서는 KISA 누리집에서 최신판을 받아 확인합니다. KISA는 언어별 예제를 담은 시큐어코딩 가이드도 내고 있으며, Python 시큐어코딩 가이드는 2023년 개정본이 최신입니다. 오늘 실습의 안전한 코드 패턴은 이 가이드의 Python 예제와 같은 원칙을 따릅니다.</p></div>
+
+<h2>OWASP API Security Top 10</h2>
+<p>OWASP는 웹 보안 지식을 공개하는 국제 비영리 단체입니다. API에서 자주 일어나는 위험 10가지를 정리한 목록을 2019년에 처음 냈고, 2023년에 개정했습니다. KISA 가이드가 "어떤 코드가 약점인가"를 중심으로 나눈다면, OWASP 목록은 "API에서 실제로 무엇이 자주 뚫리는가"를 중심으로 순위를 매깁니다.</p>
+<div class="table-wrap"><table><thead><tr><th>OWASP API 2023</th><th>뜻</th><th>KISA 유형과 이 과정</th></tr></thead><tbody><tr><td>API1 객체 수준 인가 취약(BOLA)</td><td>번호만 바꿔 남의 데이터에 접근</td><td>보안기능(부적절한 인가), S9-P32</td></tr><tr><td>API2 인증 취약</td><td>약한 로그인, 토큰 검증 실수</td><td>보안기능, S5, S10-P34</td></tr><tr><td>API3 객체 속성 수준 인가 취약(BOPLA)</td><td>응답에 필요 이상의 필드 노출, 보내면 안 되는 필드 수정</td><td>보안기능, 캡슐화, S9-P32-04</td></tr><tr><td>API4 제한 없는 자원 소비</td><td>요청 크기와 횟수를 제한하지 않음</td><td>S6 업로드 크기 제한, S10-P34 요청 제한</td></tr><tr><td>API5 기능 수준 인가 취약(BFLA)</td><td>일반 사용자가 관리자 기능 호출</td><td>보안기능(부적절한 인가), S5-P17, S9-P32</td></tr><tr><td>API6 민감한 업무 흐름 무제한 접근</td><td>자동화된 대량 대여, 대량 가입</td><td>S6 대여 한도</td></tr><tr><td>API7 서버사이드 요청 위조(SSRF)</td><td>서버가 공격자가 정한 주소로 요청</td><td>입력데이터 검증 및 표현, S9-P31-04</td></tr><tr><td>API8 보안 설정 오류</td><td>불필요한 헤더, 운영 환경의 문서 공개</td><td>S10-P35, AWS 단원</td></tr><tr><td>API9 부적절한 자산 관리</td><td>잊힌 옛 API, 테스트 API가 운영에 남음</td><td>S10-P35-04</td></tr><tr><td>API10 안전하지 않은 외부 API 사용</td><td>외부 API 응답을 그대로 믿음</td><td>입력데이터 검증 및 표현</td></tr></tbody></table></div>
+
+<p>OWASP API 2023 목록에는 SQL 삽입 같은 삽입 공격이 따로 없습니다. 덜 중요해서가 아니라 일반 웹 보안 목록에서 이미 다루기 때문입니다. 두 기준을 함께 보면, KISA 가이드로 빠짐없이 점검하고 OWASP 목록으로 API에서 특히 조심할 곳을 알 수 있습니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p29/s9-p29-02.html"><span class="dir">이전</span>S9-P29-02 소프트웨어 개발보안이란</a>
+  <a class="next" href="../../s9/p29/s9-p29-04.html"><span class="dir">다음</span>S9-P29-04 도서 API에서 공격 지점 찾기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P27-05 정리: Compose | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P27-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P27 Docker Compose로 API와 PostgreSQL 실행하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p27-01.html" style="flex:10" data-type="주요 개념" title="다중 컨테이너와 Compose (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p27-02.html" style="flex:10" data-type="주요 개념" title="compose.yaml 작성 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p27-03.html" style="flex:20" data-type="실습" title="PostgreSQL로 전환 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s8-p27-04.html" style="flex:5" data-type="주요 개념" title="운영 설정 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s8-p27-05.html" style="flex:5" data-type="정리" title="정리: Compose (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S8-P27-05</span></div>
+<h1>정리: Compose</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>Compose는 여러 컨테이너를 <code>compose.yaml</code> 하나로 정의하고 <code>docker compose up</code>으로 함께 실행합니다.</li>
+  <li>서비스끼리는 서비스 이름(<code>db</code>)을 주소로 씁니다. 데이터베이스 포트는 바깥에 열지 않습니다.</li>
+  <li>데이터는 볼륨에 보관해 컨테이너를 지워도 남게 합니다. PostgreSQL 18은 <code>/var/lib/postgresql</code>에 연결합니다.</li>
+  <li><code>depends_on</code>과 <code>healthcheck</code>로 데이터베이스가 준비된 뒤에 API를 시작합니다.</li>
+  <li>마이그레이션은 <code>docker compose run --rm api alembic upgrade head</code>로 적용하고, 데이터는 <code>pg_dump</code>로 백업합니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">api 컨테이너에서 데이터베이스 주소의 호스트로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p27q1" value="1"> <span>1. db</span></label><label><input type="radio" name="p27q1" value="2"> <span>2. 0.0.0.0</span></label><label><input type="radio" name="p27q1" value="3"> <span>3. 127.0.0.1</span></label><label><input type="radio" name="p27q1" value="4"> <span>4. localhost</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>Compose 네트워크에서는 서비스 이름이 주소입니다. 컨테이너 안의 127.0.0.1은 자기 자신입니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q"><code>docker compose down</code> 뒤 <code>up</code>했더니 데이터가 그대로 있었습니다. 그 이유는 무엇인가요?</p><label><input type="radio" name="p27q2" value="1"> <span>1. PostgreSQL이 자동으로 백업해서</span></label><label><input type="radio" name="p27q2" value="2"> <span>2. down이 아무것도 지우지 않아서</span></label><label><input type="radio" name="p27q2" value="3"> <span>3. 데이터를 볼륨에 보관했고, down은 볼륨을 지우지 않아서</span></label><label><input type="radio" name="p27q2" value="4"> <span>4. 이미지에 데이터가 들어 있어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>down은 컨테이너와 네트워크만 지웁니다. 볼륨까지 지우려면 -v를 붙입니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">처음 실행한 뒤 .env의 POSTGRES_PASSWORD를 바꿨더니 인증 오류가 납니다. 이유로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p27q3" value="1"> <span>1. 데이터베이스 사용자는 볼륨을 처음 만들 때의 비밀번호로 이미 만들어져 있어서</span></label><label><input type="radio" name="p27q3" value="2"> <span>2. compose.yaml 문법 오류</span></label><label><input type="radio" name="p27q3" value="3"> <span>3. 포트가 바뀌어서</span></label><label><input type="radio" name="p27q3" value="4"> <span>4. psycopg를 다시 설치해야 해서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>공식 이미지는 빈 볼륨일 때만 사용자를 만듭니다. 이후 비밀번호를 바꾸려면 데이터베이스 안에서 직접 바꿔야 합니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>지금 API의 출력은 <code>print</code>로 찍은 한 줄과 오류 내용이 뒤섞여 있습니다. S8-P28에서는 로그를 정해진 형식으로 남기고, 요청마다 ID를 붙여 한 요청에서 일어난 일을 모아 볼 수 있게 합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p27/s8-p27-04.html"><span class="dir">이전</span>S8-P27-04 운영 설정 점검</a>
+  <a class="next" href="../../s8/p28/s8-p28-01.html"><span class="dir">다음</span>S8-P28-01 로그가 필요한 이유</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

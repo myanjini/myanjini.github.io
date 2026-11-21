@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P49-02 운영용 Compose 설정 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P49-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 안전한 배포 구성</a><span class="sep">/</span><span>S14-P49 운영 배포 완성</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p49-01.html" style="flex:5" data-type="주요 개념" title="운영 배포 구성 점검 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s14-p49-02.html" style="flex:10" data-type="주요 개념" title="운영용 Compose 설정 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s14-p49-03.html" style="flex:25" data-type="실습" title="도서 API 배포 완성 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s14-p49-04.html" style="flex:5" data-type="실습" title="배포 결과 자기 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s14-p49-05.html" style="flex:5" data-type="정리" title="정리: 7일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S14-P49-02</span></div>
+<h1>운영용 Compose 설정</h1>
+
+<p class="lead">S8에서 만든 개발용 Compose 파일은 PostgreSQL 컨테이너를 함께 띄우고, 소스에서 이미지를 빌드했습니다. 운영용은 데이터베이스를 RDS로, 이미지를 ECR로, 비밀 값을 Parameter Store로 바꾼 별도의 파일입니다.</p>
+<div class="codeblock"><span class="file">compose.prod.yaml</span><pre><code># 운영(EC2)용 Compose 파일
+# - 이미지는 ECR에서 받습니다. 어떤 이미지를 쓸지는 같은 폴더의 .env에 IMAGE=... 로 적습니다.
+# - 비밀 값(SECRET_KEY, DATABASE_URL)은 이 파일에도 .env에도 적지 않고, 앱이 Parameter Store에서 읽습니다.
+# - 데이터베이스는 RDS를 쓰므로 db 서비스가 없습니다.
+services:
+  api:
+    image: ${IMAGE:?IMAGE를 .env에 적어 주세요}
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: production              # /docs, /redoc, /openapi.json을 끕니다.
+      SSM_PREFIX: /book-api/           # 이 경로 아래의 비밀 값을 읽습니다.
+      AWS_DEFAULT_REGION: ap-northeast-2
+      LOG_LEVEL: INFO
+    volumes:
+      - uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"   # 로그 파일 하나가 10MB를 넘으면 새 파일로 바꿉니다.
+        max-file: "3"     # 최대 3개까지만 남겨 디스크가 차지 않게 합니다.
+
+volumes:
+  uploads:</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>설정</th><th>뜻</th></tr></thead><tbody><tr><td><code>image: ${IMAGE:?...}</code></td><td>실행할 이미지를 같은 폴더의 <code>.env</code>에서 읽습니다. 값이 없으면 <code>:?</code> 뒤의 문구를 보여 주고 멈춥니다. 태그를 파일에 고정하지 않아, 배포할 때 <code>.env</code> 한 줄만 바꿉니다.</td></tr><tr><td><code>build</code>가 없음</td><td>서버에서 빌드하지 않습니다.</td></tr><tr><td><code>environment</code></td><td>비밀이 아닌 설정만 적습니다. <code>SSM_PREFIX</code>로 비밀 값을 읽습니다.</td></tr><tr><td><code>restart: unless-stopped</code></td><td>컨테이너가 죽거나 서버가 재부팅되면 다시 시작합니다.</td></tr><tr><td><code>healthcheck</code></td><td>30초마다 컨테이너 안에서 <code>/health</code>를 부릅니다. 세 번 연속 실패하면 <code>unhealthy</code>로 표시됩니다. <code>start_period</code> 동안의 실패는 세지 않아, Parameter Store를 읽고 시작하는 시간을 기다려 줍니다.</td></tr><tr><td><code>logging</code></td><td>Docker가 모으는 로그 파일을 10MB씩 최대 3개로 제한합니다.</td></tr><tr><td><code>db</code> 서비스가 없음</td><td>데이터베이스는 RDS입니다.</td></tr></tbody></table></div>
+
+<h2>개발용과 운영용 비교</h2>
+<div class="table-wrap"><table><thead><tr><th></th><th>compose.yaml(개발)</th><th>compose.prod.yaml(운영)</th></tr></thead><tbody><tr><td>어디서</td><td>내 PC</td><td>EC2</td></tr><tr><td>이미지</td><td><code>build: .</code></td><td>ECR의 버전 태그</td></tr><tr><td>데이터베이스</td><td>PostgreSQL 컨테이너</td><td>RDS</td></tr><tr><td>비밀 값</td><td><code>.env</code>의 <code>SECRET_KEY</code>, <code>POSTGRES_PASSWORD</code></td><td>Parameter Store(<code>.env</code>에는 <code>IMAGE</code> 한 줄)</td></tr><tr><td>API 문서</td><td>켜짐</td><td>꺼짐(<code>APP_ENV=production</code>)</td></tr></tbody></table></div>
+
+<p>운영용 파일도 저장소에 함께 올립니다. 비밀 값이 하나도 없으므로 올려도 안전하고, 서버의 설정이 어떤지 코드처럼 리뷰하고 이력을 남길 수 있습니다.</p>
+<div class="callout note"><p class="callout-title">Compose의 .env와 앱의 .env</p><p>서버 폴더의 <code>.env</code>는 Compose가 <code>${IMAGE}</code> 같은 변수를 채울 때 읽는 파일이고, 컨테이너 안으로 들어가지 않습니다. 이미지에는 <code>.dockerignore</code> 때문에 내 PC의 <code>.env</code>도 들어가지 않습니다(S8-P26). 그래서 서버의 <code>.env</code>에는 비밀이 아닌 <code>IMAGE</code>만 둡니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p49/s14-p49-01.html"><span class="dir">이전</span>S14-P49-01 운영 배포 구성 점검</a>
+  <a class="next" href="../../s14/p49/s14-p49-03.html"><span class="dir">다음</span>S14-P49-03 도서 API 배포 완성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

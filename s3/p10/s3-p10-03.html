@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P10-03 모델 정의와 테이블 생성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P10-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P10 SQLAlchemy ORM 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p10-01.html" style="flex:10" data-type="주요 개념" title="관계형 데이터베이스와 ORM (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p10-02.html" style="flex:10" data-type="주요 개념" title="SQLAlchemy 2.0 핵심 구성 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s3-p10-03.html" style="flex:10" data-type="주요 개념" title="모델 정의와 테이블 생성 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p10-04.html" style="flex:15" data-type="실습" title="Book 모델 만들기 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s3-p10-05.html" style="flex:5" data-type="정리" title="정리: ORM 기초 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S3-P10-03</span></div>
+<h1>모델 정의와 테이블 생성</h1>
+
+<p class="lead">데이터베이스 연결 파일과 모델 파일을 만들고, 서버가 시작할 때 테이블이 만들어지는 과정을 강사 화면으로 봅니다.</p>
+
+<h2>database.py</h2>
+<div class="codeblock"><span class="file">app/database.py</span><pre><code>from sqlalchemy import create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+from app.config import settings
+
+# SQLite는 기본적으로 한 스레드에서만 연결을 쓰게 되어 있어 이 옵션을 끕니다.
+connect_args = {"check_same_thread": False} if settings.database_url.startswith("sqlite") else {}
+
+engine = create_engine(settings.database_url, connect_args=connect_args)
+SessionLocal = sessionmaker(bind=engine, autoflush=False)
+
+
+class Base(DeclarativeBase):
+    """모든 모델 클래스가 상속하는 기본 클래스입니다."""</code></pre></div>
+
+<p>주소를 코드에 적지 않고 설정(<code>settings.database_url</code>)에서 읽습니다. <code>check_same_thread</code> 옵션은 SQLite일 때만 필요해서 주소가 <code>sqlite</code>로 시작할 때만 넣습니다.</p>
+
+<h2>models.py</h2>
+<div class="codeblock"><span class="file">app/models.py</span><pre><code>from sqlalchemy import String
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.database import Base
+
+
+class Book(Base):
+    __tablename__ = "books"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    title: Mapped[str] = mapped_column(String(100))
+    author: Mapped[str] = mapped_column(String(50))
+    price: Mapped[int]
+    isbn: Mapped[str | None] = mapped_column(String(13), unique=True)</code></pre></div>
+
+<p>1일차의 매입가(<code>cost</code>)는 실습을 단순하게 하려고 데이터베이스 모델에는 넣지 않습니다.</p>
+
+<h2>테이블 만들기</h2>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>from app import models  # noqa: F401  모델을 불러와야 테이블 목록에 등록됩니다.
+from app.database import Base, engine
+
+# 아직 없는 테이블을 만듭니다. 2일차 오후(S4-P14)에 Alembic으로 바꿉니다.
+Base.metadata.create_all(bind=engine)</code></pre></div>
+
+<p><code>Base</code>를 상속한 클래스는 불러오는 순간 <code>Base.metadata</code>라는 목록에 등록됩니다. 그래서 <code>models</code>를 먼저 불러온 뒤 <code>create_all</code>을 실행해야 <code>books</code> 테이블이 만들어집니다. 이 줄의 <code>models</code>는 코드에서 직접 쓰지 않지만 지우면 안 됩니다.</p>
+
+<h2>실제로 만들어지는 테이블</h2>
+<p>서버를 실행하면 <code>book-api</code> 폴더에 <code>books.db</code>가 생기고, SQLAlchemy가 다음 SQL을 실행한 것과 같은 테이블이 만들어집니다.</p>
+<div class="codeblock"><pre><code>CREATE TABLE books (
+    id INTEGER NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    author VARCHAR(50) NOT NULL,
+    price INTEGER NOT NULL,
+    isbn VARCHAR(13),
+    PRIMARY KEY (id),
+    UNIQUE (isbn)
+)</code></pre></div>
+<div class="callout note"><p class="callout-title">create_all의 한계</p><p><code>create_all</code>은 <strong>없는 테이블만</strong> 만듭니다. 이미 있는 테이블에 열을 추가하는 변경은 반영하지 못합니다. 그래서 2일차 마지막 시간에 테이블 변경 이력을 관리하는 Alembic으로 바꿉니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p10/s3-p10-02.html"><span class="dir">이전</span>S3-P10-02 SQLAlchemy 2.0 핵심 구성</a>
+  <a class="next" href="../../s3/p10/s3-p10-04.html"><span class="dir">다음</span>S3-P10-04 Book 모델 만들기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

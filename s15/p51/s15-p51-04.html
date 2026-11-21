@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P51-04 로그 보안 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P51-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P51 CloudWatch 로그와 모니터링</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p51-01.html" style="flex:10" data-type="주요 개념" title="CloudWatch 개요 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p51-02.html" style="flex:10" data-type="주요 개념" title="컨테이너 로그 전송 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p51-03.html" style="flex:20" data-type="실습" title="로그 조회와 경보 설정 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s15-p51-04.html" style="flex:5" data-type="주요 개념" title="로그 보안 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s15-p51-05.html" style="flex:5" data-type="정리" title="정리: 모니터링 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S15-P51-04</span></div>
+<h1>로그 보안</h1>
+
+<p class="lead">로그를 한곳에 모으면 편리한 만큼, 그 로그가 새면 피해도 한꺼번에 커집니다. CloudWatch로 보낸 로그를 보안 관점에서 다시 점검합니다.</p>
+
+<h2>로그 속 민감정보 다시 점검</h2>
+<p>CloudWatch Logs Insights로 로그 전체를 검색해, 남으면 안 되는 값이 있는지 직접 확인합니다.</p>
+<div class="codeblock"><span class="file">토큰, 비밀번호 해시, 이메일 원문이 남았는지 찾기</span><pre><code>fields @timestamp, @message
+| filter @message like /eyJ[A-Za-z0-9_-]+\./ or @message like /\$argon2/ or @message like /@example\.com/
+| limit 20</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>찾는 것</th><th>기대하는 결과</th><th>남아 있다면</th></tr></thead><tbody><tr><td>JWT(<code>eyJ</code>로 시작)</td><td>없음. S10의 마스킹이 <code>[TOKEN]</code>으로 바꿈</td><td>마스킹이 적용되지 않은 로그 경로를 찾아 고칩니다.</td></tr><tr><td>비밀번호 해시(<code>$argon2</code>)</td><td>없음</td><td>같음</td></tr><tr><td>이메일 원문</td><td>없음. <code>u***@example.com</code>처럼 가려짐</td><td>같음</td></tr><tr><td>미리 서명된 URL(<code>X-Amz-Signature</code>)</td><td>없음. 리디렉션 응답 본문은 로그에 남기지 않음</td><td>URL은 5분 동안 열쇠이므로 로그에서 지워야 합니다.</td></tr></tbody></table></div>
+
+<h2>보존 기간</h2>
+<p>로그는 문제를 찾는 데 필요한 만큼만 보관합니다. 오래 둘수록 저장 요금이 늘고, 새었을 때 노출되는 개인정보도 많아집니다. 개인정보 보호 법령과 기관의 정책이 정한 기간이 있다면 그것을 따릅니다. 이번 실습은 30일로 정했습니다. 접속 기록처럼 법이 일정 기간 이상 보관을 요구하는 로그는 따로 정합니다.</p>
+
+<h2>로그를 볼 수 있는 사람</h2>
+<p>로그를 읽는 권한(<code>logs:GetLogEvents</code>, <code>logs:StartQuery</code>)도 IAM으로 정합니다. 개발자 모두에게 운영 로그 읽기 권한을 주기보다, 운영과 장애 대응을 맡은 사람에게만 줍니다. EC2 역할에는 쓰기 권한만 주었으므로, 서버가 뚫리더라도 그 역할로 다른 로그를 읽을 수는 없습니다.</p>
+<div class="quiz" data-answer="2"><p class="q">EC2 역할에 로그 쓰기 권한만 주고 읽기 권한을 주지 않은 이유로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p51q0" value="1"> <span>1. 읽기 권한은 요금이 비싸서</span></label><label><input type="radio" name="p51q0" value="2"> <span>2. 서버가 뚫려도 그 역할로 모인 로그를 읽어 가지 못하게 하려고</span></label><label><input type="radio" name="p51q0" value="3"> <span>3. awslogs 드라이버가 읽기 권한을 지원하지 않아서</span></label><label><input type="radio" name="p51q0" value="4"> <span>4. 로그 그룹 이름이 길어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>역할에는 그 일을 하는 데 필요한 권한만 줍니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p51/s15-p51-03.html"><span class="dir">이전</span>S15-P51-03 로그 조회와 경보 설정</a>
+  <a class="next" href="../../s15/p51/s15-p51-05.html"><span class="dir">다음</span>S15-P51-05 정리: 모니터링</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P28-05 정리: 4일차 마무리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P28-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 컨테이너와 로그</a><span class="sep">/</span><span>S8-P28 로깅과 모니터링 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p28-01.html" style="flex:10" data-type="주요 개념" title="로그가 필요한 이유 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p28-02.html" style="flex:10" data-type="주요 개념" title="logging 설정과 요청 ID (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p28-03.html" style="flex:20" data-type="실습" title="API에 로깅 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s8-p28-04.html" style="flex:5" data-type="실습" title="헬스 체크 확장 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s8-p28-05.html" style="flex:5" data-type="정리" title="정리: 4일차 마무리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S8-P28-05</span></div>
+<h1>정리: 4일차 마무리</h1>
+
+<h2>4일차 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>배운 것</th><th>어디에 있나요</th></tr></thead><tbody><tr><td>pytest, fixture, 테스트 격리</td><td><code>tests/conftest.py</code>, <code>tests/test_*.py</code></td></tr><tr><td>커버리지와 CI</td><td><code>pytest --cov</code>, <code>.github/workflows/test.yml</code></td></tr><tr><td>컨테이너 이미지</td><td><code>Dockerfile</code>, <code>.dockerignore</code></td></tr><tr><td>API와 PostgreSQL 함께 실행</td><td><code>compose.yaml</code>, 볼륨, <code>docker compose run --rm api alembic upgrade head</code></td></tr><tr><td>구조화 로그와 요청 ID</td><td><code>app/logging_config.py</code>, <code>X-Request-ID</code></td></tr><tr><td>데이터베이스를 확인하는 헬스 체크</td><td><code>GET /health</code>의 200과 503</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">컨테이너에서 실행하는 API의 로그를 어디에 쓰는 것이 알맞은가요?</p><label><input type="radio" name="p28q1" value="1"> <span>1. 컨테이너 안의 logs 폴더 파일</span></label><label><input type="radio" name="p28q1" value="2"> <span>2. 표준 출력</span></label><label><input type="radio" name="p28q1" value="3"> <span>3. 데이터베이스 테이블</span></label><label><input type="radio" name="p28q1" value="4"> <span>4. 이메일</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>표준 출력으로 쓰면 Docker와 클라우드가 모아 보관합니다. 컨테이너 안의 파일은 컨테이너와 함께 사라집니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">사용자가 오류 화면과 함께 X-Request-ID 값을 알려 왔습니다. 이 값으로 할 수 있는 일은 무엇인가요?</p><label><input type="radio" name="p28q2" value="1"> <span>1. 토큰을 다시 발급한다.</span></label><label><input type="radio" name="p28q2" value="2"> <span>2. 요청을 다시 보낸다.</span></label><label><input type="radio" name="p28q2" value="3"> <span>3. 사용자의 비밀번호를 찾는다.</span></label><label><input type="radio" name="p28q2" value="4"> <span>4. 그 요청에서 남은 로그를 모두 찾아 원인을 본다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>한 요청 안의 로그는 모두 같은 request_id를 가지므로 그 요청의 흐름만 골라 볼 수 있습니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">로그에 남겨도 되는 것은 무엇인가요?</p><label><input type="radio" name="p28q3" value="1"> <span>1. Authorization 헤더</span></label><label><input type="radio" name="p28q3" value="2"> <span>2. 대여한 사용자의 번호와 도서 번호</span></label><label><input type="radio" name="p28q3" value="3"> <span>3. SECRET_KEY</span></label><label><input type="radio" name="p28q3" value="4"> <span>4. 로그인에 실패한 비밀번호</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>번호는 그 자체로 계정을 쓰거나 비밀을 알아낼 수 없습니다. 나머지는 모두 남기면 안 됩니다.</p></div>
+
+<h2>5일차 예고</h2>
+<p>4일 동안 도서 API를 만들고, 테스트하고, 컨테이너로 실행했습니다. 그런데 이 API는 안전할까요? 5일차부터는 행정안전부와 한국인터넷진흥원(KISA)의 소프트웨어 개발보안 가이드를 기준으로, 지금까지 만든 도서 API에서 보안약점을 직접 찾아 고칩니다. 공격을 재현해 보고 방어한 뒤 다시 공격해 확인하는 방식으로 진행합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p28/s8-p28-04.html"><span class="dir">이전</span>S8-P28-04 헬스 체크 확장</a>
+  <a class="next" href="../../s9/p29/s9-p29-01.html"><span class="dir">다음</span>S9-P29-01 4일차 복습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

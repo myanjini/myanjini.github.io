@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P45-02 Docker 설치와 소스 받기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P45-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P45 EC2에서 Docker로 API 실행</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p45-01.html" style="flex:10" data-type="주요 개념" title="서버에 Docker 설치하기 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p45-02.html" style="flex:15" data-type="실습" title="Docker 설치와 소스 받기 (15분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s13-p45-03.html" style="flex:15" data-type="실습" title="컨테이너로 API 실행 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s13-p45-04.html" style="flex:5" data-type="주요 개념" title="접속이 안 될 때 점검 순서 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p45-05.html" style="flex:5" data-type="정리" title="정리: EC2 배포 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S13-P45-02</span></div>
+<h1>Docker 설치와 소스 받기</h1>
+
+<p class="lead">EC2 서버에 Docker, Git, Compose, Buildx를 설치하고, GitHub에서 도서 API 소스를 받습니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>서버에 Docker를 설치해 자동 시작되게 하고, 도서 API 소스를 받아 둘 수 있습니다.</p></div>
+<ol class="steps"><li><h3>Docker와 Git 설치</h3><p>Session Manager로 접속해 <code>bash</code>로 바꾼 뒤 실행합니다.</p><div class="codeblock term"><pre><code>sudo dnf install -y docker git
+sudo systemctl enable --now docker
+sudo usermod -aG docker ssm-user
+...
+Complete!
+Created symlink /etc/systemd/system/multi-user.target.wants/docker.service → /usr/lib/systemd/system/docker.service.</code></pre></div>
+</li><li><h3>다시 접속해 그룹 적용</h3>
+<p>그룹 변경은 새 세션부터 적용됩니다. 브라우저의 Session Manager 탭에서 <strong>종료</strong>를 누르고 다시 연결한 뒤 확인합니다.</p>
+<div class="codeblock term"><pre><code>bash
+cd ~
+id
+uid=1001(ssm-user) gid=1001(ssm-user) groups=1001(ssm-user),992(docker)
+
+docker version --format "Client {{.Client.Version}} / Server {{.Server.Version}}"
+Client 25.0.14 / Server 25.0.14
+
+systemctl is-enabled docker; systemctl is-active docker
+enabled
+active</code></pre></div>
+<p><code>groups</code>에 <code>docker</code>가 보이고, <code>sudo</code> 없이 <code>docker version</code>이 서버(Server) 버전까지 보여 주면 됩니다. 버전 숫자는 설치한 날의 저장소에 따라 다릅니다.</p></li><li><h3>Compose와 Buildx 설치</h3><div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-compose \
+  https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64
+BUILDX_VERSION=v0.39.1
+sudo curl -fsSL -o /usr/local/lib/docker/cli-plugins/docker-buildx \
+  https://github.com/docker/buildx/releases/download/$BUILDX_VERSION/buildx-$BUILDX_VERSION.linux-amd64
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/lib/docker/cli-plugins/docker-buildx
+
+docker compose version
+Docker Compose version v5.8.0
+docker buildx version
+github.com/docker/buildx v0.39.1 ...</code></pre></div>
+<p>Compose는 최신 버전을 받으므로 숫자가 다를 수 있습니다.</p></li><li><h3>소스 받기</h3>
+<p>내 GitHub 저장소 주소로 받습니다. 저장소 화면의 초록색 <strong>Code</strong> 버튼에서 HTTPS 주소를 복사합니다.</p>
+<div class="codeblock term"><pre><code>git clone https://github.com/내아이디/book-api.git
+cd book-api
+git log --oneline -3
+ls
+Dockerfile  alembic.ini  app  compose.yaml  migrations  requirements.txt  tests  ...</code></pre></div>
+<div class="callout note"><p class="callout-title">비공개 저장소라면</p><p>비공개 저장소는 <code>git clone</code>할 때 아이디와 비밀번호를 묻습니다. 비밀번호 자리에는 GitHub 비밀번호가 아니라 토큰을 넣습니다. GitHub의 Settings, Developer settings, Personal access tokens, Fine-grained tokens에서 이 저장소 하나만, Contents 읽기 권한만, 만료 7일로 토큰을 만듭니다. 받은 뒤에는 서버에 토큰이 남지 않도록 Git이 비밀번호를 저장하지 않게 두고(기본값), 오늘 오후에 ECR로 바꾸면 토큰을 삭제합니다.</p></div>
+</li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>docker version의 Server 버전</td><td><input data-save="dockerver" aria-label="내 결과"></td></tr><tr><td>docker compose version</td><td><input data-save="composever" aria-label="내 결과"></td></tr><tr><td>git log의 최신 커밋</td><td><input data-save="commit" aria-label="내 결과"></td></tr></tbody></table></div>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p45a1"> <span>sudo 없이 docker 명령이 동작한다.</span></label></li><li><label><input type="checkbox" data-save="p45a2"> <span>docker 서비스가 enabled, active이다.</span></label></li><li><label><input type="checkbox" data-save="p45a3"> <span>docker compose와 docker buildx 명령이 동작한다.</span></label></li><li><label><input type="checkbox" data-save="p45a4"> <span>서버의 ~/book-api에 도서 API 소스가 있다.</span></label></li></ul>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p45/s13-p45-01.html"><span class="dir">이전</span>S13-P45-01 서버에 Docker 설치하기</a>
+  <a class="next" href="../../s13/p45/s13-p45-03.html"><span class="dir">다음</span>S13-P45-03 컨테이너로 API 실행</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

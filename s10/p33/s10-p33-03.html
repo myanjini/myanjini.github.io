@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P33-03 비밀정보 정리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P33-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 보안기능과 에러처리</a><span class="sep">/</span><span>S10-P33 보안기능 2: 중요정보 보호와 암호화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p33-01.html" style="flex:10" data-type="주요 개념" title="중요정보와 암호화 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p33-02.html" style="flex:10" data-type="주요 개념" title="하드코딩된 비밀정보 찾기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s10-p33-03.html" style="flex:20" data-type="실습" title="비밀정보 정리 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p33-04.html" style="flex:5" data-type="주요 개념" title="전송 구간 보호 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p33-05.html" style="flex:5" data-type="정리" title="정리: 중요정보 보호 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S10-P33-03</span></div>
+<h1>비밀정보 정리</h1>
+
+<p class="lead">내 프로젝트에서 비밀 값을 점검하고, 약한 비밀 키로는 서버가 시작하지 않게 막고, 관리자 목록 화면의 이메일을 가립니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>비밀 값을 점검하고 정리하며, 약한 키를 거부하는 설정과 개인정보 마스킹을 적용할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>내 프로젝트 점검</h3>
+<div class="codeblock term"><pre><code>git grep -n -i -E "secret|password|token|api_key"
+git log -p -S "SECRET_KEY=" --oneline
+git status --ignored</code></pre></div>
+
+<p>값이 직접 적힌 곳이 있는지, <code>.env</code>를 커밋한 적이 있는지, <code>.env</code>가 <code>Ignored files</code>에 나오는지 확인합니다. 발견했다면 앞 페이지의 교체 절차를 따릅니다.</p>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>값이 적힌 곳</td><td><input data-save="k1" aria-label="내 결과"></td></tr><tr><td>.env 커밋 이력</td><td><input data-save="k2" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>.env.example 정리</h3>
+<p>필요한 설정을 빠짐없이 적고, 비밀 값 자리는 비워 둡니다. 예시 값(<code>change-me</code>)을 채워 두면 그대로 복사해 쓰는 사람이 생기기 때문입니다.</p>
+<div class="codeblock"><span class="file">.env.example</span><pre><code># 이 파일을 .env로 복사한 뒤 값을 채웁니다. .env는 Git에 올리지 않습니다.
+# 비밀 값은 아래 명령으로 만듭니다.
+#   python -c "import secrets; print(secrets.token_urlsafe(32))"
+
+# 실행 환경: development 또는 production
+APP_ENV=development
+APP_NAME=도서 관리 API
+LOG_LEVEL=INFO
+
+# 데이터베이스(로컬 개발은 SQLite, Compose는 compose.yaml에서 PostgreSQL 주소를 넣습니다)
+DATABASE_URL=sqlite:///./books.db
+
+# [비밀] JWT 서명 키. 32자 이상, 환경마다 다르게
+SECRET_KEY=
+# [비밀] Compose의 PostgreSQL 비밀번호
+POSTGRES_PASSWORD=
+
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=14
+CORS_ORIGINS=["http://localhost:5173"]</code></pre></div>
+</li><li><h3>약한 비밀 키 거부하기</h3>
+<div class="codeblock"><span class="file">app/config.py</span><pre><code>    @field_validator("secret_key")
+    @classmethod
+    def check_secret_key(cls, value: str) -&gt; str:
+        """예시 값이나 짧은 값으로는 서버가 시작하지 않게 합니다."""
+        if len(value) &lt; 32 or value.lower() in WEAK_SECRETS:
+            raise ValueError("SECRET_KEY는 secrets 모듈로 만든 32자 이상의 값이어야 합니다.")
+        return value</code></pre></div>
+
+<p>파일 위쪽에 <code>from pydantic import field_validator</code>와 <code>WEAK_SECRETS</code> 집합을 추가합니다. 설정 오류 메시지에는 기본적으로 입력한 값이 찍히므로, 진짜 비밀 키가 조금 짧아서 거절될 때 그 값이 로그에 남을 수 있습니다. 이것도 막습니다.</p>
+<div class="codeblock"><span class="file">app/config.py</span><pre><code>    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",  # .env에 Compose가 쓰는 값(POSTGRES_PASSWORD)이 있어도 오류 없이 넘어갑니다.
+        hide_input_in_errors=True,  # 설정 오류 메시지에 입력한 값(비밀 키)을 찍지 않습니다.
+    )</code></pre></div>
+<details><summary>app/config.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/config.py</span><pre><code>from pydantic import field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# 예시나 기본값으로 흔히 쓰이는, 비밀 키로 쓰면 안 되는 값
+WEAK_SECRETS = {"change-me", "changeme", "secret", "secret-key", "your-secret-key"}
+
+
+class Settings(BaseSettings):
+    """환경 변수와 .env 파일에서 설정값을 읽습니다. 이름은 대소문자를 가리지 않습니다."""
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",  # .env에 Compose가 쓰는 값(POSTGRES_PASSWORD)이 있어도 오류 없이 넘어갑니다.
+        hide_input_in_errors=True,  # 설정 오류 메시지에 입력한 값(비밀 키)을 찍지 않습니다.
+    )
+
+    app_name: str = "도서 관리 API"
+    database_url: str = "sqlite:///./books.db"
+    secret_key: str  # 기본값이 없으므로 반드시 설정해야 합니다.
+    access_token_expire_minutes: int = 15  # 액세스 토큰 유효 시간(분). 재발급이 생겨 짧게 줄입니다.
+    refresh_token_expire_days: int = 14  # 리프레시 토큰 유효 기간(일)
+    upload_dir: str = "uploads"  # 올린 파일을 저장할 폴더
+    log_level: str = "INFO"  # DEBUG, INFO, WARNING, ERROR 중 하나
+    cors_origins: list[str] = ["http://localhost:5173"]
+
+    @field_validator("secret_key")
+    @classmethod
+    def check_secret_key(cls, value: str) -&gt; str:
+        """예시 값이나 짧은 값으로는 서버가 시작하지 않게 합니다."""
+        if len(value) &lt; 32 or value.lower() in WEAK_SECRETS:
+            raise ValueError("SECRET_KEY는 secrets 모듈로 만든 32자 이상의 값이어야 합니다.")
+        return value
+
+
+settings = Settings()</code></pre></div>
+</div></details>
+</li><li><h3>약한 키로 실행해 보고 새 키 만들기</h3>
+<p><code>.env</code>의 <code>SECRET_KEY</code>를 잠시 <code>change-me</code>로 바꾸고 서버를 실행합니다.</p>
+<div class="codeblock term"><pre><code>uvicorn app.main:app
+...
+secret_key
+  Value error, SECRET_KEY는 secrets 모듈로 만든 32자 이상의 값이어야 합니다. [type=value_error]</code></pre></div>
+
+<p>서버가 시작하지 않고, 오류에 입력한 값이 보이지 않습니다. 새 키를 만들어 <code>.env</code>에 넣습니다.</p>
+<div class="codeblock term"><pre><code>python -c "import secrets; print(secrets.token_urlsafe(32))"</code></pre></div>
+
+<p>키를 바꾸면 로그인되어 있던 토큰은 모두 무효가 되므로 Swagger UI에서 다시 로그인합니다.</p>
+</li><li><h3>관리자 목록에서 이메일 가리기</h3>
+<p>관리자도 목록 화면에서는 누가 누구인지만 알면 됩니다. 전체 이메일은 한 명을 골라 상세 조회할 때만 보여 줍니다. 필요한 만큼만 보여 주는 것이 개인정보 보호의 기본입니다.</p>
+<div class="codeblock"><span class="file">app/privacy.py</span><pre><code>"""개인정보와 비밀 값을 가리는 도구"""
+
+
+def mask_email(email: str) -&gt; str:
+    """user1@example.com을 us***@example.com처럼 앞 두 글자와 도메인만 남깁니다."""
+    local, _, domain = email.partition("@")
+    if not domain:
+        return "***"
+    return f"{local[:2]}***@{domain}"</code></pre></div>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code>class UserSummary(UserRead):
+    """목록 화면용 사용자 정보. 이메일은 일부만 보여 줍니다."""
+
+    @field_serializer("email")
+    def mask_email_field(self, email: str) -&gt; str:
+        return mask_email(email)</code></pre></div>
+
+<p><code>app/schemas.py</code> 위쪽 가져오기에 <code>field_serializer</code>와 <code>from app.privacy import mask_email</code>를 추가합니다. <code>field_serializer</code>는 응답으로 바꿀 때만 값을 바꾸므로 데이터베이스의 값은 그대로입니다.</p>
+<div class="codeblock"><span class="file">app/routers/admin.py</span><pre><code>@router.get("/users/{user_id}", response_model=UserRead, summary="사용자 상세 조회",
+            responses={404: {"description": "사용자를 찾을 수 없음"}})
+def get_user(db: SessionDep, user_id: int):
+    user = db.get(User, user_id)
+    if user is None:
+        raise AppError(404, "USER_NOT_FOUND", f"{user_id}번 사용자를 찾을 수 없습니다.")
+    return user</code></pre></div>
+
+<p>목록 API의 응답 모델을 <code>list[UserSummary]</code>로 바꾸고 상세 조회 API를 추가합니다.</p>
+<details><summary>app/routers/admin.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/routers/admin.py</span><pre><code>from fastapi import APIRouter, Depends
+
+from app.dependencies import PageDep, SessionDep, require_admin
+from app.errors import AppError
+from app.models import User
+from app.repositories import loans as loan_repo
+from app.repositories import users as user_repo
+from app.schemas import LoanRead, UserRead, UserSummary
+
+# 이 라우터의 모든 API에 관리자 검사를 한 번에 겁니다.
+router = APIRouter(prefix="/admin", tags=["관리자"], dependencies=[Depends(require_admin)])
+
+
+@router.get("/users", response_model=list[UserSummary], summary="전체 사용자 목록(이메일 일부 가림)")
+def list_users(db: SessionDep, page: PageDep):
+    return user_repo.list_users(db, page.skip, page.limit)
+
+
+@router.get("/users/{user_id}", response_model=UserRead, summary="사용자 상세 조회",
+            responses={404: {"description": "사용자를 찾을 수 없음"}})
+def get_user(db: SessionDep, user_id: int):
+    user = db.get(User, user_id)
+    if user is None:
+        raise AppError(404, "USER_NOT_FOUND", f"{user_id}번 사용자를 찾을 수 없습니다.")
+    return user
+
+
+@router.get("/loans", response_model=list[LoanRead], summary="전체 대여 목록")
+def list_loans(db: SessionDep, page: PageDep):
+    return loan_repo.list_all(db, page.skip, page.limit)</code></pre></div>
+</div></details>
+<div class="table-wrap"><table><thead><tr><th>요청(관리자)</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td><code>GET /admin/users</code></td><td><code>"email": "us***@example.com"</code></td><td><input data-save="k3" aria-label="내 결과"></td></tr><tr><td><code>GET /admin/users/1</code></td><td>전체 이메일</td><td><input data-save="k4" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>회귀 테스트 추가</h3>
+<p><code>tests/test_attacks.py</code> 위쪽에 <code>from pydantic import ValidationError</code>와 <code>from app.config import Settings</code>를 추가하고 덧붙입니다. <code>_env_file=None</code>은 <code>.env</code>를 읽지 말고 넘긴 값만으로 설정을 만들라는 뜻입니다.</p>
+<div class="codeblock"><span class="file">tests/test_attacks.py</span><pre><code>def test_weak_secret_key_is_rejected():
+    for weak in ["change-me", "short-key"]:
+        with pytest.raises(ValidationError):
+            Settings(secret_key=weak, _env_file=None)
+
+
+def test_admin_user_list_masks_email(client, make_user):
+    admin = make_user("admin@example.com", role="admin")
+    users = client.get("/admin/users", headers=admin).json()
+    assert users[0]["email"] == "ad***@example.com"
+    detail = client.get(f"/admin/users/{users[0]['id']}", headers=admin).json()
+    assert detail["email"] == "admin@example.com"  # 상세 조회에서만 전체를 보여 줍니다.</code></pre></div>
+<div class="codeblock term"><pre><code>pytest</code></pre></div>
+</li></ol>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>코드와 Git 이력에서 비밀 값을 점검했다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>.env.example에 필요한 설정이 모두 있고 비밀 값은 비어 있다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>change-me나 32자 미만의 키로는 서버가 시작하지 않고, 오류에 키가 보이지 않는다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>관리자 목록에서는 이메일 일부가 가려지고, 상세 조회에서만 전체가 보인다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p33-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p33/s10-p33-02.html"><span class="dir">이전</span>S10-P33-02 하드코딩된 비밀정보 찾기</a>
+  <a class="next" href="../../s10/p33/s10-p33-04.html"><span class="dir">다음</span>S10-P33-04 전송 구간 보호</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

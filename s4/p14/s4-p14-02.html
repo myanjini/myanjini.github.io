@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P14-02 Alembic 설정 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P14-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 데이터베이스 활용과 마이그레이션</a><span class="sep">/</span><span>S4-P14 Alembic 마이그레이션</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p14-01.html" style="flex:10" data-type="주요 개념" title="왜 마이그레이션인가 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s4-p14-02.html" style="flex:10" data-type="주요 개념" title="Alembic 설정 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s4-p14-03.html" style="flex:20" data-type="실습" title="리비전 생성과 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s4-p14-04.html" style="flex:5" data-type="주요 개념" title="마이그레이션 운영 수칙 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s4-p14-05.html" style="flex:5" data-type="정리" title="정리: 2일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S4-P14-02</span></div>
+<h1>Alembic 설정</h1>
+
+<p class="lead">Alembic을 설치하고 우리 프로젝트의 모델과 설정을 읽도록 연결하는 과정을 강사 화면으로 봅니다.</p>
+<h2>설치와 초기화</h2>
+<div class="codeblock term"><pre><code>pip install alembic
+alembic init migrations</code></pre></div>
+
+<p><code>book-api</code> 폴더에서 실행하면 다음 파일과 폴더가 생깁니다.</p>
+<div class="codeblock"><pre><code>book-api/
+├── alembic.ini          Alembic 설정 파일
+├── migrations/
+│   ├── env.py           마이그레이션을 실행할 때 읽는 파이썬 파일
+│   ├── script.py.mako   리비전 파일의 틀
+│   └── versions/        리비전 파일이 쌓이는 곳
+└── app/</code></pre></div>
+
+<h2>env.py에 우리 프로젝트 연결하기</h2>
+<p><code>migrations/env.py</code>를 열고 <code>target_metadata = None</code> 줄을 찾아 아래 코드로 바꿉니다.</p>
+<div class="codeblock"><span class="file">migrations/env.py</span><pre><code>from app import models  # noqa: F401  모델을 불러와야 Base.metadata에 테이블이 등록됩니다.
+from app.config import settings
+from app.database import Base
+
+# 데이터베이스 주소는 alembic.ini가 아니라 앱 설정(.env)에서 읽습니다.
+config.set_main_option("sqlalchemy.url", settings.database_url)
+
+# 자동 생성할 때 비교할 기준: 우리가 정의한 모델
+target_metadata = Base.metadata</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>코드</th><th>하는 일</th></tr></thead><tbody><tr><td><code>config.set_main_option("sqlalchemy.url", ...)</code></td><td>데이터베이스 주소를 <code>alembic.ini</code>에 따로 적지 않고 S3-P9의 <code>.env</code> 설정을 그대로 씁니다. 주소와 비밀번호를 한곳에서만 관리합니다.</td></tr><tr><td><code>target_metadata = Base.metadata</code></td><td>자동 생성할 때 "이상적인 모습"으로 삼을 기준입니다. 모델과 실제 데이터베이스를 비교해 차이를 찾아 줍니다.</td></tr></tbody></table></div>
+
+<p>같은 파일 아래쪽 <code>run_migrations_online</code> 함수의 <code>context.configure(...)</code>에는 한 줄을 추가합니다.</p>
+<div class="codeblock"><span class="file">migrations/env.py</span><pre><code>        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            render_as_batch=True,  # SQLite에서 열 변경을 안전하게 처리합니다.
+        )</code></pre></div>
+
+<p>SQLite는 열을 바꾸는 기능이 제한적이라, Alembic이 새 테이블을 만들어 옮기는 방식(batch)으로 처리하게 하는 옵션입니다.</p>
+
+<h2>create_all 지우기</h2>
+<p>이제 테이블은 Alembic이 만듭니다. <code>app/main.py</code>에서 <code>Base.metadata.create_all(...)</code> 줄과, 그 때문에 넣었던 <code>from app import models</code>, <code>from app.database import Base, engine</code> 줄을 지웁니다. 둘이 함께 있으면 누가 테이블을 만들었는지 헷갈리고, Alembic 기록과 실제 데이터베이스가 어긋납니다.</p>
+<div class="callout note"><p class="callout-title">alembic.ini는 언제 고치나요</p><p>기본 설정의 <code>prepend_sys_path = .</code> 덕분에 Alembic이 <code>app</code> 패키지를 찾을 수 있어 이 과정에서는 <code>alembic.ini</code>를 고치지 않습니다. 파일 안의 <code>sqlalchemy.url</code> 예시 줄은 env.py에서 덮어쓰므로 그대로 둡니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s4/p14/s4-p14-01.html"><span class="dir">이전</span>S4-P14-01 왜 마이그레이션인가</a>
+  <a class="next" href="../../s4/p14/s4-p14-03.html"><span class="dir">다음</span>S4-P14-03 리비전 생성과 적용</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

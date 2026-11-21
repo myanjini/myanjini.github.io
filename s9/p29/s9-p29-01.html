@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P29-01 4일차 복습 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P29-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P29 소프트웨어 개발보안과 KISA 가이드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p29-01.html" style="flex:5" data-type="주요 개념" title="4일차 복습 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s9-p29-02.html" style="flex:10" data-type="주요 개념" title="소프트웨어 개발보안이란 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p29-03.html" style="flex:10" data-type="주요 개념" title="KISA 가이드의 보안약점 분류 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s9-p29-04.html" style="flex:20" data-type="실습" title="도서 API에서 공격 지점 찾기 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s9-p29-05.html" style="flex:5" data-type="정리" title="정리: 개발보안의 틀 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S9-P29-01</span></div>
+<h1>4일차 복습</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>소프트웨어 개발보안의 필요성과 KISA 가이드의 보안약점 분류를 설명할 수 있습니다.</p></div>
+
+<p class="lead">5일차를 시작하기 전에 4일차에 만든 것을 돌아봅니다. 오늘부터는 지금까지 만든 도서 API를 공격자의 눈으로 다시 봅니다.</p>
+
+<h2>4일차에 만든 것</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>한 줄 요약</th><th>어디에 있나요</th></tr></thead><tbody><tr><td>테스트</td><td>fixture로 테스트마다 빈 데이터베이스를 쓰고, 인증과 권한까지 자동으로 시험합니다.</td><td><code>tests/</code>, <code>pytest --cov</code></td></tr><tr><td>CI</td><td>푸시할 때마다 GitHub Actions가 빈 서버에서 테스트를 실행합니다.</td><td><code>.github/workflows/test.yml</code></td></tr><tr><td>컨테이너</td><td>Dockerfile로 이미지를 만들고, Compose로 API와 PostgreSQL을 함께 실행합니다.</td><td><code>Dockerfile</code>, <code>compose.yaml</code></td></tr><tr><td>로깅</td><td>JSON 로그와 요청 ID로 한 요청에서 일어난 일을 모아 봅니다.</td><td><code>app/logging_config.py</code></td></tr></tbody></table></div>
+
+<h2>오늘 하는 방식</h2>
+<p>보안약점마다 다음 네 단계를 거칩니다. 4일차에 배운 테스트가 마지막 단계에서 다시 쓰입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>단계</th><th>하는 일</th></tr></thead><tbody><tr><td>재현</td><td>약점이 있는 코드에서 공격이 실제로 통하는 것을 확인합니다.</td></tr><tr><td>원인</td><td>왜 통했는지 코드에서 찾습니다.</td></tr><tr><td>조치</td><td>안전한 코드로 고치고, 같은 공격이 막히는지 확인합니다.</td></tr><tr><td>회귀 테스트</td><td>그 공격을 테스트로 남겨, 나중에 누가 코드를 고쳐도 약점이 되살아나지 않게 합니다.</td></tr></tbody></table></div>
+<div class="callout warn"><p class="callout-title">실습용 취약 코드입니다</p><p>이 페이지의 "위험한 코드"는 공격을 직접 확인하려고 일부러 만든 것입니다. 내 PC에서만 실행하고, 확인이 끝나면 바로 안전한 코드로 바꿉니다. Git에 올리거나 서버에 배포하지 않습니다. 공격 실습은 내가 만든 서비스에서만 합니다. 허락받지 않은 남의 서비스에 시도하면 법에 따라 처벌받습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s8/p28/s8-p28-05.html"><span class="dir">이전</span>S8-P28-05 정리: 4일차 마무리</a>
+  <a class="next" href="../../s9/p29/s9-p29-02.html"><span class="dir">다음</span>S9-P29-02 소프트웨어 개발보안이란</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

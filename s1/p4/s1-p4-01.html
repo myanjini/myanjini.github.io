@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P4-01 Pydantic 모델 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P4-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. REST API와 FastAPI 기초</a><span class="sep">/</span><span>S1-P4 Pydantic으로 요청 본문 검증하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p4-01.html" style="flex:10" data-type="주요 개념" title="Pydantic 모델 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p4-02.html" style="flex:10" data-type="주요 개념" title="요청 본문 받기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s1-p4-03.html" style="flex:20" data-type="실습" title="도서 등록 API (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s1-p4-04.html" style="flex:5" data-type="실습" title="검증 오류 읽기 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s1-p4-05.html" style="flex:5" data-type="정리" title="정리: 요청 검증 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S1-P4-01</span></div>
+<h1>Pydantic 모델</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>Pydantic 모델과 Field 제약으로 POST 요청 본문을 검증할 수 있습니다.</p></div>
+
+<p class="lead">도서를 등록할 때는 제목, 저자, 가격처럼 여러 값을 한꺼번에 받아야 합니다. 이런 데이터의 모양과 규칙을 정해 두는 도구가 Pydantic입니다.</p>
+
+<h2>왜 규칙이 필요할까요</h2>
+<p>클라이언트가 항상 올바른 데이터를 보낸다는 보장은 없습니다. 제목을 빠뜨리거나, 가격에 음수를 넣거나, 숫자 자리에 글자를 넣을 수 있습니다. 이런 데이터가 그대로 저장되면 나중에 찾기 어려운 문제가 생깁니다. 그래서 서버는 데이터를 받는 입구에서 먼저 검사해야 합니다. 5일차 개발 보안 단원에서도 이 "입구 검사"가 가장 먼저 등장합니다.</p>
+
+<h2>BaseModel로 데이터 모양 정하기</h2>
+<div class="codeblock"><pre><code>from pydantic import BaseModel, Field
+
+
+class BookCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+    author: str = Field(min_length=1, max_length=50)
+    price: int = Field(ge=0, le=1_000_000)
+    isbn: str | None = None</code></pre></div>
+
+<p><code>BaseModel</code>을 상속한 클래스에 필드 이름과 타입을 적으면, 그 자체가 "이런 모양의 데이터만 받겠다"는 규칙이 됩니다.</p>
+
+<h2>필수 항목과 선택 항목</h2>
+<div class="table-wrap"><table><thead><tr><th>필드</th><th>선언</th><th>뜻</th></tr></thead><tbody><tr><td><code>title</code></td><td><code>str = Field(...)</code></td><td>기본값이 없으므로 반드시 보내야 합니다.</td></tr><tr><td><code>isbn</code></td><td><code>str | None = None</code></td><td>보내지 않아도 되고, 그러면 <code>None</code>이 들어갑니다.</td></tr></tbody></table></div>
+
+<h2>Field로 세부 규칙 정하기</h2>
+<div class="table-wrap"><table><thead><tr><th>규칙</th><th>뜻</th><th>예</th></tr></thead><tbody><tr><td><code>min_length</code>, <code>max_length</code></td><td>문자열의 최소, 최대 길이</td><td>제목은 1자 이상 100자 이하</td></tr><tr><td><code>ge</code>, <code>le</code></td><td>숫자의 최솟값, 최댓값(같은 값 포함)</td><td>가격은 0 이상 1,000,000 이하</td></tr><tr><td><code>gt</code>, <code>lt</code></td><td>숫자의 최솟값, 최댓값(같은 값 제외)</td><td>수량은 0보다 큼</td></tr><tr><td><code>pattern</code></td><td>문자열이 따라야 할 정규 표현식</td><td>ISBN은 숫자 13자리</td></tr></tbody></table></div>
+
+<p><code>ge</code>는 greater than or equal(크거나 같음), <code>le</code>는 less than or equal(작거나 같음)의 줄임말입니다. <code>1_000_000</code>의 밑줄은 숫자를 읽기 쉽게 쓰는 Python 표기로, 값은 1000000과 같습니다.</p>
+<div class="callout note"><p class="callout-title">알아 두면 좋은 점</p><p>Pydantic은 바꿀 수 있는 값은 알아서 바꿔 줍니다. 가격에 문자열 <code>"15000"</code>을 보내면 정수 <code>15000</code>으로 바꿔 받습니다. 하지만 <code>"만오천"</code>처럼 바꿀 수 없는 값은 오류로 처리합니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p3/s1-p3-05.html"><span class="dir">이전</span>S1-P3-05 정리: 라우팅</a>
+  <a class="next" href="../../s1/p4/s1-p4-02.html"><span class="dir">다음</span>S1-P4-02 요청 본문 받기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

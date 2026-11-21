@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P29-04 도서 API에서 공격 지점 찾기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P29-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P29 소프트웨어 개발보안과 KISA 가이드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p29-01.html" style="flex:5" data-type="주요 개념" title="4일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s9-p29-02.html" style="flex:10" data-type="주요 개념" title="소프트웨어 개발보안이란 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p29-03.html" style="flex:10" data-type="주요 개념" title="KISA 가이드의 보안약점 분류 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s9-p29-04.html" style="flex:20" data-type="실습" title="도서 API에서 공격 지점 찾기 (20분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s9-p29-05.html" style="flex:5" data-type="정리" title="정리: 개발보안의 틀 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S9-P29-04</span></div>
+<h1>도서 API에서 공격 지점 찾기</h1>
+
+<p class="lead">공격자는 서비스가 바깥의 값을 받아들이는 모든 곳을 노립니다. 도서 API에서 그런 곳을 빠짐없이 찾아 목록으로 만듭니다. 이 목록이 오늘 하루 점검의 지도가 됩니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>도서 API의 입력 지점, 인증 지점, 파일 처리 지점, 외부 연동 지점을 찾아 공격 지점 목록을 만들 수 있습니다.</p></div>
+
+<h2>1. 공격 지점의 종류</h2>
+<div class="table-wrap"><table><thead><tr><th>종류</th><th>찾는 질문</th><th>예</th></tr></thead><tbody><tr><td>입력 지점</td><td>사용자가 정한 값이 들어오는 곳은 어디인가?</td><td>경로 변수, 쿼리 파라미터, 요청 본문, 헤더</td></tr><tr><td>인증 지점</td><td>누구인지 확인하거나 권한을 판단하는 곳은 어디인가?</td><td>로그인, 토큰 검사, 소유자 검사</td></tr><tr><td>파일 처리 지점</td><td>파일을 받거나, 저장하거나, 내보내는 곳은 어디인가?</td><td>표지 업로드, 표지 내보내기</td></tr><tr><td>외부 연동 지점</td><td>서버가 다른 시스템에 요청하거나 명령을 실행하는 곳은 어디인가?</td><td>데이터베이스, 앞으로 연결할 AWS 서비스</td></tr></tbody></table></div>
+
+<h2>2. 목록 채우기</h2>
+<p>Swagger UI(<code>/docs</code>)와 코드를 함께 보며 표를 채웁니다. 칸마다 그 API에서 해당하는 것을 짧게 적고, 없으면 비워 둡니다.</p>
+<div class="table-wrap"><table><thead><tr><th>API</th><th>입력 지점</th><th>인증 지점</th><th>파일 처리</th><th>외부 연동</th></tr></thead><tbody><tr><td><code>POST /auth/signup</code></td><td><input data-save="a11" aria-label="내 결과"></td><td><input data-save="a12" aria-label="내 결과"></td><td><input data-save="a13" aria-label="내 결과"></td><td><input data-save="a14" aria-label="내 결과"></td></tr><tr><td><code>POST /auth/token</code></td><td><input data-save="a21" aria-label="내 결과"></td><td><input data-save="a22" aria-label="내 결과"></td><td><input data-save="a23" aria-label="내 결과"></td><td><input data-save="a24" aria-label="내 결과"></td></tr><tr><td><code>GET /books</code></td><td><input data-save="a31" aria-label="내 결과"></td><td><input data-save="a32" aria-label="내 결과"></td><td><input data-save="a33" aria-label="내 결과"></td><td><input data-save="a34" aria-label="내 결과"></td></tr><tr><td><code>PATCH /books/{book_id}</code></td><td><input data-save="a41" aria-label="내 결과"></td><td><input data-save="a42" aria-label="내 결과"></td><td><input data-save="a43" aria-label="내 결과"></td><td><input data-save="a44" aria-label="내 결과"></td></tr><tr><td><code>POST /books/{book_id}/cover</code></td><td><input data-save="a51" aria-label="내 결과"></td><td><input data-save="a52" aria-label="내 결과"></td><td><input data-save="a53" aria-label="내 결과"></td><td><input data-save="a54" aria-label="내 결과"></td></tr><tr><td><code>GET /covers/...</code></td><td><input data-save="a61" aria-label="내 결과"></td><td><input data-save="a62" aria-label="내 결과"></td><td><input data-save="a63" aria-label="내 결과"></td><td><input data-save="a64" aria-label="내 결과"></td></tr><tr><td><code>POST /loans</code></td><td><input data-save="a71" aria-label="내 결과"></td><td><input data-save="a72" aria-label="내 결과"></td><td><input data-save="a73" aria-label="내 결과"></td><td><input data-save="a74" aria-label="내 결과"></td></tr><tr><td><code>POST /loans/{loan_id}/return</code></td><td><input data-save="a81" aria-label="내 결과"></td><td><input data-save="a82" aria-label="내 결과"></td><td><input data-save="a83" aria-label="내 결과"></td><td><input data-save="a84" aria-label="내 결과"></td></tr></tbody></table></div>
+<details><summary>예시 답안 보기</summary><div class="answer"><div class="table-wrap"><table><thead><tr><th>API</th><th>입력 지점</th><th>인증 지점</th><th>파일 처리</th><th>외부 연동</th></tr></thead><tbody><tr><td><code>POST /auth/signup</code></td><td>본문: email, password</td><td>없음(누구나)</td><td></td><td>DB에 쓰기</td></tr><tr><td><code>POST /auth/token</code></td><td>폼: username, password</td><td>비밀번호 확인, 토큰 발급</td><td></td><td>DB 읽기</td></tr><tr><td><code>GET /books</code></td><td>쿼리: q, author_id, sort, skip, limit</td><td>없음(누구나)</td><td></td><td>DB 읽기(검색어가 SQL로)</td></tr><tr><td><code>PATCH /books/{book_id}</code></td><td>경로: book_id, 본문: 바꿀 필드</td><td>토큰, 소유자 검사</td><td></td><td>DB 쓰기</td></tr><tr><td><code>POST /books/{book_id}/cover</code></td><td>경로, 파일 이름, 파일 내용, 크기</td><td>토큰, 소유자 검사</td><td>검사, 저장, 이전 파일 삭제</td><td>파일 시스템, 로그</td></tr><tr><td><code>GET /covers/...</code></td><td>경로: 파일 이름</td><td>없음(누구나)</td><td>파일 내보내기</td><td>파일 시스템</td></tr><tr><td><code>POST /loans</code></td><td>본문: book_id</td><td>토큰</td><td></td><td>DB 쓰기(재고 변경)</td></tr><tr><td><code>POST /loans/{loan_id}/return</code></td><td>경로: loan_id</td><td>토큰, 본인 확인</td><td></td><td>DB 쓰기</td></tr></tbody></table></div>
+<p>헤더(<code>Authorization</code>)도 입력 지점입니다. 공격자는 토큰을 위조하거나 지우고 보낼 수 있습니다. 표지 업로드처럼 입력, 인증, 파일 처리가 모두 겹치는 곳이 가장 먼저 점검할 곳입니다.</p></div></details>
+
+<h2>3. 공격자의 눈으로 질문하기</h2>
+<div class="qa"><p class="question">질문 1. 위 목록에서 "사용자가 보낸 값이 SQL, 파일 경로, HTML 화면 중 하나로 흘러가는 곳"을 모두 골라 보세요. 그 값을 그대로 쓰면 어떤 일이 생길 수 있을까요?</p><textarea data-save="q1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>검색어(<code>q</code>), 정렬 기준(<code>sort</code>)은 SQL로, 업로드 파일 이름과 표지 주소는 파일 경로로, 도서 제목은 웹 화면의 HTML로 흘러갑니다. 그대로 쓰면 각각 SQL 삽입, 경로 조작, 크로스사이트 스크립트가 될 수 있습니다. 지금 코드는 ORM과 허용 목록, 무작위 파일 이름 덕분에 대부분 막혀 있는데, 오늘은 이 방어가 없을 때 무슨 일이 생기는지 재현하고, 새 기능을 추가하면서 같은 실수를 하지 않는 방법을 익힙니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 2. 번호(<code>book_id</code>, <code>loan_id</code>)를 받는 API에서 공격자가 해 볼 만한 일은 무엇일까요?</p><textarea data-save="q2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>번호를 1, 2, 3처럼 바꿔 가며 남의 데이터를 읽거나 고치려고 시도할 수 있습니다. 서버가 "로그인했는가"만 확인하고 "이 데이터의 주인인가"를 확인하지 않으면 그대로 뚫립니다. OWASP API 목록의 1위인 객체 수준 인가 취약이 이것이며, S9-P32에서 다룹니다.</p></div></details></div>
+
+<h2>4. 내 공격 지점 목록</h2>
+<div class="qa"><p class="question">내 도서 API의 공격 지점과, 점검할 순서를 적어 보세요. 오늘 실습을 마친 뒤 다시 열어 보고 고친 것을 표시합니다.</p><textarea data-save="q3" placeholder="공격 지점과 점검 순서를 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>예시: 1. 표지 업로드(입력, 인증, 파일 처리가 모두 겹침) 2. 대여와 반납(번호로 남의 기록 접근 가능성) 3. 로그인(무차별 대입, 5일차 오후) 4. 검색과 정렬(SQL로 흘러감) 5. 표지 내보내기(파일 형식 위장).</p></div></details></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p29/s9-p29-03.html"><span class="dir">이전</span>S9-P29-03 KISA 가이드의 보안약점 분류</a>
+  <a class="next" href="../../s9/p29/s9-p29-05.html"><span class="dir">다음</span>S9-P29-05 정리: 개발보안의 틀</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

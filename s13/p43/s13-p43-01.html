@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P43-01 6일차 복습 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P43-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P43 VPC와 보안 그룹 만들기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p43-01.html" style="flex:5" data-type="주요 개념" title="6일차 복습 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s13-p43-02.html" style="flex:10" data-type="주요 개념" title="VPC 생성 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s13-p43-03.html" style="flex:20" data-type="실습" title="실습 VPC 구성 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p43-04.html" style="flex:10" data-type="실습" title="보안 그룹 만들기 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s13-p43-05.html" style="flex:5" data-type="정리" title="정리: 네트워크 구성 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S13-P43-01</span></div>
+<h1>6일차 복습</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>설계한 대로 VPC와 서브넷, 보안 그룹을 만들 수 있습니다.</p></div>
+
+<p class="lead">7일차는 6일차 오후에 만든 설계표를 실제 AWS 자원으로 바꾸는 날입니다. 오전에는 네트워크, 서버, 데이터베이스를 차례로 만들고 도서 API를 띄웁니다. 시작하기 전에 어제 배운 내용을 질문으로 떠올려 봅니다.</p>
+
+<h2>스스로 떠올리기</h2>
+<div class="qa"><p class="question">질문 1. 진단 실습에서 bandit이 찾지 못한 약점에는 어떤 것이 있었나요? 왜 못 찾았나요?</p><textarea data-save="r1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>남의 공지 삭제(부적절한 인가), X-Role 헤더로 관리자 판단, 좋아요 경쟁 조건, 전역 변수로 공유한 사용자 정보, 링크 미리 보기의 SSRF 등이 있었습니다. 평범한 코드 모양으로 이루어져 있어서, 업무 규칙과 실행 상황을 알아야 문제인지 판단할 수 있기 때문입니다(S11-P38).</p></div></details></div>
+<div class="qa"><p class="question">질문 2. EC2 서버가 Parameter Store의 비밀 값을 읽을 때 액세스 키 대신 무엇을 쓰나요? 그 방식의 장점은 무엇인가요?</p><textarea data-save="r2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>서버에 붙인 IAM 역할을 씁니다. AWS가 임시 자격 증명을 서버에 주고 자동으로 바꿔 주므로, 코드나 이미지 어디에도 오래 쓰는 비밀 값이 남지 않습니다(S12-P41).</p></div></details></div>
+<div class="qa"><p class="question">질문 3. 서브넷이 퍼블릭인지 프라이빗인지는 무엇으로 정해지나요?</p><textarea data-save="r3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>연결된 라우팅 테이블에 <code>0.0.0.0/0 → 인터넷 게이트웨이</code> 경로가 있는지로 정해집니다(S12-P42-01).</p></div></details></div>
+<div class="qa"><p class="question">질문 4. DB 보안 그룹의 인바운드 규칙 출처에 IP 대신 API 서버의 보안 그룹을 적는 이유는 무엇인가요?</p><textarea data-save="r4" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>API 서버의 IP가 바뀌거나 서버가 늘어나도 규칙을 고칠 필요가 없고, 그 보안 그룹이 붙지 않은 자원은 DB에 닿을 수 없기 때문입니다(S12-P42-02).</p></div></details></div>
+
+<h2>오늘 오전에 만드는 것</h2>
+<div class="table-wrap"><table><thead><tr><th>교시</th><th>만드는 것</th><th>확인 방법</th></tr></thead><tbody><tr><td>1교시</td><td>실습 VPC(서브넷 4개, 인터넷 게이트웨이), 보안 그룹 2개</td><td>리소스 맵과 CLI로 구성 확인</td></tr><tr><td>2교시</td><td>EC2 서버(Amazon Linux 2023, IAM 역할 연결)</td><td>Session Manager로 접속</td></tr><tr><td>3교시</td><td>EC2의 Docker에서 도서 API 실행(SQLite)</td><td>내 PC 브라우저에서 <code>/health</code></td></tr><tr><td>4교시</td><td>RDS PostgreSQL, API를 RDS로 연결</td><td>EC2에서 psql 접속, 마이그레이션, 데이터 확인</td></tr></tbody></table></div>
+
+<p>S12-P42-03에서 작성한 설계표(서브넷 CIDR, 보안 그룹 규칙)를 옆에 펼쳐 두고 시작합니다. 아래 그림이 오늘 만들 네트워크입니다.</p>
+<figure><svg viewBox="0 0 760 440" role="img" aria-label="실습 VPC의 배치. 퍼블릭 서브넷만 인터넷 게이트웨이로 가는 경로를 갖고, 프라이빗 서브넷은 VPC 안에서만 통신합니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="320" y="5" width="120" height="36" rx="8" class="svg-box"/><text x="380.0" y="28.0" text-anchor="middle" class="svg-text">인터넷</text><rect x="290" y="62" width="180" height="42" rx="8" class="svg-box-accent"/><text x="380.0" y="88.0" text-anchor="middle" class="svg-text">인터넷 게이트웨이</text><rect x="20" y="120" width="720" height="310" rx="10" class="svg-zone"/><text x="32" y="140" text-anchor="start" class="svg-label">VPC 10.0.0.0/16</text><rect x="35" y="150" width="335" height="268" rx="10" class="svg-zone"/><text x="47" y="170" text-anchor="start" class="svg-label">가용 영역 ap-northeast-2a</text><rect x="390" y="150" width="335" height="268" rx="10" class="svg-zone"/><text x="402" y="170" text-anchor="start" class="svg-label">가용 영역 ap-northeast-2c</text><rect x="50" y="180" width="305" height="105" rx="10" class="svg-zone-public"/><text x="62" y="200" text-anchor="start" class="svg-label">퍼블릭 서브넷 10.0.1.0/24</text><rect x="140" y="220" width="125" height="50" rx="8" class="svg-box-accent"/><text x="202.5" y="241.0" text-anchor="middle" class="svg-text">EC2</text><text x="202.5" y="260.0" text-anchor="middle" class="svg-small">도서 API</text><rect x="50" y="300" width="305" height="105" rx="10" class="svg-zone-private"/><text x="62" y="320" text-anchor="start" class="svg-label">프라이빗 서브넷 10.0.11.0/24</text><rect x="140" y="340" width="125" height="50" rx="8" class="svg-box"/><text x="202.5" y="361.0" text-anchor="middle" class="svg-text">RDS</text><text x="202.5" y="380.0" text-anchor="middle" class="svg-small">주 DB</text><rect x="405" y="180" width="305" height="105" rx="10" class="svg-zone-public"/><text x="417" y="200" text-anchor="start" class="svg-label">퍼블릭 서브넷 10.0.2.0/24</text><text x="557" y="250" text-anchor="middle" class="svg-small">8일차에 ALB가 함께 씁니다</text><rect x="405" y="300" width="305" height="105" rx="10" class="svg-zone-private"/><text x="417" y="320" text-anchor="start" class="svg-label">프라이빗 서브넷 10.0.12.0/24</text><text x="557" y="370" text-anchor="middle" class="svg-small">DB 서브넷 그룹의 두 번째 칸</text><line x1="380" y1="41" x2="380" y2="60" class="svg-line" marker-end="url(#arr)"/><line x1="340" y1="104" x2="230" y2="218" class="svg-line" marker-end="url(#arr)"/><line x1="420" y1="104" x2="640" y2="228" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>실습 VPC의 배치. 퍼블릭 서브넷만 인터넷 게이트웨이로 가는 경로를 갖고, 프라이빗 서브넷은 VPC 안에서만 통신합니다.</figcaption></figure>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p42/s12-p42-05.html"><span class="dir">이전</span>S12-P42-05 정리: 6일차 마무리</a>
+  <a class="next" href="../../s13/p43/s13-p43-02.html"><span class="dir">다음</span>S13-P43-02 VPC 생성 과정 보기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

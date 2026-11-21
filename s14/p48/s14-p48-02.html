@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P48-02 이미지 푸시 과정 보기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P48-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 안전한 배포 구성</a><span class="sep">/</span><span>S14-P48 ECR로 이미지 배포</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p48-01.html" style="flex:5" data-type="주요 개념" title="컨테이너 레지스트리와 ECR (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s14-p48-02.html" style="flex:10" data-type="주요 개념" title="이미지 푸시 과정 보기 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s14-p48-03.html" style="flex:25" data-type="실습" title="이미지 푸시와 EC2에서 실행 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s14-p48-04.html" style="flex:5" data-type="주요 개념" title="이미지 태그 전략 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s14-p48-05.html" style="flex:5" data-type="정리" title="정리: ECR (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S14-P48-02</span></div>
+<h1>이미지 푸시 과정 보기</h1>
+
+<p class="lead">이미지를 ECR에 올리는 과정은 저장소 만들기, 로그인, 태그 붙이기, 푸시, 스캔 결과 확인의 다섯 단계입니다. 각 단계의 명령과 뜻을 먼저 봅니다.</p>
+<div class="table-wrap"><table><thead><tr><th>단계</th><th>명령</th><th>뜻</th></tr></thead><tbody><tr><td>1. 저장소 만들기</td><td><code>aws ecr create-repository</code></td><td>이미지를 담을 저장소를 만듭니다. 한 번만 합니다.</td></tr><tr><td>2. 로그인</td><td><code>aws ecr get-login-password | docker login</code></td><td>AWS 권한으로 12시간 동안 쓸 수 있는 레지스트리 암호를 받아 Docker에 로그인합니다.</td></tr><tr><td>3. 태그 붙이기</td><td><code>docker build -t 레지스트리/book-api:1.0.0</code></td><td>이미지 이름에 레지스트리 주소가 들어가야 그곳으로 올라갑니다.</td></tr><tr><td>4. 푸시</td><td><code>docker push</code></td><td>이미지를 올립니다. 이미 있는 층(layer)은 다시 올리지 않습니다.</td></tr><tr><td>5. 스캔 결과</td><td><code>aws ecr describe-image-scan-findings</code></td><td>심각도별 취약점 수를 확인합니다.</td></tr></tbody></table></div>
+
+<h2>레지스트리 주소</h2>
+<p>ECR의 주소는 <code>계정ID.dkr.ecr.리전.amazonaws.com</code>이고, 이미지 전체 이름은 <code>주소/저장소:태그</code>입니다.</p>
+<div class="codeblock term"><pre><code>123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/book-api:1.0.0</code></pre></div>
+
+<h2>로그인과 푸시</h2>
+<div class="codeblock"><span class="file">푸시 명령의 모양</span><pre><code>REGISTRY=123456789012.dkr.ecr.ap-northeast-2.amazonaws.com
+aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $REGISTRY
+docker build --platform linux/amd64 -t $REGISTRY/book-api:1.0.0 .
+docker push $REGISTRY/book-api:1.0.0</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>부분</th><th>뜻</th></tr></thead><tbody><tr><td><code>get-login-password</code></td><td>내 IAM 권한으로 레지스트리 암호를 받아 화면 대신 다음 명령으로 넘깁니다.</td></tr><tr><td><code>--password-stdin</code></td><td>암호를 명령 기록에 남기지 않고 표준 입력으로 받습니다.</td></tr><tr><td><code>--platform linux/amd64</code></td><td>EC2(x86_64)에서 돌아갈 이미지를 만듭니다. Apple Silicon Mac에서 이 옵션을 빼면 ARM용 이미지가 만들어져 EC2에서 <code>exec format error</code>로 실행되지 않습니다. Intel이나 AMD PC에서는 붙여도 결과가 같습니다.</td></tr></tbody></table></div>
+<div class="callout warn"><p class="callout-title">로그인 정보가 남는 곳</p><p><code>docker login</code>에 성공하면 Docker가 레지스트리 암호를 <code>~/.docker/config.json</code>(또는 운영체제의 자격 증명 저장소)에 저장합니다. 12시간 뒤에 만료되지만, 이 파일을 공유하거나 저장소에 올리지 않습니다.</p></div>
+
+<h2>스캔 결과 읽기</h2>
+<div class="codeblock term"><pre><code>aws ecr describe-image-scan-findings --repository-name book-api --image-id imageTag=1.0.0 --query "imageScanFindings.findingSeverityCounts"
+{
+    "MEDIUM": 6,
+    "LOW": 14,
+    "INFORMATIONAL": 3
+}</code></pre></div>
+
+<p>숫자는 베이스 이미지의 시점에 따라 다릅니다. HIGH나 CRITICAL이 있으면 결과를 열어 어떤 패키지인지 보고, 베이스 이미지를 최신으로 다시 받아 빌드(<code>docker build --pull</code>)하거나 고친 버전으로 올립니다. 운영체제 패키지의 취약점은 아직 고친 버전이 없는 경우도 많아, S11-P37처럼 근거를 들어 판정하고 기록합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p48/s14-p48-01.html"><span class="dir">이전</span>S14-P48-01 컨테이너 레지스트리와 ECR</a>
+  <a class="next" href="../../s14/p48/s14-p48-03.html"><span class="dir">다음</span>S14-P48-03 이미지 푸시와 EC2에서 실행</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

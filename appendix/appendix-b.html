@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>부록 B API 명세서 양식 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body data-page="index">
+<header class="topbar">
+  <a class="course" href="../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="index.html">부록</a><span class="sep">/</span><span>부록 B</span></nav>
+</header>
+<main class="page">
+<h1>부록 B. API 명세서 양식</h1><div class="table-wrap"><table><thead><tr><th>기능</th><th>메서드</th><th>URI</th><th>요청 본문과 검증 규칙</th><th>응답</th><th>상태 코드</th><th>인증/권한</th></tr></thead><tbody><tr><td>예: 모임 등록</td><td>POST</td><td>/studies</td><td>title(1~100자), description(최대 1000자), capacity(2~50)</td><td>StudyRead</td><td>201, 401, 422</td><td>로그인 사용자</td></tr><tr><td>예: 모임 목록</td><td>GET</td><td>/studies?keyword=&amp;page=</td><td>keyword(최대 50자), page(1 이상)</td><td>페이지 정보와 StudyRead 목록</td><td>200, 422</td><td>없음</td></tr><tr><td>예: 모임 삭제</td><td>DELETE</td><td>/studies/{study_id}</td><td>없음</td><td>없음</td><td>204, 401, 403, 404</td><td>개설자 본인</td></tr></tbody></table></div>
+<p>명세서 아래에는 주요 위협과 보안 요구사항(예: 다른 사용자의 모임 수정 차단, 로그인 실패 제한, 첨부 파일 형식 제한)을 3개 이상 적습니다.</p><h2>양식 내려받기</h2><ul><li><a href="../assets/files/api-spec.md" download>API 명세서 양식 내려받기(api-spec.md)</a></li><li><a href="../assets/files/project-security-requirements.md" download>주제와 보안 요구사항 초안 내려받기(project-security-requirements.md)</a></li></ul><p class="when">다른 부록: <a href="appendix-a.html">부록 A</a> <a href="appendix-b.html">부록 B</a> <a href="appendix-c.html">부록 C</a> <a href="appendix-d.html">부록 D</a> <a href="appendix-e.html">부록 E</a> <a href="appendix-f.html">부록 F</a> <a href="appendix-g.html">부록 G</a></p>
+</main>
+</body>
+</html>

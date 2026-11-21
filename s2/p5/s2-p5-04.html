@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P5-04 수정, 삭제 API 완성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P5-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 응답 설계와 프로젝트 구조</a><span class="sep">/</span><span>S2-P5 응답 모델과 상태 코드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p5-01.html" style="flex:10" data-type="주요 개념" title="응답 모델과 데이터 계약 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s2-p5-02.html" style="flex:5" data-type="주요 개념" title="상태 코드 선택하기 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s2-p5-03.html" style="flex:10" data-type="주요 개념" title="응답 모델 적용하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s2-p5-04.html" style="flex:20" data-type="실습" title="수정, 삭제 API 완성 (20분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s2-p5-05.html" style="flex:5" data-type="정리" title="정리: 응답 설계 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S2-P5-04</span></div>
+<h1>수정, 삭제 API 완성</h1>
+
+<p class="lead">응답 모델과 상태 코드를 적용하고, 수정(PUT, PATCH)과 삭제(DELETE) API를 추가해 메모리 기반 CRUD를 완성합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>도서의 등록, 조회, 수정, 삭제 API를 알맞은 상태 코드와 응답 모델로 구현할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>목록과 모델 바꾸기</h3>
+<p>앞 페이지에서 본 대로 <code>BOOKS</code>에 <code>isbn</code>과 <code>cost</code>를 추가하고, 기존 <code>BookCreate</code> 자리에 모델 세 개(<code>BookCreate</code>, <code>BookUpdate</code>, <code>BookRead</code>)를 작성합니다. 맨 위 가져오기 줄에는 <code>status</code>를 추가합니다.</p>
+<div class="codeblock"><span class="file">main.py</span><pre><code>from fastapi import FastAPI, HTTPException, status</code></pre></div>
+</li><li><h3>도서 찾기 함수로 중복 줄이기</h3>
+<p>조회, 수정, 삭제 모두 "번호로 도서를 찾고, 없으면 404"라는 같은 일을 합니다. 이 부분을 함수 하나로 묶습니다.</p>
+<div class="codeblock"><span class="file">main.py</span><pre><code>def find_book(book_id: int) -&gt; dict:
+    for book in BOOKS:
+        if book["id"] == book_id:
+            return book
+    raise HTTPException(status_code=404, detail="도서를 찾을 수 없습니다.")</code></pre></div>
+
+<p><code>get_book</code>은 이제 <code>return find_book(book_id)</code> 한 줄이면 됩니다.</p>
+</li><li><h3>등록 API에 201 적용</h3>
+<div class="codeblock"><span class="file">main.py</span><pre><code>@app.post("/books", response_model=BookRead, status_code=status.HTTP_201_CREATED)
+def create_book(book_in: BookCreate):
+    new_id = max(book["id"] for book in BOOKS) + 1 if BOOKS else 1
+    book = {"id": new_id, **book_in.model_dump(), "cost": 0}
+    BOOKS.append(book)
+    return book</code></pre></div>
+
+<p>새 도서의 매입가는 아직 받지 않으므로 0으로 둡니다. 목록 조회에도 <code>response_model=list[BookRead]</code>를 붙입니다.</p>
+</li><li><h3>전체 수정 PUT</h3>
+<div class="codeblock"><span class="file">main.py</span><pre><code>@app.put("/books/{book_id}", response_model=BookRead)
+def replace_book(book_id: int, book_in: BookCreate):
+    book = find_book(book_id)
+    book.update(book_in.model_dump())
+    return book</code></pre></div>
+
+<p>PUT은 도서 정보를 통째로 바꿉니다. 그래서 등록과 같은 <code>BookCreate</code>로 모든 항목을 받습니다. <code>isbn</code>을 보내지 않으면 기본값 <code>None</code>으로 바뀐다는 점에 주의합니다.</p>
+</li><li><h3>일부 수정 PATCH</h3>
+<div class="codeblock"><span class="file">main.py</span><pre><code>@app.patch("/books/{book_id}", response_model=BookRead)
+def update_book(book_id: int, book_in: BookUpdate):
+    book = find_book(book_id)
+    # 보낸 항목만 꺼내고, null로 보낸 항목은 무시합니다.
+    changes = book_in.model_dump(exclude_unset=True, exclude_none=True)
+    book.update(changes)
+    return book</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>옵션</th><th>하는 일</th></tr></thead><tbody><tr><td><code>exclude_unset=True</code></td><td>클라이언트가 보내지 않은 항목을 뺍니다. 이 옵션이 없으면 보내지 않은 항목이 모두 <code>None</code>으로 덮어써집니다.</td></tr><tr><td><code>exclude_none=True</code></td><td>값을 <code>null</code>로 보낸 항목도 뺍니다. 제목에 <code>null</code>이 들어가 응답 모델 검사에서 서버 오류가 나는 것을 막습니다.</td></tr></tbody></table></div>
+</li><li><h3>삭제 DELETE에 204 적용</h3>
+<div class="codeblock"><span class="file">main.py</span><pre><code>@app.delete("/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_book(book_id: int):
+    book = find_book(book_id)
+    BOOKS.remove(book)</code></pre></div>
+
+<p>204는 돌려줄 내용이 없다는 뜻이므로 함수도 아무것도 돌려주지 않습니다.</p>
+</li><li><h3>요청 보내 확인하기</h3>
+<p>Swagger UI에서 차례로 실행하고 결과를 적습니다. 서버가 다시 시작되면 목록이 처음 상태로 돌아가므로, 코드를 다 고친 뒤 한 번에 확인합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>요청</th><th>보낼 값</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td><code>GET /books/1</code></td><td></td><td>200, <code>cost</code> 없음</td><td><input data-save="t1" aria-label="내 결과"></td></tr><tr><td><code>POST /books</code></td><td><code>{"title": "FastAPI 실전", "author": "최유나", "price": 27000}</code></td><td>201, id 5</td><td><input data-save="t2" aria-label="내 결과"></td></tr><tr><td><code>PATCH /books/1</code></td><td><code>{"price": 19000}</code></td><td>200, 가격만 바뀜</td><td><input data-save="t3" aria-label="내 결과"></td></tr><tr><td><code>PUT /books/2</code></td><td><code>{"title": "웹 개발 입문 2판", "author": "이도윤", "price": 24000}</code></td><td>200, isbn이 null로 바뀜</td><td><input data-save="t4" aria-label="내 결과"></td></tr><tr><td><code>DELETE /books/4</code></td><td></td><td>204, 본문 없음</td><td><input data-save="t5" aria-label="내 결과"></td></tr><tr><td><code>GET /books/4</code></td><td></td><td>404</td><td><input data-save="t6" aria-label="내 결과"></td></tr></tbody></table></div>
+</li></ol>
+
+<h2>지금까지의 main.py</h2>
+<details><summary>전체 코드 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">main.py</span><pre><code>from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel, Field
+
+app = FastAPI(title="도서 관리 API")
+
+# cost(매입가)는 내부에서만 쓰는 값이라 응답에 나가면 안 됩니다.
+BOOKS = [
+    {"id": 1, "title": "파이썬 첫걸음", "author": "김하늘", "price": 18000, "isbn": "9791100000011", "cost": 12000},
+    {"id": 2, "title": "웹 개발 입문", "author": "이도윤", "price": 22000, "isbn": "9791100000028", "cost": 15000},
+    {"id": 3, "title": "데이터베이스 기초", "author": "김하늘", "price": 25000, "isbn": None, "cost": 17000},
+    {"id": 4, "title": "알기 쉬운 네트워크", "author": "박서준", "price": 20000, "isbn": None, "cost": 13000},
+]
+
+
+class BookCreate(BaseModel):
+    """등록과 전체 수정(PUT)에 쓰는 입력 모델"""
+    title: str = Field(min_length=1, max_length=100)
+    author: str = Field(min_length=1, max_length=50)
+    price: int = Field(ge=0, le=1_000_000)
+    isbn: str | None = Field(default=None, pattern=r"^\d{13}$")
+
+
+class BookUpdate(BaseModel):
+    """일부 수정(PATCH)에 쓰는 입력 모델. 모든 항목이 선택입니다."""
+    title: str | None = Field(default=None, min_length=1, max_length=100)
+    author: str | None = Field(default=None, min_length=1, max_length=50)
+    price: int | None = Field(default=None, ge=0, le=1_000_000)
+    isbn: str | None = Field(default=None, pattern=r"^\d{13}$")
+
+
+class BookRead(BaseModel):
+    """응답에 쓰는 출력 모델. 여기에 없는 필드는 응답에서 빠집니다."""
+    id: int
+    title: str
+    author: str
+    price: int
+    isbn: str | None = None
+
+
+@app.get("/")
+def read_root():
+    return {"message": "도서 관리 API에 오신 것을 환영합니다."}
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
+
+
+def find_book(book_id: int) -&gt; dict:
+    for book in BOOKS:
+        if book["id"] == book_id:
+            return book
+    raise HTTPException(status_code=404, detail="도서를 찾을 수 없습니다.")
+
+
+@app.get("/books", response_model=list[BookRead])
+def list_books(author: str | None = None):
+    if author is None:
+        return BOOKS
+    return [book for book in BOOKS if book["author"] == author]
+
+
+@app.get("/books/{book_id}", response_model=BookRead)
+def get_book(book_id: int):
+    return find_book(book_id)
+
+
+@app.post("/books", response_model=BookRead, status_code=status.HTTP_201_CREATED)
+def create_book(book_in: BookCreate):
+    new_id = max(book["id"] for book in BOOKS) + 1 if BOOKS else 1
+    book = {"id": new_id, **book_in.model_dump(), "cost": 0}
+    BOOKS.append(book)
+    return book
+
+
+@app.put("/books/{book_id}", response_model=BookRead)
+def replace_book(book_id: int, book_in: BookCreate):
+    book = find_book(book_id)
+    book.update(book_in.model_dump())
+    return book
+
+
+@app.patch("/books/{book_id}", response_model=BookRead)
+def update_book(book_id: int, book_in: BookUpdate):
+    book = find_book(book_id)
+    # 보낸 항목만 꺼내고, null로 보낸 항목은 무시합니다.
+    changes = book_in.model_dump(exclude_unset=True, exclude_none=True)
+    book.update(changes)
+    return book
+
+
+@app.delete("/books/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_book(book_id: int):
+    book = find_book(book_id)
+    BOOKS.remove(book)</code></pre></div>
+</div></details>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>응답에 cost가 나오지 않는다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>등록하면 201, 삭제하면 204가 나온다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>PATCH는 보낸 항목만 바꾸고, PUT은 전체를 바꾼다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>없는 도서를 수정하거나 삭제하면 404가 나온다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p5-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s2/p5/s2-p5-03.html"><span class="dir">이전</span>S2-P5-03 응답 모델 적용하기</a>
+  <a class="next" href="../../s2/p5/s2-p5-05.html"><span class="dir">다음</span>S2-P5-05 정리: 응답 설계</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

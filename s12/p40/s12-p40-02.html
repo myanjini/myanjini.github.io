@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P40-02 AWS 글로벌 인프라와 주요 서비스 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P40-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P40 클라우드와 AWS 개요</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p40-01.html" style="flex:10" data-type="주요 개념" title="클라우드 컴퓨팅 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p40-02.html" style="flex:10" data-type="주요 개념" title="AWS 글로벌 인프라와 주요 서비스 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p40-03.html" style="flex:15" data-type="실습" title="실습 계정과 콘솔 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s12-p40-04.html" style="flex:10" data-type="주요 개념" title="과금 구조와 비용 관리 원칙 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s12-p40-05.html" style="flex:5" data-type="정리" title="정리: AWS 개요 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S12-P40-02</span></div>
+<h1>AWS 글로벌 인프라와 주요 서비스</h1>
+
+<p class="lead">AWS의 자원은 전 세계 여러 지역의 데이터 센터에 있습니다. 내 자원이 어디에 놓이는지 정하는 리전과 가용 영역을 이해하고, 이 과정에서 쓸 서비스와 최종 배포 구성을 미리 봅니다.</p>
+
+<h2>리전과 가용 영역</h2>
+<div class="table-wrap"><table><thead><tr><th>용어</th><th>뜻</th><th>예</th></tr></thead><tbody><tr><td>리전(Region)</td><td>AWS 데이터 센터가 모여 있는 지리적 지역입니다. 리전끼리는 서로 독립되어 있어서, 내 자원은 내가 고른 리전에만 만들어집니다.</td><td>아시아 태평양(서울) <code>ap-northeast-2</code></td></tr><tr><td>가용 영역(AZ, Availability Zone)</td><td>한 리전 안에서 전원, 냉방, 네트워크가 따로 갖춰진 데이터 센터 묶음입니다. 서로 떨어져 있어 하나가 멈춰도 다른 곳은 계속 동작합니다.</td><td>서울 리전의 <code>ap-northeast-2a</code>, <code>2b</code>, <code>2c</code>, <code>2d</code></td></tr><tr><td>엣지 로케이션</td><td>콘텐츠를 사용자 가까이에서 빠르게 전달하는 지점입니다(CloudFront 같은 서비스가 씁니다).</td><td>이 과정에서는 쓰지 않습니다.</td></tr></tbody></table></div>
+
+<p>서울 리전에는 가용 영역이 4곳 있습니다. 중요한 서비스는 자원을 두 곳 이상의 가용 영역에 나눠 두어, 한 곳에 문제가 생겨도 서비스가 멈추지 않게 합니다. 이 과정에서도 서브넷을 두 가용 영역에 나눠 만듭니다(S12-P42).</p>
+<p>리전은 사용자와의 거리(응답 속도), 데이터를 어느 나라에 둬야 하는지에 대한 법과 규정, 필요한 서비스가 있는지, 가격을 보고 고릅니다. 이 과정은 기관의 정책에 따라 <strong>서울 리전만</strong> 씁니다. 콘솔에서 다른 리전을 고른 채로 자원을 만들면 "만든 자원이 안 보인다"거나, 정리할 때 빠뜨려 요금이 계속 나가는 일이 생깁니다.</p>
+
+<h2>이 과정에서 쓰는 서비스</h2>
+<div class="table-wrap"><table><thead><tr><th>서비스</th><th>하는 일</th><th>배우는 때</th></tr></thead><tbody><tr><td>IAM</td><td>누가 무엇을 할 수 있는지(사용자, 역할, 정책)를 관리합니다.</td><td>6일차(S12-P41)</td></tr><tr><td>VPC</td><td>내 자원이 놓일 사설 네트워크와 방화벽(보안 그룹)을 만듭니다.</td><td>6일차(S12-P42), 7일차</td></tr><tr><td>EC2</td><td>가상 서버입니다. 여기에 Docker를 설치하고 도서 API를 실행합니다.</td><td>7일차</td></tr><tr><td>RDS</td><td>관리형 관계형 데이터베이스입니다. PostgreSQL을 씁니다.</td><td>7일차</td></tr><tr><td>Systems Manager</td><td>Session Manager로 SSH 키 없이 서버에 접속하고, Parameter Store에 비밀 값을 보관합니다.</td><td>7일차</td></tr><tr><td>ECR</td><td>Docker 이미지를 보관하는 저장소(레지스트리)입니다.</td><td>7일차</td></tr><tr><td>S3</td><td>파일을 보관하는 객체 저장소입니다. 표지 이미지를 옮깁니다.</td><td>8일차</td></tr><tr><td>CloudWatch</td><td>로그를 모으고, 지표를 보고, 경보를 보냅니다.</td><td>8일차</td></tr><tr><td>ALB, ACM</td><td>요청을 서버로 나눠 보내는 로드 밸런서와 HTTPS 인증서입니다.</td><td>8일차</td></tr></tbody></table></div>
+
+<h2>최종 배포 구성도</h2>
+<figure><svg viewBox="0 0 760 470" role="img" aria-label="이 과정에서 완성할 배포 구성도. 7일차에 EC2와 RDS로 먼저 배포하고, 8일차에 ALB, S3, CloudWatch, GitHub Actions 배포를 더합니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="10" y="110" width="100" height="50" rx="8" class="svg-box"/><text x="60.0" y="131.0" text-anchor="middle" class="svg-text">사용자</text><text x="60.0" y="150.0" text-anchor="middle" class="svg-small">HTTPS 요청</text><rect x="130" y="10" width="620" height="450" rx="10" class="svg-zone"/><text x="142" y="30" text-anchor="start" class="svg-label">서울 리전(ap-northeast-2)</text><rect x="150" y="40" width="400" height="400" rx="10" class="svg-zone"/><text x="162" y="60" text-anchor="start" class="svg-label">VPC(내 사설 네트워크)</text><rect x="170" y="70" width="360" height="150" rx="10" class="svg-zone-public"/><text x="182" y="90" text-anchor="start" class="svg-label">퍼블릭 서브넷</text><rect x="190" y="110" width="120" height="50" rx="8" class="svg-box"/><text x="250.0" y="131.0" text-anchor="middle" class="svg-text">ALB</text><text x="250.0" y="150.0" text-anchor="middle" class="svg-small">로드 밸런서</text><rect x="380" y="105" width="130" height="60" rx="8" class="svg-box-accent"/><text x="445.0" y="131.0" text-anchor="middle" class="svg-text">EC2</text><text x="445.0" y="150.0" text-anchor="middle" class="svg-small">Docker, 도서 API</text><rect x="170" y="260" width="360" height="150" rx="10" class="svg-zone-private"/><text x="182" y="280" text-anchor="start" class="svg-label">프라이빗 서브넷</text><rect x="380" y="310" width="130" height="60" rx="8" class="svg-box"/><text x="445.0" y="336.0" text-anchor="middle" class="svg-text">RDS</text><text x="445.0" y="355.0" text-anchor="middle" class="svg-small">PostgreSQL</text><rect x="575" y="60" width="165" height="46" rx="8" class="svg-box"/><text x="657.5" y="79.0" text-anchor="middle" class="svg-text">ECR</text><text x="657.5" y="98.0" text-anchor="middle" class="svg-small">컨테이너 이미지</text><rect x="575" y="120" width="165" height="46" rx="8" class="svg-box"/><text x="657.5" y="139.0" text-anchor="middle" class="svg-text">Parameter Store</text><text x="657.5" y="158.0" text-anchor="middle" class="svg-small">비밀 키, DB 정보</text><rect x="575" y="180" width="165" height="46" rx="8" class="svg-box"/><text x="657.5" y="199.0" text-anchor="middle" class="svg-text">S3</text><text x="657.5" y="218.0" text-anchor="middle" class="svg-small">표지 이미지</text><rect x="575" y="240" width="165" height="46" rx="8" class="svg-box"/><text x="657.5" y="259.0" text-anchor="middle" class="svg-text">CloudWatch</text><text x="657.5" y="278.0" text-anchor="middle" class="svg-small">로그, 경보</text><rect x="575" y="330" width="165" height="56" rx="8" class="svg-box"/><text x="657.5" y="354.0" text-anchor="middle" class="svg-text">IAM 역할</text><text x="657.5" y="373.0" text-anchor="middle" class="svg-small">EC2에 붙는 권한</text><rect x="10" y="380" width="110" height="56" rx="8" class="svg-box"/><text x="65.0" y="404.0" text-anchor="middle" class="svg-text">GitHub Actions</text><text x="65.0" y="423.0" text-anchor="middle" class="svg-small">테스트, 배포</text><line x1="110" y1="135" x2="188" y2="135" class="svg-line" marker-end="url(#arr)"/><line x1="310" y1="135" x2="378" y2="135" class="svg-line" marker-end="url(#arr)"/><line x1="445" y1="165" x2="445" y2="308" class="svg-line" marker-end="url(#arr)"/><line x1="510" y1="125" x2="573" y2="83" class="svg-line" marker-end="url(#arr)"/><line x1="510" y1="135" x2="573" y2="143" class="svg-line" marker-end="url(#arr)"/><line x1="510" y1="145" x2="573" y2="203" class="svg-line" marker-end="url(#arr)"/><line x1="510" y1="155" x2="573" y2="263" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>이 과정에서 완성할 배포 구성도. 7일차에 EC2와 RDS로 먼저 배포하고, 8일차에 ALB, S3, CloudWatch, GitHub Actions 배포를 더합니다.</figcaption></figure>
+
+<p>구성도에서 눈여겨볼 점은 두 가지입니다. 첫째, 데이터베이스(RDS)는 인터넷에서 바로 닿지 않는 프라이빗 서브넷에 둡니다. 둘째, EC2가 ECR, Parameter Store, S3, CloudWatch를 쓸 때 액세스 키를 쓰지 않고 IAM 역할로 권한을 받습니다. 오늘 오후의 IAM과 VPC 수업은 이 두 가지를 위한 준비입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>시점</th><th>구성</th><th>사용자가 접속하는 곳</th></tr></thead><tbody><tr><td>7일차</td><td>VPC, EC2(Docker), RDS, Parameter Store, ECR</td><td>EC2의 퍼블릭 IP 주소(8000번 포트), 내 IP에서만</td></tr><tr><td>8일차</td><td>여기에 S3, CloudWatch, ALB와 HTTPS, GitHub Actions 자동 배포를 더함</td><td>ALB 주소, EC2는 ALB에서 오는 요청만 받음</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p40/s12-p40-01.html"><span class="dir">이전</span>S12-P40-01 클라우드 컴퓨팅</a>
+  <a class="next" href="../../s12/p40/s12-p40-03.html"><span class="dir">다음</span>S12-P40-03 실습 계정과 콘솔</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

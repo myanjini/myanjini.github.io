@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P46-01 관리형 데이터베이스와 RDS | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P46-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. EC2와 RDS로 서버 구축</a><span class="sep">/</span><span>S13-P46 RDS PostgreSQL 연결</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p46-01.html" style="flex:10" data-type="주요 개념" title="관리형 데이터베이스와 RDS (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p46-02.html" style="flex:10" data-type="주요 개념" title="RDS 생성 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s13-p46-03.html" style="flex:20" data-type="실습" title="RDS 만들고 연결하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p46-04.html" style="flex:5" data-type="주요 개념" title="RDS 보안 설정 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s13-p46-05.html" style="flex:5" data-type="정리" title="정리: RDS (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S13-P46-01</span></div>
+<h1>관리형 데이터베이스와 RDS</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>프라이빗 서브넷에 RDS를 만들고 EC2의 API와 연결할 수 있습니다.</p></div>
+
+<p class="lead">S8에서는 PostgreSQL을 Compose의 컨테이너로 직접 띄웠습니다. 운영 환경에서는 데이터베이스를 직접 운영하는 대신 RDS(Relational Database Service) 같은 관리형 데이터베이스를 많이 씁니다. 무엇을 대신 해 주는지, 그리고 무엇에 돈이 드는지 정리합니다.</p>
+
+<h2>직접 운영과 RDS</h2>
+<div class="table-wrap"><table><thead><tr><th>할 일</th><th>EC2나 컨테이너에서 직접 운영</th><th>RDS</th></tr></thead><tbody><tr><td>설치와 버전 올리기</td><td>직접</td><td>엔진 버전을 고르면 AWS가 설치합니다. 작은 버전 업데이트는 정한 유지 관리 기간에 자동으로 적용할 수 있습니다.</td></tr><tr><td>백업</td><td>스크립트를 짜서 정기 실행</td><td>자동 백업. 보존 기간(1~35일) 안의 원하는 시점으로 복원할 수 있습니다.</td></tr><tr><td>장애 대비</td><td>복제 서버를 직접 구성</td><td>다중 AZ 배포를 켜면 다른 가용 영역에 대기 인스턴스를 두고 장애 때 자동으로 넘깁니다.</td></tr><tr><td>디스크</td><td>꽉 차면 직접 늘림</td><td>스토리지 크기를 늘릴 수 있고, 자동 확장을 켤 수도 있습니다.</td></tr><tr><td>모니터링</td><td>직접 구성</td><td>CPU, 연결 수, 저장 공간 같은 지표가 CloudWatch에 자동으로 쌓입니다.</td></tr><tr><td>쿼리 작성, 인덱스, 계정 권한, 접근 제어</td><td>직접</td><td><strong>여전히 직접</strong>(공동 책임 모델)</td></tr></tbody></table></div>
+
+<h2>RDS를 이루는 설정</h2>
+<div class="table-wrap"><table><thead><tr><th>설정</th><th>뜻</th><th>이번 실습</th></tr></thead><tbody><tr><td>DB 인스턴스</td><td>데이터베이스가 돌아가는 서버 한 대입니다. 인스턴스 클래스(<code>db.t4g.micro</code> 등)로 크기를 정합니다.</td><td>기관이 허용한 가장 작은 클래스</td></tr><tr><td>DB 서브넷 그룹</td><td>RDS를 둘 수 있는 서브넷의 목록입니다. 서로 다른 가용 영역의 서브넷 두 개 이상이 있어야 합니다.</td><td>프라이빗 서브넷 2개만 넣은 <code>book-api-db-subnets</code></td></tr><tr><td>파라미터 그룹</td><td>PostgreSQL의 설정 파일(<code>postgresql.conf</code>)에 해당하는 값의 묶음입니다. 기본 그룹은 바꿀 수 없고, 바꾸려면 새 그룹을 만듭니다.</td><td>기본값. PostgreSQL 15 이상은 <code>rds.force_ssl=1</code>(SSL 연결만 허용)이 기본입니다.</td></tr><tr><td>자동 백업</td><td>매일 정해진 시간에 백업하고, 그 사이 변경 기록도 남겨 시점 복원을 지원합니다.</td><td>보존 1일</td></tr><tr><td>다중 AZ</td><td>다른 가용 영역에 대기 인스턴스를 둡니다. 요금이 약 두 배입니다.</td><td>끔(단일 AZ)</td></tr><tr><td>엔드포인트</td><td>앱이 접속할 주소입니다. IP가 아니라 이름(<code>book-api-db.xxxx.ap-northeast-2.rds.amazonaws.com</code>)입니다.</td><td>DATABASE_URL에 넣음</td></tr></tbody></table></div>
+
+<p>엔드포인트가 IP가 아니라 이름인 이유는, 장애로 대기 인스턴스로 넘어가거나 인스턴스를 교체해도 이름은 그대로 두고 가리키는 주소만 바꾸기 위해서입니다. 그래서 앱 설정에 IP를 적지 않습니다.</p>
+
+<h2>RDS의 요금</h2>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>기준</th></tr></thead><tbody><tr><td>인스턴스</td><td>켜져 있는 시간(클래스에 따라 다름). 다중 AZ는 두 배</td></tr><tr><td>스토리지</td><td>할당한 GB(쓴 양이 아니라 할당한 양)</td></tr><tr><td>백업</td><td>DB 크기만큼의 백업 저장 공간은 추가 요금이 없고, 넘는 부분과 직접 만든 스냅샷은 요금이 붙음</td></tr><tr><td>퍼블릭 IP</td><td>퍼블릭 액세스를 켜면 공용 IPv4 요금(이번 실습은 끔)</td></tr></tbody></table></div>
+
+<p>RDS를 중지하면 인스턴스 요금은 멈추지만 스토리지와 백업 요금은 계속되고, 7일이 지나면 자동으로 다시 시작됩니다(S12-P40-04). 과정이 끝나면 삭제합니다(S18).</p>
+<div class="quiz" data-answer="2"><p class="q">RDS를 쓰면 AWS가 대신 해 주지 않는 것은 무엇인가요?</p><label><input type="radio" name="p46q0" value="1"> <span>1. 엔진 설치</span></label><label><input type="radio" name="p46q0" value="2"> <span>2. DB 계정 권한과 보안 그룹 설정</span></label><label><input type="radio" name="p46q0" value="3"> <span>3. 지표 수집</span></label><label><input type="radio" name="p46q0" value="4"> <span>4. 자동 백업</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>누가 데이터베이스에 접속할 수 있는지와 데이터를 어떻게 쓰는지는 여전히 고객의 책임입니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p45/s13-p45-05.html"><span class="dir">이전</span>S13-P45-05 정리: EC2 배포</a>
+  <a class="next" href="../../s13/p46/s13-p46-02.html"><span class="dir">다음</span>S13-P46-02 RDS 생성 과정 보기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

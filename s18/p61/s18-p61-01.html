@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S18-P61-01 보안 점검 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S18-P61-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S18. 보안 점검, 배포와 발표</a><span class="sep">/</span><span>S18-P61 보안 점검과 AWS 배포</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s18-p61-01.html" style="flex:15" data-type="실습" title="보안 점검 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s18-p61-02.html" style="flex:25" data-type="실습" title="AWS 배포 (25분)"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s18-p61-03.html" style="flex:5" data-type="실습" title="README 작성 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s18-p61-04.html" style="flex:5" data-type="정리" title="정리: 발표 준비 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S18-P61-01</span></div>
+<h1>보안 점검</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>프로젝트의 보안약점을 점검하고 기존 배포 파이프라인으로 AWS에 배포할 수 있습니다.</p></div>
+
+<p class="lead">배포하기 전에 내 프로젝트를 스스로 진단합니다. 자동 점검 도구를 먼저 돌리고, 도구가 보지 못하는 부분은 7개 유형의 점검 질문으로 확인합니다. 5일차에 남의 코드(진단용 예제 API)로 연습한 것을 이번에는 내 코드에 합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>bandit과 pip-audit 결과를 판정하고, <a href="../../appendix/appendix-f.html">부록 F</a> 진단표로 내 프로젝트를 자기 진단하고 조치할 수 있습니다.</p></div>
+<p><a href="../../assets/files/project-diagnosis.md" download>자기 진단표 양식 내려받기(Markdown)</a></p>
+<ol class="steps"><li><h3>자동 점검</h3><div class="codeblock term"><pre><code>bandit -r app -ll
+Test results:
+	No issues identified.
+...
+	Total issues (by severity):
+		Low: 1
+		Medium: 0
+		High: 0
+
+pip-audit -r requirements.txt
+No known vulnerabilities found</code></pre></div>
+
+<p><code>-ll</code>은 중간 이상만 보여 주는 옵션이라 "찾은 것 없음"으로 나오지만, 요약에는 낮음 1건이 있습니다. 옵션 없이 실행하면 <code>app/routers/auth.py</code>의 <code>"token_type": "bearer"</code>를 "비밀번호를 코드에 적은 것 같다"(B105)고 알려 줍니다. 토큰의 종류를 나타내는 정해진 단어일 뿐 비밀 값이 아니므로 오탐입니다. 진단표의 자동 점검 표에 "낮음 1건, B105 오탐(비밀 값 아님)"처럼 판정과 이유를 적습니다(S11-P37-03).</p>
+</li><li><h3>유형별 점검</h3>
+<p>양식의 "유형별 점검" 표에서 7개 유형마다 내 코드의 해당 위치를 찾아 답합니다. 자동 도구가 찾지 못하는 약점(인가 누락, 경쟁 조건, 응답 속 개인정보)은 대부분 여기서 나옵니다. 오전에 쓴 보안 요구사항(S17-P57-03)과 테스트가 근거가 됩니다.</p>
+</li><li><h3>진단과 조치 결과 적기</h3>
+<p>점검하다 찾은 약점, 그리고 오전에 구현하며 이미 막은 약점을 모두 "진단과 조치 결과" 표에 적습니다. 처음부터 막아 둔 것도 "무엇을 왜 막았는지"를 적어야 평가에서 근거가 됩니다.</p>
+<details><summary>예시 진단표(스터디 모임 API) 보기</summary><div class="answer"><div class="table-wrap"><table><thead><tr><th>번호</th><th>유형과 항목</th><th>위치</th><th>위험도</th><th>진단 근거와 조치</th><th>확인 테스트</th></tr></thead><tbody><tr><td>1</td><td>보안기능<br>부적절한 인가</td><td><code>services/studies.py</code>, <code>update_study</code>, <code>delete_study</code></td><td>상</td><td>P58 단계에서 로그인만 하면 남의 모임 수정, 삭제 가능<br>조치: 모임을 찾은 뒤 <code>check_can_modify</code>로 개설자 검사(403)</td><td><code>test_other_user_cannot_update_study</code></td></tr><tr><td>2</td><td>시간 및 상태<br>경쟁 조건</td><td><code>repositories/studies.py</code>, <code>increase_member_count</code></td><td>중</td><td>인원 확인과 증가 사이에 다른 요청이 끼어들면 정원 초과<br>조치: 조건부 UPDATE, 같은 사람 중복은 유일 제약</td><td><code>test_last_seat_cannot_be_taken_twice</code></td></tr><tr><td>3</td><td>캡슐화<br>개인정보 노출</td><td><code>routers/studies.py</code>, <code>list_members</code></td><td>중</td><td>명단에 참가자 전체 이메일<br>조치: 개설자만 조회, 이메일 앞 두 글자와 도메인만</td><td><code>test_members_list_is_owner_only_and_masked</code></td></tr><tr><td>4</td><td>입력데이터 검증 및 표현<br>정의하지 않은 필드 허용</td><td><code>schemas.py</code>, <code>StudyCreate</code></td><td>중</td><td>요청에 <code>owner_id</code>를 넣어 남을 개설자로 지정할 수 있는지<br>조치: <code>InputModel</code> 상속으로 422</td><td><code>test_invalid_study_is_422</code></td></tr><tr><td>5</td><td>API 오용<br>알려진 취약점이 있는 패키지</td><td><code>requirements.txt</code></td><td>-</td><td>pip-audit 결과 없음<br>조치: 해당 없음</td><td>CI의 pip-audit 단계</td></tr></tbody></table></div>
+</div></details>
+
+<p>진단표는 저장소의 <code>docs/security-diagnosis.md</code>로 넣습니다.</p>
+</li><li><h3>배포 전 점검표의 애플리케이션 항목</h3>
+<p><a href="../../appendix/appendix-c.html">부록 C</a>의 1~7번(S16-P54-03)을 내 프로젝트로 한 번 더 봅니다. 템플릿을 그대로 썼다면 대부분 이미 "예"입니다. 특히 4번(CORS)은 템플릿 기본값이 "허용 없음"이므로 바꾸지 않았는지, 3번(<code>/docs</code>)은 운영에서 꺼지는지(<code>APP_ENV=production</code>) 확인합니다.</p>
+</li><li><h3>커밋</h3><div class="codeblock term"><pre><code>git add docs/security-diagnosis.md &amp;&amp; git commit -m "자기 진단표"</code></pre></div>
+</li></ol>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p61a1"> <span>bandit과 pip-audit 결과를 판정하고 진단표에 적었다.</span></label></li><li><label><input type="checkbox" data-save="p61a2"> <span>7개 유형 모두에 답했다(해당 없음도 이유와 함께).</span></label></li><li><label><input type="checkbox" data-save="p61a3"> <span>진단과 조치 결과에 3건 이상 있고, 각각 확인 테스트가 있다.</span></label></li><li><label><input type="checkbox" data-save="p61a4"> <span>진단표를 저장소에 넣었다.</span></label></li></ul>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s17/p60/s17-p60-04.html"><span class="dir">이전</span>S17-P60-04 정리: 오전 마무리</a>
+  <a class="next" href="../../s18/p61/s18-p61-02.html"><span class="dir">다음</span>S18-P61-02 AWS 배포</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

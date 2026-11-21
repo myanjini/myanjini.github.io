@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P41-05 정리: IAM | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P41-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P41 IAM과 접근 관리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p41-01.html" style="flex:10" data-type="주요 개념" title="IAM 핵심 개념 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p41-02.html" style="flex:10" data-type="주요 개념" title="정책 문서 읽기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p41-03.html" style="flex:20" data-type="실습" title="IAM 역할 만들기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s12-p41-04.html" style="flex:5" data-type="주요 개념" title="액세스 키 관리 수칙 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p41-05.html" style="flex:5" data-type="정리" title="정리: IAM (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S12-P41-05</span></div>
+<h1>정리: IAM</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>핵심</th></tr></thead><tbody><tr><td>IAM 구성 요소</td><td>루트 사용자는 쓰지 않고, 사람은 IAM 사용자나 Identity Center로, 서비스는 역할로 권한을 받습니다.</td></tr><tr><td>정책 읽기</td><td>Effect, Action, Resource(필요하면 Condition)를 읽습니다. 기본은 거부, 명시적 거부가 이깁니다.</td></tr><tr><td>최소 권한</td><td>필요한 동작만, 필요한 자원에만 허용합니다. <code>*</code>는 꼭 필요한지 따져 봅니다.</td></tr><tr><td>EC2용 역할</td><td>Session Manager, ECR 내려받기, <code>/book-api/</code> 파라미터 읽기만 허용합니다.</td></tr><tr><td>액세스 키</td><td>만들지 않습니다. 사람은 임시 로그인, 서버는 역할, 배포는 OIDC를 씁니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">어떤 정책은 <code>s3:GetObject</code>를 허용하고, 다른 정책은 같은 동작을 거부합니다. 결과는 무엇인가요?</p><label><input type="radio" name="p41q1" value="1"> <span>1. 오류가 난다</span></label><label><input type="radio" name="p41q1" value="2"> <span>2. 허용</span></label><label><input type="radio" name="p41q1" value="3"> <span>3. 거부</span></label><label><input type="radio" name="p41q1" value="4"> <span>4. 나중에 붙인 정책을 따른다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>명시적 거부는 어떤 허용보다 우선합니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">EC2 서버의 애플리케이션이 Parameter Store를 읽게 하는 가장 알맞은 방법은 무엇인가요?</p><label><input type="radio" name="p41q2" value="1"> <span>1. 읽기 권한만 있는 IAM 역할을 EC2에 붙인다</span></label><label><input type="radio" name="p41q2" value="2"> <span>2. 루트 사용자의 키를 쓴다</span></label><label><input type="radio" name="p41q2" value="3"> <span>3. Docker 이미지에 액세스 키를 넣는다</span></label><label><input type="radio" name="p41q2" value="4"> <span>4. .env 파일에 액세스 키를 넣어 서버에 복사한다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>역할은 장기 비밀 값 없이 임시 자격 증명을 자동으로 주고 바꿔 줍니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">역할의 신뢰 정책이 정하는 것은 무엇인가요?</p><label><input type="radio" name="p41q3" value="1"> <span>1. 역할의 요금</span></label><label><input type="radio" name="p41q3" value="2"> <span>2. 역할이 할 수 있는 동작</span></label><label><input type="radio" name="p41q3" value="3"> <span>3. 이 역할을 맡을 수 있는 주체</span></label><label><input type="radio" name="p41q3" value="4"> <span>4. 역할의 유효 기간</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>할 수 있는 동작은 권한 정책, 맡을 수 있는 주체는 신뢰 정책이 정합니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>다음 파트에서는 도서 API와 데이터베이스가 놓일 네트워크(VPC)를 배웁니다. 데이터베이스를 인터넷에서 숨기는 서브넷 배치와, 꼭 필요한 연결만 여는 보안 그룹 규칙을 직접 설계합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p41/s12-p41-04.html"><span class="dir">이전</span>S12-P41-04 액세스 키 관리 수칙</a>
+  <a class="next" href="../../s12/p42/s12-p42-01.html"><span class="dir">다음</span>S12-P42-01 VPC 구성 요소</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

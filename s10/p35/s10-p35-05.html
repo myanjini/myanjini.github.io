@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P35-05 정리: 5일차 마무리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P35-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 보안기능과 에러처리</a><span class="sep">/</span><span>S10-P35 에러처리, 캡슐화와 정보 노출</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p35-01.html" style="flex:10" data-type="주요 개념" title="에러처리 보안약점 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p35-02.html" style="flex:10" data-type="주요 개념" title="정보가 새는 응답 찾기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s10-p35-03.html" style="flex:20" data-type="실습" title="안전한 오류 응답 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p35-04.html" style="flex:5" data-type="주요 개념" title="캡슐화와 디버그 코드 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p35-05.html" style="flex:5" data-type="정리" title="정리: 5일차 마무리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S10-P35-05</span></div>
+<h1>정리: 5일차 마무리</h1>
+
+<h2>5일차 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>KISA 유형</th><th>보안약점</th><th>도서 API의 조치</th></tr></thead><tbody><tr><td>입력데이터 검증 및 표현</td><td>SQL 삽입, 경로 조작, XSS, 위험한 형식 파일 업로드, 명령어 삽입, SSRF</td><td>값 바인딩, 허용 목록, 기준 폴더 검사, nosniff, 매직 넘버 검사</td></tr><tr><td>보안기능</td><td>부적절한 인가</td><td>소유자 검사(404), /admin 분리, extra="forbid"</td></tr><tr><td>보안기능</td><td>중요정보 평문 저장과 전송, 하드코드된 중요정보, 취약한 난수</td><td>해시 저장, 비밀 값 분리와 점검, 약한 키 거부, secrets, 이메일 마스킹</td></tr><tr><td>보안기능</td><td>반복된 인증 시도 제한 부재, 취약한 비밀번호 허용</td><td>계정과 IP 기준 실패 제한(429), 비밀번호 규칙</td></tr><tr><td>에러처리</td><td>오류 메시지를 통한 정보 노출, 부적절한 예외 처리</td><td>전역 예외 처리, 입력 값 없는 422, 로그 마스킹</td></tr><tr><td>캡슐화</td><td>남은 디버그 코드, 시스템 정보 노출</td><td>운영 문서 끄기, server 헤더 제거</td></tr></tbody></table></div>
+
+<p>오늘 고친 모든 약점은 <code>tests/test_attacks.py</code>에 회귀 테스트로 남아 있고, 4일차에 만든 CI가 푸시할 때마다 실행합니다.</p>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">처리하지 못한 예외가 났을 때 사용자 응답에 담기에 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p35q1" value="1"> <span>1. 서버 버전</span></label><label><input type="radio" name="p35q1" value="2"> <span>2. 예외 메시지와 트레이스백</span></label><label><input type="radio" name="p35q1" value="3"> <span>3. 실행된 SQL 문장</span></label><label><input type="radio" name="p35q1" value="4"> <span>4. 정해진 오류 코드, 문구, 요청 ID</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>자세한 내용은 로그에만 남기고, 사용자에게는 정해진 문구와 로그를 찾을 단서(요청 ID)만 줍니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">FastAPI의 기본 422 응답에서 비밀번호가 새는 이유는 무엇인가요?</p><label><input type="radio" name="p35q2" value="1"> <span>1. 비밀번호를 평문으로 저장해서</span></label><label><input type="radio" name="p35q2" value="2"> <span>2. 검사에 실패한 값을 input 항목에 그대로 담아서</span></label><label><input type="radio" name="p35q2" value="3"> <span>3. HTTPS를 쓰지 않아서</span></label><label><input type="radio" name="p35q2" value="4"> <span>4. 로그 수준이 DEBUG라서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>RequestValidationError 처리기로 위치와 이유만 응답하게 바꿉니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">로그 마스킹에 대한 설명으로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p35q3" value="1"> <span>1. 마스킹하면 로그를 검색할 수 없다.</span></label><label><input type="radio" name="p35q3" value="2"> <span>2. 마스킹은 운영 환경에서만 필요하다.</span></label><label><input type="radio" name="p35q3" value="3"> <span>3. 마스킹이 있으므로 비밀번호를 로그에 남겨도 된다.</span></label><label><input type="radio" name="p35q3" value="4"> <span>4. 모양으로 알아볼 수 있는 값을 가리는 안전망이며, 중요정보를 로그에 넣지 않는 것이 먼저다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>비밀번호 원문처럼 모양이 정해지지 않은 값은 가릴 수 없습니다.</p></div>
+
+<h2>6일차 예고</h2>
+<p>6일차 오전에는 동시에 대여하면 재고보다 많이 빌려지는 경쟁 조건을 재현해 고치고, bandit과 pip-audit으로 코드와 패키지를 자동 점검한 뒤, 강사가 준비한 진단용 API로 보안약점 진단 실습을 합니다. 오후부터는 AWS 기초(클라우드, IAM, VPC)를 배우며 배포를 준비합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p35/s10-p35-04.html"><span class="dir">이전</span>S10-P35-04 캡슐화와 디버그 코드</a>
+  <a class="next" href="../../s11/p36/s11-p36-01.html"><span class="dir">다음</span>S11-P36-01 5일차 복습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P9-04 CORS와 요청 로깅 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P9-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P9 설정 관리와 미들웨어</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p9-01.html" style="flex:10" data-type="주요 개념" title="설정과 비밀정보 분리 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p9-02.html" style="flex:15" data-type="실습" title="Settings 클래스 적용 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s3-p9-03.html" style="flex:5" data-type="주요 개념" title="미들웨어와 CORS (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s3-p9-04.html" style="flex:15" data-type="실습" title="CORS와 요청 로깅 (15분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s3-p9-05.html" style="flex:5" data-type="정리" title="정리: 설정과 미들웨어 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S3-P9-04</span></div>
+<h1>CORS와 요청 로깅</h1>
+
+<p class="lead">CORS 미들웨어를 설정하고, 모든 요청의 처리 시간을 기록하는 미들웨어를 직접 만듭니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>허용한 출처에만 CORS 헤더가 붙는지 확인하고, 요청마다 처리 시간을 기록할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>CORS 미들웨어 추가</h3>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI(...)
+
+# 이 주소에서 실행되는 웹 화면만 브라우저에서 이 API를 호출할 수 있습니다.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)</code></pre></div>
+
+<p>허용할 출처 목록은 S3-P9-02에서 만든 설정값(<code>CORS_ORIGINS</code>)에서 읽습니다.</p>
+</li><li><h3>처리 시간 미들웨어 작성</h3>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>import time
+
+from fastapi import FastAPI, Request
+
+
+@app.middleware("http")
+async def log_process_time(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)  # 실제 경로 함수가 여기서 실행됩니다.
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    response.headers["X-Process-Time"] = f"{elapsed_ms:.1f}ms"
+    print(f"{request.method} {request.url.path} {response.status_code} {elapsed_ms:.1f}ms")
+    return response</code></pre></div>
+
+<p><code>call_next(request)</code> 앞이 "들어갈 때", 뒤가 "나올 때" 하는 일입니다. <code>call_next</code>는 기다려야 하는 함수라서 이 미들웨어만큼은 <code>async def</code>와 <code>await</code>로 씁니다. <code>print</code>는 4일차에 로그 기록 도구로 바꿉니다.</p>
+</li><li><h3>허용된 출처로 요청</h3>
+<p><code>-H "Origin: ..."</code>은 브라우저처럼 출처를 밝혀 요청하는 옵션입니다.</p>
+<div class="codeblock term"><pre><code>curl -i -H "Origin: http://localhost:5173" http://127.0.0.1:8000/books</code></pre></div>
+
+<p>응답 헤더에 <code>access-control-allow-origin: http://localhost:5173</code>과 <code>x-process-time</code>이 보입니다.</p>
+</li><li><h3>허용되지 않은 출처로 요청</h3>
+<div class="codeblock term"><pre><code>curl -i -H "Origin: http://evil.example" http://127.0.0.1:8000/books</code></pre></div>
+
+<p>응답 본문은 그대로 오지만 <code>access-control-allow-origin</code> 헤더가 없습니다. 브라우저였다면 이 응답을 화면 코드가 읽지 못하게 막습니다.</p>
+</li><li><h3>터미널 기록 확인</h3>
+<p>서버 터미널에 요청마다 <code>GET /books 200 1.2ms</code> 같은 줄이 찍히는지 확인합니다.</p>
+</li></ol>
+
+<h2>지금까지의 app/main.py</h2>
+<details><summary>전체 코드 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">app/main.py</span><pre><code>import time
+
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+
+from app.config import settings
+from app.errors import AppError
+from app.routers import books
+
+app = FastAPI(
+    title=settings.app_name,
+    description="도서를 등록하고 조회, 수정, 삭제하는 API입니다.",
+    version="0.1.0",
+)
+
+# 이 주소에서 실행되는 웹 화면만 브라우저에서 이 API를 호출할 수 있습니다.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.middleware("http")
+async def log_process_time(request: Request, call_next):
+    start = time.perf_counter()
+    response = await call_next(request)  # 실제 경로 함수가 여기서 실행됩니다.
+    elapsed_ms = (time.perf_counter() - start) * 1000
+    response.headers["X-Process-Time"] = f"{elapsed_ms:.1f}ms"
+    print(f"{request.method} {request.url.path} {response.status_code} {elapsed_ms:.1f}ms")
+    return response
+
+
+@app.exception_handler(AppError)
+def handle_app_error(request: Request, exc: AppError):
+    # 어떤 AppError든 같은 모양의 JSON으로 바꿔 응답합니다.
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"code": exc.code, "message": exc.message},
+    )
+
+
+@app.get("/", tags=["기본"])
+def read_root():
+    return {"message": f"{settings.app_name}에 오신 것을 환영합니다."}
+
+
+@app.get("/health", tags=["기본"])
+def health_check():
+    return {"status": "ok"}
+
+
+app.include_router(books.router)</code></pre></div>
+</div></details>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>허용한 출처에만 access-control-allow-origin 헤더가 붙는다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>모든 응답에 X-Process-Time 헤더가 있다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>터미널에 요청마다 처리 시간이 기록된다.</span></label></li></ul>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p9-done</code> 브랜치에 있습니다. <code>.env</code>는 저장소에 없으므로 <code>.env.example</code>을 복사해 만듭니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p9/s3-p9-03.html"><span class="dir">이전</span>S3-P9-03 미들웨어와 CORS</a>
+  <a class="next" href="../../s3/p9/s3-p9-05.html"><span class="dir">다음</span>S3-P9-05 정리: 설정과 미들웨어</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

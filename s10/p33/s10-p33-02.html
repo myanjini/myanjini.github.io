@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P33-02 하드코딩된 비밀정보 찾기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P33-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 보안기능과 에러처리</a><span class="sep">/</span><span>S10-P33 보안기능 2: 중요정보 보호와 암호화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p33-01.html" style="flex:10" data-type="주요 개념" title="중요정보와 암호화 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p33-02.html" style="flex:10" data-type="주요 개념" title="하드코딩된 비밀정보 찾기 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s10-p33-03.html" style="flex:20" data-type="실습" title="비밀정보 정리 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p33-04.html" style="flex:5" data-type="주요 개념" title="전송 구간 보호 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p33-05.html" style="flex:5" data-type="정리" title="정리: 중요정보 보호 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S10-P33-02</span></div>
+<h1>하드코딩된 비밀정보 찾기</h1>
+
+<p class="lead">코드에 비밀 값을 직접 적는 것을 하드코딩이라고 합니다. 지금 코드에 없더라도 예전에 적었다가 지운 적이 있다면 Git 이력에 그대로 남아 있습니다.</p>
+
+<h2>비밀 값이 숨는 곳</h2>
+<div class="table-wrap"><table><thead><tr><th>위치</th><th>예</th></tr></thead><tbody><tr><td>코드</td><td><code>SECRET_KEY = "k9Xq2..."</code>, 테스트 코드의 실제 계정 비밀번호</td></tr><tr><td>설정 파일</td><td><code>compose.yaml</code>, <code>Dockerfile</code>의 <code>ENV</code>, <code>alembic.ini</code>의 데이터베이스 주소</td></tr><tr><td>Git 이력</td><td>지금은 지웠지만 예전 커밋에 들어 있는 값</td></tr><tr><td>터미널 기록</td><td><code>docker run -e SECRET_KEY=...</code>처럼 명령에 직접 적은 값</td></tr><tr><td>CI 기록과 로그</td><td>실행 중에 출력한 환경 변수, 오류 메시지 속 접속 정보</td></tr></tbody></table></div>
+
+<h2>지금 코드에서 찾기</h2>
+<p><code>git grep</code>은 Git이 관리하는 파일 안에서만 찾으므로 <code>.venv</code> 같은 폴더를 건너뜁니다.</p>
+<div class="codeblock term"><pre><code>git grep -n -i -E "secret|password|token|api_key"</code></pre></div>
+
+<p>결과가 많이 나오지만 대부분은 변수 이름이나 설명입니다. 하나씩 보며 <strong>값이 직접 적힌 줄</strong>만 골라냅니다. 테스트 전용 키처럼 비밀이 아닌 값도 있으므로 사람이 판단합니다.</p>
+
+<h2>Git 이력에서 찾기</h2>
+<p>한 팀원이 처음에 비밀 키를 코드에 적어 커밋했다가, 다음 커밋에서 환경 변수로 바꿨다고 합시다. 지금 파일에는 값이 없지만 이력을 검색하면 나옵니다.</p>
+<div class="codeblock term"><pre><code>git log -p -S "hardcoded-secret" --oneline
+d6169ae use env var
+-SECRET_KEY = "k9Xq2-hardcoded-secret-value-1234567890"
++import os
++SECRET_KEY = os.environ["SECRET_KEY"]
+383e2b0 add config
++SECRET_KEY = "k9Xq2-hardcoded-secret-value-1234567890"</code></pre></div>
+
+<p><code>-S</code>는 그 글자가 추가되거나 지워진 커밋을 찾습니다. 저장소를 받은 사람이면 누구나 이렇게 찾을 수 있습니다. 실무에서는 gitleaks 같은 도구로 이력 전체를 자동으로 검사하고, GitHub도 비밀 값으로 보이는 문자열이 푸시되면 막거나 알려 주는 기능(secret scanning, push protection)을 제공합니다.</p>
+
+<h2>노출된 비밀 값은 바꿉니다</h2>
+<p>이력에서 지우는 것만으로는 부족합니다. 이미 누군가 저장소를 복제했을 수 있습니다. <strong>한 번 노출된 비밀 값은 새어 나간 것으로 보고 교체</strong>하는 것이 원칙입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>SECRET_KEY가 노출되었을 때</th></tr></thead><tbody><tr><td>1</td><td><code>secrets.token_urlsafe(32)</code>로 새 키를 만듭니다.</td></tr><tr><td>2</td><td>서버의 환경 변수(7일차부터는 Parameter Store)를 새 값으로 바꾸고 다시 시작합니다. 그 순간 예전 키로 서명된 액세스 토큰은 모두 무효가 됩니다.</td></tr><tr><td>3</td><td>공격자가 이미 받아 둔 리프레시 토큰이 있을 수 있으면 <code>refresh_tokens</code>를 모두 <code>revoked</code>로 바꿔 전원 다시 로그인하게 합니다(S5-P18-04).</td></tr><tr><td>4</td><td>코드와 이력에서 값을 지우고, 같은 일이 다시 없도록 점검 도구를 CI에 넣습니다(6일차).</td></tr><tr><td>5</td><td>노출 기간 동안 이상한 로그인이나 요청이 있었는지 로그를 확인합니다.</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p33/s10-p33-01.html"><span class="dir">이전</span>S10-P33-01 중요정보와 암호화</a>
+  <a class="next" href="../../s10/p33/s10-p33-03.html"><span class="dir">다음</span>S10-P33-03 비밀정보 정리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P31-02 위험한 형식 파일 업로드 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P31-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 개발 보안 기초와 입력데이터 검증</a><span class="sep">/</span><span>S9-P31 입력데이터 검증 2: XSS, 파일 업로드, 명령어 삽입</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p31-01.html" style="flex:10" data-type="주요 개념" title="크로스사이트 스크립트와 API (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s9-p31-02.html" style="flex:10" data-type="주요 개념" title="위험한 형식 파일 업로드 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s9-p31-03.html" style="flex:20" data-type="실습" title="업로드 API 보안 강화 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s9-p31-04.html" style="flex:5" data-type="주요 개념" title="명령어 삽입과 SSRF (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s9-p31-05.html" style="flex:5" data-type="정리" title="정리: 입력데이터 검증 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S9-P31-02</span></div>
+<h1>위험한 형식 파일 업로드</h1>
+
+<p class="lead">3일차 업로드 API는 확장자와 크기만 검사했습니다. 확장자는 파일 이름일 뿐이라 얼마든지 바꿀 수 있습니다.</p>
+
+<h2>확장자 위조</h2>
+<p>HTML과 스크립트가 든 파일의 이름을 <code>cover.png</code>로 바꿔 올리면 3일차 코드는 통과시킵니다. 서버에는 HTML 내용의 <code>.png</code> 파일이 저장되고, 우리 주소(<code>/covers/...png</code>)로 누구나 열 수 있게 됩니다. 브라우저가 이 파일을 HTML로 짐작해 열면 우리 사이트에서 공격자의 스크립트가 실행됩니다.</p>
+<div class="codeblock"><span class="file">cover.png(실제 내용)</span><pre><code>&lt;html&gt;&lt;script&gt;alert(document.cookie)&lt;/script&gt;&lt;/html&gt;</code></pre></div>
+
+<h2>위험한 형식 파일 업로드를 막는 방법</h2>
+<div class="table-wrap"><table><thead><tr><th>방법</th><th>도서 API</th></tr></thead><tbody><tr><td>허용하는 형식만 받기(허용 목록)</td><td>jpg, jpeg, png. 스크립트를 담을 수 있는 svg, html은 받지 않습니다.</td></tr><tr><td>파일 내용으로 형식 확인</td><td><strong>오늘 추가</strong>. 파일 앞부분의 형식 표시를 확인합니다.</td></tr><tr><td>크기 제한</td><td>3일차에 2MB로 제한했습니다.</td></tr><tr><td>저장 이름 다시 짓기</td><td>3일차에 uuid로 짓고, 오늘부터 확장자도 내용으로 확인한 형식으로 붙입니다.</td></tr><tr><td>실행되지 않는 위치에 저장</td><td>코드와 떨어진 <code>uploads</code> 폴더에 두고, 정해진 Content-Type과 <code>nosniff</code>로만 내보냅니다. 8일차에는 아예 다른 서비스(S3)로 옮깁니다.</td></tr></tbody></table></div>
+
+<h2>파일 내용의 형식 표시(매직 넘버)</h2>
+<p>대부분의 파일 형식은 맨 앞 몇 바이트가 정해져 있습니다. 이것을 매직 넘버라고 합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>형식</th><th>맨 앞 바이트</th></tr></thead><tbody><tr><td>PNG</td><td><code>89 50 4E 47 0D 0A 1A 0A</code>(<code>\x89PNG</code>로 시작)</td></tr><tr><td>JPEG</td><td><code>FF D8 FF</code></td></tr></tbody></table></div>
+<div class="codeblock"><span class="file">app/services/covers.py</span><pre><code># 파일 앞부분에 들어 있는 형식 표시(매직 넘버)와, 그 형식으로 저장할 확장자
+SIGNATURES = {
+    b"\x89PNG\r\n\x1a\n": ".png",
+    b"\xff\xd8\xff": ".jpg",
+}
+
+
+def detect_image_type(data: bytes) -&gt; str | None:
+    """파일 내용의 앞부분을 보고 png인지 jpg인지 판단합니다."""
+    for signature, ext in SIGNATURES.items():
+        if data.startswith(signature):
+            return ext
+    return None</code></pre></div>
+<div class="codeblock"><span class="file">app/services/covers.py</span><pre><code>def read_cover(file: UploadFile) -&gt; tuple[bytes, str]:
+    """확장자, 크기, 내용을 검사하고, 파일 내용과 저장할 확장자를 돌려줍니다."""
+    expected = ALLOWED_EXTENSIONS.get(Path(file.filename or "").suffix.lower())
+    if expected is None:
+        raise AppError(415, "UNSUPPORTED_FILE_TYPE", "jpg, jpeg, png 파일만 올릴 수 있습니다.")
+    data = file.file.read(MAX_COVER_SIZE + 1)  # 한도보다 1바이트 더 읽어 보면 넘었는지 알 수 있습니다.
+    if len(data) &gt; MAX_COVER_SIZE:
+        raise AppError(413, "FILE_TOO_LARGE", "파일 크기는 2MB를 넘을 수 없습니다.")
+    if not data:
+        raise AppError(422, "EMPTY_FILE", "빈 파일입니다.")
+    if detect_image_type(data) != expected:
+        raise AppError(415, "INVALID_IMAGE_CONTENT", "파일 내용이 확장자에 맞는 이미지가 아닙니다.")
+    return data, expected  # 저장할 때는 확인한 형식의 확장자를 씁니다.</code></pre></div>
+
+<p>확장자로 "무엇이어야 하는지"를 정하고, 내용으로 "정말 그것인지"를 확인합니다. 둘이 다르면 거절합니다. 매직 넘버는 앞부분만 보므로 이미지 앞부분 뒤에 다른 내용을 숨긴 파일까지 막지는 못합니다. 더 엄격하게 하려면 Pillow 같은 이미지 라이브러리로 실제로 열어 보거나 다시 저장해 숨은 내용을 없앱니다.</p>
+
+<h2>파일 이름도 입력입니다</h2>
+<p>원래 파일 이름은 저장에 쓰지 않지만 업로드 로그에 남깁니다. 이름에 줄바꿈 문자를 넣으면 로그에 가짜 줄을 끼워 넣을 수 있고, 아주 긴 이름은 로그를 어지럽힙니다. 기록하기 전에 다듬습니다.</p>
+<div class="codeblock"><span class="file">app/services/covers.py</span><pre><code>def clean_filename(name: str | None) -&gt; str:
+    """기록에 남길 원래 파일 이름에서 경로와 제어 문자를 없애고 길이를 줄입니다."""
+    name = (name or "").replace("\\", "/").rsplit("/", 1)[-1]  # 폴더 부분을 떼어 냅니다.
+    name = "".join(ch for ch in name if ch.isprintable())   # 줄바꿈 같은 보이지 않는 문자를 지웁니다.
+    return name[:100] or "unnamed"</code></pre></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p31/s9-p31-01.html"><span class="dir">이전</span>S9-P31-01 크로스사이트 스크립트와 API</a>
+  <a class="next" href="../../s9/p31/s9-p31-03.html"><span class="dir">다음</span>S9-P31-03 업로드 API 보안 강화</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

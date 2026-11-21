@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P21-03 대여, 반납 구현 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P21-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P21 3일차 통합 실습: 도서 대여 기능</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p21-01.html" style="flex:5" data-type="주요 개념" title="과제 안내 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s6-p21-02.html" style="flex:10" data-type="실습" title="대여 모델과 API 설계 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p21-03.html" style="flex:25" data-type="실습" title="대여, 반납 구현 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s6-p21-04.html" style="flex:5" data-type="주요 개념" title="강사 풀이와 흔한 실수 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s6-p21-05.html" style="flex:5" data-type="정리" title="정리: 3일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S6-P21-03</span></div>
+<h1>대여, 반납 구현</h1>
+
+<p class="lead">설계를 바탕으로 직접 구현합니다. 먼저 힌트 없이 시도하고, 15분이 지나도 막히는 단계만 힌트를 펼칩니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>마이그레이션, 서비스 계층, 트랜잭션, 권한 검사를 결합해 대여와 반납 API를 구현할 수 있습니다.</p></div>
+<div class="callout note"><p class="callout-title">평가 안내</p><p>이 실습의 결과물은 3일차 실습 결과물 평가(5%) 대상입니다. 강사 풀이(S6-P21-04)를 보기 전에 제출한 코드로, S6-P21-02의 시험 표대로 대여와 반납이 동작하는지 확인합니다.</p></div>
+<ol class="steps"><li><h3>Loan 모델과 리비전</h3>
+<p><code>app/models.py</code> 맨 아래에 <code>Loan</code>을 추가하고 리비전을 만들어 적용합니다.</p>
+<details><summary>힌트 보기</summary><div class="answer"><div class="codeblock"><span class="file">app/models.py</span><pre><code>class Loan(Base):
+    """누가 어떤 도서를 언제 빌리고 반납했는지 기록합니다."""
+
+    __tablename__ = "loans"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    book_id: Mapped[int] = mapped_column(ForeignKey("books.id"))
+    loaned_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    returned_at: Mapped[datetime | None]  # 반납하기 전에는 None
+
+    book: Mapped["Book"] = relationship()</code></pre></div>
+<p>리비전에 <code>loans</code> 테이블만 만드는지 확인합니다. 새 테이블이므로 외래키 이름을 고칠 필요가 없습니다.</p></div></details>
+</li><li><h3>스키마</h3>
+<p>대여 요청 본문과 응답 모델을 만듭니다. 응답에는 도서 번호와 제목이 보이면 좋습니다.</p>
+<details><summary>힌트 보기</summary><div class="answer"><p>파일 맨 위에 <code>from datetime import datetime</code>을 추가합니다.</p><div class="codeblock"><span class="file">app/schemas.py</span><pre><code>class LoanCreate(BaseModel):
+    """대여 요청 본문"""
+    book_id: int = Field(gt=0, examples=[1])
+
+
+class BookBrief(BaseModel):
+    """대여 응답에 넣는 도서 요약"""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    title: str
+
+
+class LoanRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    user_id: int
+    book: BookBrief
+    loaned_at: datetime
+    returned_at: datetime | None = None</code></pre></div>
+</div></details>
+</li><li><h3>저장소</h3>
+<p><code>app/repositories/loans.py</code>를 만듭니다. 서비스가 필요로 하는 질문을 함수로 만듭니다. "이 사람이 이 도서를 반납하지 않고 빌리고 있나?", "이 사람이 반납하지 않은 대여는 몇 건인가?", "이 도서의 대여 기록이 있나?"</p>
+<details><summary>힌트 보기</summary><div class="answer"><p>"반납하지 않음"은 <code>Loan.returned_at.is_(None)</code> 조건입니다. 개수는 도서 목록에서 쓴 <code>select(func.count()).select_from(Loan).where(...)</code>를 씁니다.</p></div></details>
+</li><li><h3>서비스</h3>
+<p><code>app/services/loans.py</code>에 <code>borrow</code>, <code>return_book</code>, <code>my_loans</code>를 만듭니다. 검사를 모두 마친 뒤 재고 변경과 대여 기록 추가를 하고, 마지막에 한 번만 <code>commit</code>합니다.</p>
+<details><summary>힌트 보기</summary><div class="answer"><p>대여 순서: 도서 찾기, 중복 대여 검사, 권수 검사, 재고 검사, <code>change_stock(db, book, -1, "대여")</code>, 대여 기록 추가, <code>commit</code>.</p><p>반납 순서: 대여 기록 찾기(404), 본인 또는 관리자인지 검사(403), 이미 반납했는지 검사(409), <code>returned_at</code>에 현재 시각 넣기, <code>change_stock(db, loan.book, 1, "반납")</code>, <code>commit</code>.</p><p>현재 시각은 리프레시 토큰에서 쓴 <code>datetime.now(timezone.utc)</code>를 씁니다.</p></div></details>
+</li><li><h3>라우터와 연결</h3>
+<p><code>app/routers/loans.py</code>를 만들고 <code>app/main.py</code>에 연결합니다. <code>GET /loans/me</code>의 응답 모델은 목록입니다.</p>
+<details><summary>힌트 보기</summary><div class="answer"><p>응답 모델은 <code>response_model=list[LoanRead]</code>입니다. <code>main.py</code>에서는 <code>from app.routers import auth, authors, books, loans</code>와 <code>app.include_router(loans.router)</code>를 추가합니다.</p></div></details>
+</li><li><h3>도서 삭제 규칙</h3>
+<p>요구사항 9번을 위해 도서 서비스의 <code>delete_book</code>을 고칩니다.</p>
+<details><summary>힌트 보기</summary><div class="answer"><p>권한 검사 바로 아래에서 대여 저장소로 기록이 있는지 묻고, 있으면 <code>AppError(409, "BOOK_HAS_LOANS", ...)</code>를 냅니다.</p></div></details>
+</li></ol>
+
+<h2>시험 표</h2>
+<p>user1이 재고 2권인 도서 A를 등록하고, 재고 1권인 B, 재고 5권인 C와 D를 등록한 뒤 시작합니다. 사용자를 바꿀 때는 Authorize 창에서 Logout 후 다시 로그인합니다. user2는 S5-P17에서 관리자로 바꾼 계정입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>계정</th><th>요청</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td>1</td><td>로그인 안 함</td><td>A 대여</td><td>401</td><td><input data-save="x1" aria-label="내 결과"></td></tr><tr><td>2</td><td>user1</td><td>A 대여</td><td>201. A의 재고 1</td><td><input data-save="x2" aria-label="내 결과"></td></tr><tr><td>3</td><td>user1</td><td>A 대여</td><td>409 <code>ALREADY_LOANED</code></td><td><input data-save="x3" aria-label="내 결과"></td></tr><tr><td>4</td><td>user3</td><td>A 대여</td><td>201. A의 재고 0</td><td><input data-save="x4" aria-label="내 결과"></td></tr><tr><td>5</td><td>user1</td><td>B, C 대여 뒤 D 대여</td><td>B와 C는 201, D는 409 <code>LOAN_LIMIT_EXCEEDED</code></td><td><input data-save="x5" aria-label="내 결과"></td></tr><tr><td>6</td><td>user3</td><td>2번에서 만든 user1의 대여 반납</td><td>403</td><td><input data-save="x6" aria-label="내 결과"></td></tr><tr><td>7</td><td>user1</td><td>2번 대여 반납</td><td>200, <code>returned_at</code>에 시각. A의 재고 1</td><td><input data-save="x7" aria-label="내 결과"></td></tr><tr><td>8</td><td>user1</td><td>2번 대여 한 번 더 반납</td><td>409 <code>ALREADY_RETURNED</code></td><td><input data-save="x8" aria-label="내 결과"></td></tr><tr><td>9</td><td>user1</td><td><code>GET /loans/me</code></td><td>최근 것부터 3건. A는 반납 시각이 있음</td><td><input data-save="x9" aria-label="내 결과"></td></tr><tr><td>10</td><td>user1</td><td>A 삭제</td><td>409 <code>BOOK_HAS_LOANS</code></td><td><input data-save="x10" aria-label="내 결과"></td></tr><tr><td>11</td><td>user2(관리자)</td><td>4번에서 만든 user3의 대여 반납</td><td>200</td><td><input data-save="x11" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>A의 재고가 0인 상태에서 다른 사람이 A를 빌리면 409 <code>OUT_OF_STOCK</code>이어야 합니다. 4번 뒤에 user2로 확인해 봅니다. 마지막으로 재고 기록을 보고 "대여"와 "반납"이 순서대로 남았는지 확인합니다.</p>
+<div class="callout note"><p class="callout-title">시각이 9시간 다르게 보여요</p><p><code>loaned_at</code>과 <code>returned_at</code>은 세계 표준시(UTC)로 저장합니다. 한국 시간보다 9시간 늦게 보이는 것이 정상입니다. 서버는 UTC로 저장하고, 화면에 보여 줄 때 사용자의 지역 시간으로 바꾸는 것이 일반적입니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p21/s6-p21-02.html"><span class="dir">이전</span>S6-P21-02 대여 모델과 API 설계</a>
+  <a class="next" href="../../s6/p21/s6-p21-04.html"><span class="dir">다음</span>S6-P21-04 강사 풀이와 흔한 실수</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

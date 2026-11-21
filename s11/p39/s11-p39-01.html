@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P39-01 조치 우선순위 정하기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P39-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P39 보안약점 조치와 보안 테스트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p39-01.html" style="flex:5" data-type="주요 개념" title="조치 우선순위 정하기 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p39-02.html" style="flex:20" data-type="실습" title="보안약점 조치 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s11-p39-03.html" style="flex:15" data-type="실습" title="보안 테스트 작성 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s11-p39-04.html" style="flex:5" data-type="주요 개념" title="강사 풀이 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s11-p39-05.html" style="flex:5" data-type="정리" title="정리: 개발 보안 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S11-P39-01</span></div>
+<h1>조치 우선순위 정하기</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>진단한 보안약점을 조치하고 재발을 막는 테스트를 작성할 수 있습니다.</p></div>
+
+<p class="lead">약점이 25개라면 무엇부터 고쳐야 할까요? 시간과 사람은 늘 부족하므로, 가장 위험한 것부터 고치는 순서를 정합니다.</p>
+
+<h2>우선순위를 정하는 세 가지 기준</h2>
+<div class="table-wrap"><table><thead><tr><th>기준</th><th>질문</th><th>높게 보는 경우</th></tr></thead><tbody><tr><td>위험도</td><td>악용되면 피해가 얼마나 큰가요? 얼마나 쉽게 악용되나요?</td><td>로그인 없이, 요청 한 번으로, 서버 장악이나 전체 데이터 유출</td></tr><tr><td>영향 범위</td><td>피해가 사용자 한 명에 그치나요, 서비스 전체에 미치나요?</td><td>모든 사용자, 서버 자체, 비밀 키</td></tr><tr><td>조치 난이도</td><td>고치는 데 얼마나 걸리고, 다른 기능을 깨뜨릴 위험이 있나요?</td><td>몇 줄로 고칠 수 있는 것은 위험도가 같으면 먼저</td></tr></tbody></table></div>
+
+<p>위험도와 영향 범위가 우선순위를 정하고, 조치 난이도는 같은 순위 안에서 순서를 정합니다. 위험한데 고치기 어려운 약점은 먼저 <strong>임시 조치</strong>(기능을 잠시 끄기, 관리자만 쓰게 막기)로 피해를 막고, 근본 조치는 따로 일정을 잡습니다. "어려우니 나중에"는 위험을 그대로 두는 결정이라는 점을 기억합니다.</p>
+
+<h2>게시판 API의 조치 순서(예시)</h2>
+<div class="table-wrap"><table><thead><tr><th>순위</th><th>묶음</th><th>진단표 번호</th><th>이유</th></tr></thead><tbody><tr><td>1</td><td>서버 장악과 인증 우회</td><td>20(pickle 토큰), 3(명령어 삽입), 24(yaml.load), 23(/debug/config와 비밀번호 출력)</td><td>로그인 없이 서버에서 코드를 실행하거나 비밀 키를 얻습니다. 한 번 뚫리면 다른 조치가 의미 없습니다.</td></tr><tr><td>2</td><td>데이터 유출과 변조</td><td>1(SQL 삽입), 2(경로 조작), 6(X-Role), 7(남의 공지 삭제), 13(인증 없는 기능), 11(하드코드된 키)</td><td>모든 사용자의 데이터가 새거나 바뀝니다.</td></tr><tr><td>3</td><td>계정 보호</td><td>8(MD5), 9(비밀번호 규칙), 10(로그인 제한), 12(난수), 21(해시 응답), 22(전역 사용자)</td><td>계정 탈취로 이어집니다. 8번은 이미 가입한 사용자의 해시를 바꾸는 계획도 필요합니다.</td></tr><tr><td>4</td><td>외부 요청과 서비스 안정성</td><td>5(SSRF), 15(무한 반복), 4(파일 형식), 25(패키지)</td><td>내부망 접근과 서비스 거부로 이어집니다.</td></tr><tr><td>5</td><td>품질과 견고함</td><td>14(경쟁 조건), 16(트레이스백), 17(except pass), 18(None), 19(연결 해제)</td><td>피해가 작거나 다른 약점과 겹칠 때 커집니다. 함께 고치기 쉬운 것이 많습니다.</td></tr></tbody></table></div>
+
+<p>정답이 정해진 순서는 아닙니다. 예를 들어 SSRF(5번)는 AWS에 배포한 뒤라면 서버 안에서만 열리는 메타데이터 주소로 서버의 권한 정보를 얻는 데 쓰일 수 있어 1순위로 올려야 합니다. 이 내용은 AWS 단원에서 다시 다룹니다. 서비스가 어디서 어떻게 돌아가는지에 따라 순서가 바뀐다는 점이 중요합니다.</p>
+<div class="qa"><p class="question">생각해 보기. 8번(MD5 비밀번호)을 고치면 이미 가입한 사용자는 로그인할 수 없게 됩니다. 어떻게 하면 좋을까요?</p><textarea data-save="pr1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>몇 가지 방법이 있습니다. 로그인에 성공한 순간에는 원래 비밀번호를 알고 있으므로, MD5로 확인되면 그 자리에서 Argon2로 다시 해시해 저장합니다. 오래 로그인하지 않은 계정은 비밀번호 재설정을 요구합니다. 이 실습의 예제는 실습용이라 기존 데이터가 없다고 보고 바로 바꿉니다.</p></div></details></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p38/s11-p38-05.html"><span class="dir">이전</span>S11-P38-05 정리: 진단</a>
+  <a class="next" href="../../s11/p39/s11-p39-02.html"><span class="dir">다음</span>S11-P39-02 보안약점 조치</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

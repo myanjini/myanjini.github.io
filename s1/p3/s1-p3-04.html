@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P3-04 async def와 def | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P3-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. REST API와 FastAPI 기초</a><span class="sep">/</span><span>S1-P3 라우팅과 파라미터</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p3-01.html" style="flex:10" data-type="주요 개념" title="경로 연산과 HTTP 메서드 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p3-02.html" style="flex:10" data-type="주요 개념" title="타입 힌트와 자동 검증 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s1-p3-03.html" style="flex:20" data-type="실습" title="도서 조회 API 만들기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s1-p3-04.html" style="flex:5" data-type="주요 개념" title="async def와 def (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s1-p3-05.html" style="flex:5" data-type="정리" title="정리: 라우팅 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S1-P3-04</span></div>
+<h1>async def와 def</h1>
+
+<p class="lead">FastAPI 예제를 보면 <code>def</code>와 <code>async def</code>가 섞여 있습니다. 둘 중 무엇을 써야 하는지 기준만 간단히 잡고 갑니다.</p>
+
+<h2>기다리는 시간이 문제입니다</h2>
+<p>서버가 하는 일 중에는 데이터베이스 응답이나 다른 서버의 응답을 기다리는 시간이 많습니다. <code>async def</code>로 만든 함수는 기다리는 동안 다른 요청을 먼저 처리할 수 있습니다. 식당 직원이 한 테이블의 음식이 나올 때까지 주방 앞에 서 있지 않고, 그사이 다른 테이블의 주문을 받는 것과 같습니다.</p>
+
+<h2>선택 기준</h2>
+<div class="table-wrap"><table><thead><tr><th>상황</th><th>선택</th></tr></thead><tbody><tr><td>함수 안에서 <code>await</code>를 붙여 쓰는 라이브러리를 호출한다</td><td><code>async def</code></td></tr><tr><td><code>await</code>를 쓰지 않는 일반 라이브러리를 호출한다</td><td><code>def</code></td></tr><tr><td>어느 쪽인지 잘 모르겠다</td><td><code>def</code></td></tr></tbody></table></div>
+
+<p>FastAPI는 일반 <code>def</code> 함수를 별도의 작업 공간에서 실행해 주므로, <code>def</code>로 써도 다른 요청이 막히지 않습니다. 이 과정의 실습 코드도 대부분 <code>def</code>로 작성합니다.</p>
+<div class="callout warn"><p class="callout-title">이것만은 피하세요</p><p><code>async def</code> 함수 안에서 <code>time.sleep()</code>처럼 기다리는 동안 멈춰 있는 함수를 부르면, 그동안 서버 전체가 다른 요청을 처리하지 못합니다. <code>async def</code>를 쓸 때는 기다리는 작업도 <code>await</code>로 기다릴 수 있는 것을 써야 합니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p3/s1-p3-03.html"><span class="dir">이전</span>S1-P3-03 도서 조회 API 만들기</a>
+  <a class="next" href="../../s1/p3/s1-p3-05.html"><span class="dir">다음</span>S1-P3-05 정리: 라우팅</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

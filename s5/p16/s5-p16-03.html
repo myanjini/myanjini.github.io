@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P16-03 로그인과 토큰 발급 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P16-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. 인증과 인가</a><span class="sep">/</span><span>S5-P16 OAuth2 Password Flow와 JWT</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p16-01.html" style="flex:10" data-type="주요 개념" title="JWT의 구조 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s5-p16-02.html" style="flex:5" data-type="주요 개념" title="OAuth2 Password Flow (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s5-p16-03.html" style="flex:10" data-type="주요 개념" title="로그인과 토큰 발급 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p16-04.html" style="flex:20" data-type="실습" title="로그인 API 구현 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s5-p16-05.html" style="flex:5" data-type="정리" title="정리: 토큰 발급 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S5-P16-03</span></div>
+<h1>로그인과 토큰 발급</h1>
+
+<p class="lead">로그인 API가 사용자를 확인하고 토큰을 만들어 돌려주기까지의 코드를 강사 화면으로 봅니다.</p>
+
+<h2>JWT 라이브러리와 설정</h2>
+<div class="codeblock term"><pre><code>pip install pyjwt</code></pre></div>
+
+<p><strong>PyJWT</strong>는 JWT를 만들고 검증하는 라이브러리입니다. 가져올 때 이름은 <code>jwt</code>입니다. 토큰 유효 시간은 환경마다 다르게 정할 수 있도록 설정에 추가합니다.</p>
+<div class="codeblock"><span class="file">app/config.py</span><pre><code>    secret_key: str  # 기본값이 없으므로 반드시 설정해야 합니다.
+    access_token_expire_minutes: int = 30  # 액세스 토큰 유효 시간(분)</code></pre></div>
+
+<h2>토큰 만들기</h2>
+<div class="codeblock"><span class="file">app/security.py</span><pre><code>ALGORITHM = "HS256"  # 비밀 키 하나로 서명하고 검증하는 방식
+
+
+def create_access_token(user_id: int) -&gt; str:
+    """사용자 번호와 만료 시각을 담아 서명한 JWT를 만듭니다."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=settings.access_token_expire_minutes)
+    payload = {"sub": str(user_id), "exp": expire}
+    return jwt.encode(payload, settings.secret_key, algorithm=ALGORITHM)</code></pre></div>
+
+<p><code>jwt.encode</code>는 페이로드와 비밀 키로 서명까지 붙인 JWT 문자열을 돌려줍니다. 만료 시각은 <code>datetime</code>으로 넣으면 PyJWT가 초 단위 숫자로 바꿔 줍니다. 시각은 서버가 있는 지역과 상관없도록 UTC(세계 표준시)로 계산합니다. <code>sub</code>는 표준에서 문자열로 정해 두었기 때문에 <code>str(user_id)</code>로 넣습니다.</p>
+
+<h2>사용자 확인하기</h2>
+<div class="codeblock"><span class="file">app/security.py</span><pre><code># 없는 이메일로 로그인할 때 비교용으로 쓰는 가짜 해시입니다.
+DUMMY_HASH = password_hash.hash("dummy-password")</code></pre></div>
+<div class="codeblock"><span class="file">app/routers/auth.py</span><pre><code># 401 응답에는 어떤 방식으로 인증해야 하는지 알려 주는 헤더를 붙입니다.
+BEARER = {"WWW-Authenticate": "Bearer"}
+
+
+def authenticate(db: Session, email: str, password: str) -&gt; User | None:
+    """이메일과 비밀번호가 맞으면 사용자를, 틀리면 None을 돌려줍니다."""
+    user = db.scalar(select(User).where(User.email == email.lower()))
+    if user is None:
+        verify_password(password, DUMMY_HASH)  # 없는 이메일도 비슷한 시간이 걸리게 합니다.
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    return user</code></pre></div>
+
+<p>이메일이 틀린 경우와 비밀번호가 틀린 경우를 똑같이 다룹니다. 두 경우의 응답이 다르면 공격자가 "이 이메일은 가입되어 있다"는 사실을 알아낼 수 있기 때문입니다. 메시지뿐 아니라 걸리는 시간도 비슷해야 합니다. 비밀번호 해시 검증은 일부러 느리게 만든 계산이라, 없는 이메일일 때 검증을 건너뛰면 응답이 눈에 띄게 빨라집니다. 그래서 없는 이메일이어도 가짜 해시로 한 번 검증해 시간을 맞춥니다.</p>
+
+<h2>401 응답에 헤더 붙이기</h2>
+<p>HTTP 규칙상 401 응답에는 어떤 방식으로 인증해야 하는지 알려 주는 <code>WWW-Authenticate</code> 헤더를 붙입니다. 지금의 <code>AppError</code>는 헤더를 담을 수 없으므로 하나를 더 받게 고칩니다.</p>
+<div class="codeblock"><span class="file">app/errors.py</span><pre><code>class AppError(Exception):
+    """이 앱이 일부러 보내는 오류. 상태 코드, 오류 코드, 메시지를 담습니다."""
+
+    def __init__(self, status_code: int, code: str, message: str, headers: dict[str, str] | None = None):
+        self.status_code = status_code
+        self.code = code
+        self.message = message
+        self.headers = headers  # 응답 헤더에 함께 보낼 값(401의 WWW-Authenticate 등)</code></pre></div>
+<div class="codeblock"><span class="file">app/main.py</span><pre><code>    return JSONResponse(
+        status_code=exc.status_code,
+        content={"code": exc.code, "message": exc.message},
+        headers=exc.headers,
+    )</code></pre></div>
+
+<p><code>headers</code>는 기본값이 <code>None</code>이라 지금까지 쓰던 <code>AppError(404, ...)</code> 같은 코드는 고치지 않아도 됩니다.</p>
+
+<h2>로그인 API</h2>
+<div class="codeblock"><span class="file">app/schemas.py</span><pre><code>class Token(BaseModel):
+    """로그인 응답. OAuth2 규칙에 맞춰 이름을 정합니다."""
+    access_token: str
+    token_type: str = "bearer"</code></pre></div>
+<div class="codeblock"><span class="file">app/routers/auth.py</span><pre><code>@router.post("/token", response_model=Token, summary="로그인(토큰 발급)",
+             responses={401: {"description": "이메일 또는 비밀번호가 틀림"}})
+def login(db: SessionDep, form: Annotated[OAuth2PasswordRequestForm, Depends()]):
+    # OAuth2 규칙상 입력 칸 이름은 username입니다. 이 앱에서는 이메일을 넣습니다.
+    user = authenticate(db, form.username, form.password)
+    if user is None:
+        raise AppError(401, "INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않습니다.", headers=BEARER)
+    return {"access_token": create_access_token(user.id), "token_type": "bearer"}</code></pre></div>
+
+<p><code>Annotated[OAuth2PasswordRequestForm, Depends()]</code>는 2일차에 만든 <code>Pagination</code>처럼 클래스를 의존성으로 쓰는 방법입니다. FastAPI가 폼에서 값을 읽어 <code>form.username</code>, <code>form.password</code>에 넣어 줍니다. 응답의 <code>access_token</code>과 <code>token_type</code>은 OAuth2 표준이 정한 이름이므로 바꾸지 않습니다.</p>
+
+<h2>Swagger UI의 Authorize 버튼</h2>
+<p>다음 파트에서 보호된 API를 하나라도 만들면 <code>/docs</code> 오른쪽 위에 <strong>Authorize</strong> 버튼이 생깁니다. 버튼을 누르면 로그인 창이 열리고, <code>username</code>에 이메일, <code>password</code>에 비밀번호를 넣으면 Swagger UI가 <code>/auth/token</code>을 대신 호출해 토큰을 받아 둡니다. 그 뒤로 보내는 요청에는 Swagger UI가 <code>Authorization</code> 헤더를 자동으로 붙여 줍니다. 이번 파트에서는 아직 버튼이 없으니 <code>POST /auth/token</code>을 직접 호출해 봅니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s5/p16/s5-p16-02.html"><span class="dir">이전</span>S5-P16-02 OAuth2 Password Flow</a>
+  <a class="next" href="../../s5/p16/s5-p16-04.html"><span class="dir">다음</span>S5-P16-04 로그인 API 구현</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

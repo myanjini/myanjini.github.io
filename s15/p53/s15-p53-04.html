@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P53-04 정리: 배포 자동화 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P53-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P53 GitHub Actions로 배포 자동화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p53-01.html" style="flex:10" data-type="주요 개념" title="배포 파이프라인 설계 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p53-02.html" style="flex:10" data-type="주요 개념" title="배포 워크플로 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p53-03.html" style="flex:25" data-type="실습" title="내 저장소에 배포 자동화 적용 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s15-p53-04.html" style="flex:5" data-type="정리" title="정리: 배포 자동화 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S15-P53-04</span></div>
+<h1>정리: 배포 자동화</h1>
+
+<h2>8일차 오전 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>교시</th><th>만든 것</th><th>핵심</th></tr></thead><tbody><tr><td>1교시</td><td>S3 표지 저장</td><td>비공개 버킷, 미리 서명된 URL(5분), 서버가 만든 이름만 허용, covers/* 권한</td></tr><tr><td>2교시</td><td>CloudWatch 로그와 경보</td><td>awslogs 드라이버, 30일 보존, 요청 ID 추적, CPU와 상태 검사 경보</td></tr><tr><td>3교시</td><td>ALB</td><td>인터넷 입구는 ALB 하나, EC2는 ALB 보안 그룹만 허용, 진짜 사용자 IP, HTTPS 과정</td></tr><tr><td>4교시</td><td>배포 자동화</td><td>OIDC 역할, 테스트 통과 후에만 배포, Run Command, 배포 확인</td></tr></tbody></table></div>
+
+<p>이제 도서 API는 서버 안에 데이터를 하나도 갖지 않습니다. 데이터는 RDS, 파일은 S3, 비밀 값은 Parameter Store, 로그는 CloudWatch에 있고, 서버는 ECR의 이미지를 받아 실행만 합니다. 서버를 지우고 새로 만들어도 같은 서비스가 이어지는 구조입니다.</p>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">GitHub Actions에서 AWS 액세스 키 대신 OIDC를 쓰는 가장 큰 이유는 무엇인가요?</p><label><input type="radio" name="p53q1" value="1"> <span>1. 설정이 더 간단해서</span></label><label><input type="radio" name="p53q1" value="2"> <span>2. 저장소에 오래 쓰는 비밀 값을 두지 않고, 실행마다 짧게 유효한 자격 증명을 받기 위해</span></label><label><input type="radio" name="p53q1" value="3"> <span>3. 요금이 싸서</span></label><label><input type="radio" name="p53q1" value="4"> <span>4. ECR이 액세스 키를 지원하지 않아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>새어도 곧 만료되고, 신뢰 정책으로 어느 저장소의 어느 브랜치만 맡을 수 있는지 정합니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">배포 역할의 신뢰 정책에서 <code>sub</code> 조건을 빼면 어떤 위험이 있나요?</p><label><input type="radio" name="p53q2" value="1"> <span>1. ECR 푸시가 실패한다</span></label><label><input type="radio" name="p53q2" value="2"> <span>2. 테스트가 건너뛰어진다</span></label><label><input type="radio" name="p53q2" value="3"> <span>3. 배포가 느려진다</span></label><label><input type="radio" name="p53q2" value="4"> <span>4. 다른 사람의 저장소나 다른 브랜치에서 실행된 워크플로도 이 역할을 맡을 수 있다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>aud 조건만으로는 GitHub의 모든 워크플로 토큰이 통과합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">서버에서 실행하는 명령 목록 맨 앞에 <code>set -e</code>를 둔 이유는 무엇인가요?</p><label><input type="radio" name="p53q3" value="1"> <span>1. 명령을 빠르게 실행하려고</span></label><label><input type="radio" name="p53q3" value="2"> <span>2. 마이그레이션 같은 앞 명령이 실패하면 컨테이너 교체로 넘어가지 않고 멈추려고</span></label><label><input type="radio" name="p53q3" value="3"> <span>3. 로그를 줄이려고</span></label><label><input type="radio" name="p53q3" value="4"> <span>4. root 권한을 얻으려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>실패한 상태로 다음 단계를 진행하면 서비스가 깨진 채 배포됩니다.</p></div>
+
+<h2>8일차 오후 예고</h2>
+<p>오후에는 배포된 서비스를 공격자의 눈으로 다시 봅니다. OWASP API Top 10을 기준으로 배포 환경까지 점검하고, 일부러 장애와 보안 사고를 일으켜 로그와 경보로 찾아내고 대응하는 훈련을 합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p53/s15-p53-03.html"><span class="dir">이전</span>S15-P53-03 내 저장소에 배포 자동화 적용</a>
+  <a class="next" href="../../s16/p54/s16-p54-01.html"><span class="dir">다음</span>S16-P54-01 AWS 보안 점검 항목</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

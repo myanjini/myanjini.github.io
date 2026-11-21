@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P4-05 정리: 요청 검증 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P4-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. REST API와 FastAPI 기초</a><span class="sep">/</span><span>S1-P4 Pydantic으로 요청 본문 검증하기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p4-01.html" style="flex:10" data-type="주요 개념" title="Pydantic 모델 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p4-02.html" style="flex:10" data-type="주요 개념" title="요청 본문 받기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s1-p4-03.html" style="flex:20" data-type="실습" title="도서 등록 API (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s1-p4-04.html" style="flex:5" data-type="실습" title="검증 오류 읽기 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s1-p4-05.html" style="flex:5" data-type="정리" title="정리: 요청 검증 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S1-P4-05</span></div>
+<h1>정리: 요청 검증</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>Pydantic의 <code>BaseModel</code>로 요청 데이터의 모양을 정하고, <code>Field</code>로 길이와 범위 같은 세부 규칙을 정합니다.</li>
+  <li>기본값이 없는 필드는 필수, 기본값이 있는 필드는 선택 항목입니다.</li>
+  <li>함수 매개변수의 타입이 Pydantic 모델이면 FastAPI는 요청 본문에서 값을 받습니다.</li>
+  <li>규칙을 어긴 요청은 함수가 실행되기 전에 422로 걸러지고, 응답의 <code>loc</code>와 <code>msg</code>로 원인을 알 수 있습니다.</li>
+  <li>지금은 데이터가 메모리에만 있어 서버를 다시 시작하면 사라집니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q"><code>price: int = Field(ge=0)</code>로 선언했을 때 통과하지 <strong>못하는</strong> 값은 무엇인가요?</p><label><input type="radio" name="p4q1" value="1"> <span>1. <code>"15000"</code></span></label><label><input type="radio" name="p4q1" value="2"> <span>2. <code>-1</code></span></label><label><input type="radio" name="p4q1" value="3"> <span>3. <code>0</code></span></label><label><input type="radio" name="p4q1" value="4"> <span>4. <code>15000</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden><code>ge=0</code>은 0 이상이라는 뜻이므로 음수는 통과하지 못합니다. 문자열 "15000"은 정수로 바뀌어 통과합니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">다음 중 보내지 않아도 되는 선택 항목은 무엇인가요?</p><label><input type="radio" name="p4q2" value="1"> <span>1. <code>price: int = Field(ge=0)</code></span></label><label><input type="radio" name="p4q2" value="2"> <span>2. <code>title: str</code></span></label><label><input type="radio" name="p4q2" value="3"> <span>3. <code>title: str = Field(min_length=1)</code></span></label><label><input type="radio" name="p4q2" value="4"> <span>4. <code>isbn: str | None = None</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>기본값(<code>None</code>)이 있으므로 보내지 않아도 됩니다. <code>Field(...)</code>에 기본값을 주지 않으면 필수 항목입니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">422 응답의 <code>loc</code>가 <code>["body", "author"]</code>입니다. 무엇을 확인해야 하나요?</p><label><input type="radio" name="p4q3" value="1"> <span>1. 쿼리 문자열</span></label><label><input type="radio" name="p4q3" value="2"> <span>2. 요청 본문의 author 값</span></label><label><input type="radio" name="p4q3" value="3"> <span>3. 서버 로그</span></label><label><input type="radio" name="p4q3" value="4"> <span>4. 주소의 경로</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden><code>loc</code>는 문제가 난 위치입니다. body는 요청 본문을 뜻합니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>오전 수업을 마쳤습니다. 오후 첫 시간인 S2-P5에서는 응답 모양도 모델로 정하고, 상황에 맞는 상태 코드를 돌려주며 수정과 삭제 API까지 완성합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p4/s1-p4-04.html"><span class="dir">이전</span>S1-P4-04 검증 오류 읽기</a>
+  <a class="next" href="../../s2/p5/s2-p5-01.html"><span class="dir">다음</span>S2-P5-01 응답 모델과 데이터 계약</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P55-04 대응 과정 돌아보기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P55-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. 운영 보안 점검과 장애 대응</a><span class="sep">/</span><span>S16-P55 장애 대응과 롤백</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p55-01.html" style="flex:10" data-type="주요 개념" title="장애 대응 절차 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p55-02.html" style="flex:5" data-type="주요 개념" title="장애 시나리오 안내 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s16-p55-03.html" style="flex:25" data-type="실습" title="장애 대응 실습 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s16-p55-04.html" style="flex:5" data-type="실습" title="대응 과정 돌아보기 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s16-p55-05.html" style="flex:5" data-type="정리" title="정리: 장애 대응 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>5분</span><span>S16-P55-04</span></div>
+<h1>대응 과정 돌아보기</h1>
+
+<p class="lead">대응을 마쳤으면 돌아봅니다. 질문에 먼저 내 답을 적고 예시 답안과 비교합니다. 정답은 하나가 아니며, 내 서비스에 맞는 개선을 고르는 것이 목표입니다.</p>
+<div class="qa"><p class="question">질문 1. 시나리오 A를 더 빨리 알아챌 방법은 무엇인가요?</p><textarea data-save="v1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>(1) ALB 대상 그룹의 <code>UnHealthyHostCount</code>가 1 이상이면 울리는 CloudWatch 경보를 더합니다. 지금의 CPU와 상태 검사 경보는 이 장애를 잡지 못합니다. (2) 배포 워크플로가 실패하면 GitHub 알림(메일)을 받도록 설정합니다. (3) 배포 직후 확인에 <code>/health</code>뿐 아니라 로그인 같은 핵심 API 하나를 더 호출합니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 2. 시나리오 A가 운영까지 가지 않게 막을 방법은 무엇인가요?</p><textarea data-save="v2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>배포 워크플로에서 이미지를 만든 직후, 러너 안에서 그 이미지를 실행해 <code>/health</code>를 확인하는 단계를 둡니다(컨테이너 시험). Dockerfile도 코드이므로 리뷰 대상에 포함합니다. 서버가 두 대 이상이면 한 대에 먼저 배포해 확인하고 나머지에 배포하는 방식(점진 배포)으로 피해를 줄일 수 있습니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 3. 복구 시간을 줄일 방법은 무엇인가요?</p><textarea data-save="v3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>롤백 절차를 명령 몇 줄의 문서나 스크립트로 정리해 두고, 워크플로에 "이전 태그로 배포"를 수동 실행 입력(<code>workflow_dispatch</code>의 입력값)으로 만들면 서버에 접속하지 않고 버튼으로 되돌릴 수 있습니다. 배포할 때마다 직전 태그를 기록해 두면 "어느 태그로 되돌릴지" 찾는 시간도 줄어듭니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 4. 시나리오 B에서 사용자가 겪는 시간을 줄이려면 암호 교체 절차를 어떻게 바꿔야 하나요?</p><textarea data-save="v4" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>바꾼 값을 운영에 적용하기 전에 확인하는 단계를 둡니다. 예를 들어 새 값으로 일회용 컨테이너를 띄워 <code>alembic current</code>로 연결을 시험한 뒤에 운영 컨테이너를 다시 시작합니다. 또는 S14-P47-04에서 본 것처럼 DB 계정 두 개를 번갈아 쓰거나 Secrets Manager의 자동 교체를 씁니다.</p></div></details></div>
+<div class="qa"><p class="question">질문 5. 이번 대응 기록에서 "사람을 탓하지 않는 기록"이 중요한 이유는 무엇인가요?</p><textarea data-save="v5" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>실수한 사람을 탓하면 다음부터 실수를 숨기게 되고, 같은 함정에 다른 사람이 또 빠집니다. "포트를 잘못 바꿨다"보다 "Dockerfile 변경을 확인하는 단계가 없었다"로 적어야 장치를 고칠 수 있습니다.</p></div></details></div>
+<div class="table-wrap"><table><thead><tr><th>내 개선안</th><th>내용</th></tr></thead><tbody><tr><td>더 빨리 알아채기</td><td><input data-save="imp1" aria-label="내 결과"></td></tr><tr><td>더 빨리 복구하기</td><td><input data-save="imp2" aria-label="내 결과"></td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s16/p55/s16-p55-03.html"><span class="dir">이전</span>S16-P55-03 장애 대응 실습</a>
+  <a class="next" href="../../s16/p55/s16-p55-05.html"><span class="dir">다음</span>S16-P55-05 정리: 장애 대응</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

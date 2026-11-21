@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S18-P61-03 README 작성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S18-P61-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S18. 보안 점검, 배포와 발표</a><span class="sep">/</span><span>S18-P61 보안 점검과 AWS 배포</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s18-p61-01.html" style="flex:15" data-type="실습" title="보안 점검 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s18-p61-02.html" style="flex:25" data-type="실습" title="AWS 배포 (25분)"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s18-p61-03.html" style="flex:5" data-type="실습" title="README 작성 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s18-p61-04.html" style="flex:5" data-type="정리" title="정리: 발표 준비 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>5분</span><span>S18-P61-03</span></div>
+<h1>README 작성</h1>
+
+<p class="lead">README는 저장소에 처음 온 사람이 가장 먼저 읽는 문서입니다. 평가하는 사람도 README로 프로젝트를 처음 만납니다. 템플릿 안내였던 README를 내 프로젝트 소개로 다시 씁니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>실행 방법, API 목록, 보안 조치 요약, 배포 확인 방법을 담은 README를 작성할 수 있습니다.</p></div>
+
+<h2>README에 담을 것</h2>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>항목</th><th>쓰는 법</th></tr></thead><tbody><tr><td>1</td><td>프로젝트 소개</td><td>누가, 무엇을, 왜. 한 문장</td></tr><tr><td>2</td><td>실행 방법</td><td>처음 받은 사람이 그대로 따라 하면 실행되는 명령. 테스트 실행과 통과 개수까지</td></tr><tr><td>3</td><td>API 목록</td><td><code>docs/api-spec.md</code> 링크. 핵심 API 몇 개는 표로</td></tr><tr><td>4</td><td>보안 조치 요약</td><td>위협, 조치, 확인 테스트를 한 줄씩. 자기 진단표 링크</td></tr><tr><td>5</td><td>배포</td><td>배포 구성 한 줄, 확인 방법(<code>/health</code>, 시연 스크립트). 과정이 끝나면 자원을 지우므로 주소는 "과정 중에만 접속 가능"으로 적습니다.</td></tr></tbody></table></div>
+
+<h2>예시(스터디 모임 API)</h2>
+<div class="codeblock"><span class="file">README.md</span><pre><code># 스터디 모임 API
+
+회원이 스터디 모임을 열고, 다른 회원이 정원 안에서 참가 신청을 하는 API입니다.
+
+## 실행 방법
+
+```bash
+python -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env               # SECRET_KEY를 새로 만들어 채웁니다.
+alembic upgrade head
+uvicorn app.main:app --reload      # http://localhost:8000/docs
+pytest -q                          # 28개 통과
+```
+
+## API 목록
+
+자세한 명세는 [docs/api-spec.md](docs/api-spec.md)를 봅니다.
+
+## 보안 조치 요약
+
+| 위협 | 조치 | 테스트 |
+|---|---|---|
+| 남의 모임 수정, 삭제 | 서비스에서 개설자 검사(403) | tests/test_permissions.py |
+| 참가자 이메일 수집 | 명단은 개설자만, 이메일 가림 | tests/test_permissions.py |
+| 정원 초과(동시 신청) | 조건부 UPDATE, 유일 제약 | tests/test_members.py |
+| 소유자 필드 조작 | 정의하지 않은 필드 422 | tests/test_studies.py |
+| 비밀번호 무차별 대입 | 15분에 5번 실패하면 429 | tests/test_auth.py |
+
+자기 진단 결과는 [docs/security-diagnosis.md](docs/security-diagnosis.md)에 있습니다.
+
+## 배포
+
+GitHub Actions(OIDC) → ECR → EC2(Docker Compose) → RDS PostgreSQL, ALB로 공개합니다.
+비밀 값은 Parameter Store(/project-api/)에 있고 저장소와 서버 파일에는 없습니다.
+배포 주소는 과정 중에만 접속할 수 있습니다.</code></pre></div>
+<div class="callout warn"><p class="callout-title">README에 쓰면 안 되는 것</p><p>실제 암호, 토큰, 계정 ID가 들어간 ARN, 시연에 쓴 계정의 비밀번호는 적지 않습니다. 저장소를 나중에 공개로 바꾸면 그대로 드러납니다. 예시 계정이 필요하면 "가입해서 쓰세요"라고 적습니다.</p></div>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 값</th></tr></thead><tbody><tr><td>README의 실행 방법을 새 폴더에서 그대로 따라 해 봤는가</td><td><input data-save="p61_readme" aria-label="내 결과"></td></tr></tbody></table></div>
+<div class="codeblock term"><pre><code>git add README.md &amp;&amp; git commit -m "README 작성" &amp;&amp; git push</code></pre></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s18/p61/s18-p61-02.html"><span class="dir">이전</span>S18-P61-02 AWS 배포</a>
+  <a class="next" href="../../s18/p61/s18-p61-04.html"><span class="dir">다음</span>S18-P61-04 정리: 발표 준비 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

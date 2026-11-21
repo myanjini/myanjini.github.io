@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P58-04 정리: 진행 점검 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P58-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P58 구현 1: 모델과 CRUD</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p58-01.html" style="flex:5" data-type="주요 개념" title="구현 순서와 템플릿 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s17-p58-02.html" style="flex:20" data-type="실습" title="모델, 스키마, 마이그레이션 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s17-p58-03.html" style="flex:20" data-type="실습" title="핵심 CRUD 구현 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s17-p58-04.html" style="flex:5" data-type="정리" title="정리: 진행 점검 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S17-P58-04</span></div>
+<h1>정리: 진행 점검</h1>
+
+<h2>진행 점검</h2>
+<p>지금까지 한 일을 확인하고, 막혔던 곳과 해결한 방법을 적습니다. 이 기록은 발표의 "어려웠던 점"(<a href="../../appendix/appendix-d.html">부록 D</a>의 7번)에 그대로 씁니다.</p>
+<div class="table-wrap"><table><thead><tr><th>항목</th><th>상태</th></tr></thead><tbody><tr><td>저장소 생성, 명세 커밋</td><td><input data-save="p58_s1" aria-label="내 결과"></td></tr><tr><td>모델, 스키마, 첫 리비전(SQLite, PostgreSQL)</td><td><input data-save="p58_s2" aria-label="내 결과"></td></tr><tr><td>주 자원 CRUD, Swagger 확인</td><td><input data-save="p58_s3" aria-label="내 결과"></td></tr><tr><td>진행률(%)</td><td><input data-save="p58_pct" aria-label="내 결과"></td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>막힌 곳</th><th>해결 방법</th></tr></thead><tbody><tr><td><input data-save="p58_b1" aria-label="내 결과"></td><td><input data-save="p58_f1" aria-label="내 결과"></td></tr><tr><td><input data-save="p58_b2" aria-label="내 결과"></td><td><input data-save="p58_f2" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<h2>자주 막히는 곳</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>no such table: studies</code></td><td>리비전을 만들기만 하고 적용하지 않았습니다. <code>alembic upgrade head</code></td></tr><tr><td>autogenerate에 내 테이블이 안 나옴</td><td>모델을 <code>app/models.py</code>가 아닌 다른 파일에 만들었다면, <code>migrations/env.py</code>가 그 파일을 불러오지 않습니다. 모델은 <code>app/models.py</code>에 둡니다.</td></tr><tr><td><code>POST /studies</code>가 401</td><td>Swagger UI에서 Authorize를 하지 않았거나, 서버를 다시 시작해 토큰이 아니라 DB가 바뀌었습니다(SQLite 파일을 지운 경우). 다시 가입하고 로그인합니다.</td></tr><tr><td><code>GET /studies/joined</code>가 422</td><td><code>/{study_id}</code> 경로가 먼저 선언되어 "joined"를 번호로 읽으려 한 것입니다. 고정 경로를 먼저 선언합니다(S17-P60-01).</td></tr><tr><td>응답에 <code>created_at</code>이 없어 500</td><td>응답 모델의 필드가 모델에 없거나 이름이 다릅니다. 로그의 <code>ResponseValidationError</code>를 봅니다.</td></tr><tr><td>PATCH에 <code>null</code>을 보내면 500</td><td>필수 열에 <code>None</code>을 넣으려 한 것입니다. 예시처럼 값이 <code>None</code>인 항목은 건너뜁니다.</td></tr></tbody></table></div>
+
+<h2>다음 파트 예고</h2>
+<p>다음 파트에서는 템플릿의 인증이 내 프로젝트에서 제대로 동작하는지 확인하고, 권한 표대로 권한 검사를 넣습니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s17/p58/s17-p58-03.html"><span class="dir">이전</span>S17-P58-03 핵심 CRUD 구현</a>
+  <a class="next" href="../../s17/p59/s17-p59-01.html"><span class="dir">다음</span>S17-P59-01 인증 모듈 적용</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

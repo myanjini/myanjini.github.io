@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P40-05 정리: AWS 개요 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P40-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P40 클라우드와 AWS 개요</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p40-01.html" style="flex:10" data-type="주요 개념" title="클라우드 컴퓨팅 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p40-02.html" style="flex:10" data-type="주요 개념" title="AWS 글로벌 인프라와 주요 서비스 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p40-03.html" style="flex:15" data-type="실습" title="실습 계정과 콘솔 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s12-p40-04.html" style="flex:10" data-type="주요 개념" title="과금 구조와 비용 관리 원칙 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s12-p40-05.html" style="flex:5" data-type="정리" title="정리: AWS 개요 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S12-P40-05</span></div>
+<h1>정리: AWS 개요</h1>
+
+<h2>핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>핵심</th></tr></thead><tbody><tr><td>클라우드</td><td>컴퓨팅 자원을 필요한 만큼 빌려 쓰고 쓴 만큼 냅니다.</td></tr><tr><td>서비스 모델</td><td>IaaS(EC2)는 운영체제부터 내가, 관리형 서비스(RDS)는 더 많은 부분을 AWS가 관리합니다.</td></tr><tr><td>공동 책임 모델</td><td>AWS는 클라우드 자체를, 나는 클라우드 안의 설정, 권한, 데이터, 코드를 책임집니다.</td></tr><tr><td>리전과 가용 영역</td><td>서울 리전(ap-northeast-2)만 쓰고, 중요한 자원은 두 가용 영역에 나눠 둡니다.</td></tr><tr><td>로그인</td><td>루트 사용자를 쓰지 않고, CLI는 액세스 키 대신 <code>aws login</code>이나 <code>aws sso login</code>으로 임시 자격 증명을 받습니다.</td></tr><tr><td>비용</td><td>시간, 용량, 공용 IPv4 주소에 요금이 붙습니다. 작게 만들고, 태그를 붙이고, 매일 정리합니다.</td></tr></tbody></table></div>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">가용 영역에 대한 설명으로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p40q1" value="1"> <span>1. 전 세계에 콘텐츠를 빠르게 전달하는 지점</span></label><label><input type="radio" name="p40q1" value="2"> <span>2. 한 리전 안에서 전원과 네트워크가 따로 갖춰진 데이터 센터 묶음</span></label><label><input type="radio" name="p40q1" value="3"> <span>3. AWS 계정마다 하나씩 주는 사설 네트워크</span></label><label><input type="radio" name="p40q1" value="4"> <span>4. 요금을 계산하는 단위</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>한 가용 영역이 멈춰도 다른 가용 영역은 계속 동작하므로, 중요한 자원을 두 곳 이상에 나눠 둡니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">EC2 인스턴스를 "중지"했을 때 계속 요금이 나갈 수 있는 것은 무엇인가요?</p><label><input type="radio" name="p40q2" value="1"> <span>1. CPU 사용량</span></label><label><input type="radio" name="p40q2" value="2"> <span>2. 아무것도 나가지 않는다</span></label><label><input type="radio" name="p40q2" value="3"> <span>3. 인스턴스의 실행 시간</span></label><label><input type="radio" name="p40q2" value="4"> <span>4. 디스크(EBS)와 할당해 둔 탄력적 IP</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>중지하면 실행 시간 요금은 멈추지만, 저장 공간과 할당한 주소는 남아 있으므로 요금이 계속됩니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">AWS CLI가 지금 누구의 권한으로 요청하는지 확인하는 명령은 무엇인가요?</p><label><input type="radio" name="p40q3" value="1"> <span>1. <code>aws configure list-regions</code></span></label><label><input type="radio" name="p40q3" value="2"> <span>2. <code>aws sts get-caller-identity</code></span></label><label><input type="radio" name="p40q3" value="3"> <span>3. <code>aws iam whoami</code></span></label><label><input type="radio" name="p40q3" value="4"> <span>4. <code>aws login --check</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>권한 문제를 만나면 가장 먼저 실행해 계정과 사용자(역할)를 확인합니다.</p></div>
+
+<h2>다음 파트 예고</h2>
+<p>다음 파트에서는 AWS에서 "누가 무엇을 할 수 있는가"를 정하는 IAM을 배웁니다. 정책 문서를 읽는 법을 익히고, 7일차에 만들 EC2 서버가 쓸 최소 권한의 IAM 역할을 직접 만듭니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p40/s12-p40-04.html"><span class="dir">이전</span>S12-P40-04 과금 구조와 비용 관리 원칙</a>
+  <a class="next" href="../../s12/p41/s12-p41-01.html"><span class="dir">다음</span>S12-P41-01 IAM 핵심 개념</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

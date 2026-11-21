@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S18-P63-03 후속 학습 로드맵 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S18-P63-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S18. 보안 점검, 배포와 발표</a><span class="sep">/</span><span>S18-P63 평가, 회고와 자원 정리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s18-p63-01.html" style="flex:15" data-type="실습" title="자기 평가와 회고 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s18-p63-02.html" style="flex:10" data-type="주요 개념" title="9일 과정 핵심 정리 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s18-p63-03.html" style="flex:5" data-type="주요 개념" title="후속 학습 로드맵 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s18-p63-04.html" style="flex:15" data-type="실습" title="AWS 자원 정리 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s18-p63-05.html" style="flex:5" data-type="정리" title="정리: 수료 안내 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S18-P63-03</span></div>
+<h1>후속 학습 로드맵</h1>
+
+<p class="lead">이 과정은 백엔드 개발과 클라우드 배포의 기본 한 바퀴였습니다. 다음 단계로 배울 만한 주제를 네 방향으로 정리합니다. 모두 지금 만든 도서 API나 프로젝트를 출발점으로 연습할 수 있습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>방향</th><th>배울 것</th><th>지금 구성에서 바뀌는 점</th><th>첫 연습</th></tr></thead><tbody><tr><td>컨테이너 운영</td><td>Amazon ECS와 Fargate, 컨테이너 오케스트레이션(Kubernetes, Amazon EKS)</td><td>서버(EC2)를 직접 관리하지 않고, 컨테이너 여러 개를 자동으로 띄우고 늘리고 교체합니다. 배포 중 중단도 없앨 수 있습니다.</td><td>프로젝트를 ECS Fargate 서비스로 옮기고 ALB에 연결</td></tr><tr><td>코드로 만드는 인프라(IaC)</td><td>AWS CloudFormation, AWS CDK, Terraform</td><td>콘솔에서 누르던 VPC, 보안 그룹, RDS, 역할을 코드로 적고 Git으로 관리합니다. 같은 환경을 여러 번 만들고 한 번에 지울 수 있습니다.</td><td>이번 과정의 VPC와 보안 그룹을 코드로 다시 만들기</td></tr><tr><td>보안 심화</td><td>OWASP ASVS(검증 기준), 위협 모델링, 동적 점검(DAST) 도구, AWS WAF, Secrets Manager 자동 교체</td><td>점검표를 더 체계적인 기준으로 바꾸고, 실행 중인 API를 공격자처럼 점검하며, 비밀 값을 자동으로 교체합니다.</td><td>프로젝트를 ASVS 인증 항목으로 점검하고 결과표 만들기</td></tr><tr><td>관측성</td><td>지표(메트릭), 분산 추적(OpenTelemetry, AWS X-Ray), 대시보드와 경보 설계</td><td>로그만으로는 알기 어려운 "어디가 느린가", "얼마나 실패하는가"를 숫자와 추적으로 봅니다.</td><td>요청 수, 오류율, 응답 시간을 CloudWatch 대시보드로 만들기</td></tr></tbody></table></div>
+
+<h2>백엔드 개발 자체를 넓히는 주제</h2>
+<div class="table-wrap"><table><thead><tr><th>주제</th><th>왜 필요한가</th></tr></thead><tbody><tr><td>비동기 데이터베이스 접근(async SQLAlchemy)</td><td>요청이 많을 때 기다리는 시간을 줄입니다(S1-P3-04의 async def).</td></tr><tr><td>캐시(Redis)</td><td>자주 읽는 데이터를 데이터베이스 대신 메모리에서 돌려줍니다. 로그인 실패 횟수 같은 값도 여기에 둡니다.</td></tr><tr><td>백그라운드 작업 큐</td><td>메일 발송, 이미지 변환처럼 오래 걸리는 일을 요청과 떼어 처리합니다.</td></tr><tr><td>API 버전 관리와 문서화</td><td>이미 쓰는 사용자를 깨뜨리지 않고 API를 바꿉니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">한 번에 하나씩</p><p>모든 것을 한꺼번에 배우려 하지 않습니다. 자기 평가에서 가장 약했던 항목과 연결된 방향 하나를 골라, 지금의 프로젝트를 고쳐 가며 배우는 것이 가장 빠릅니다. 결과물은 저장소의 커밋으로 남깁니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s18/p63/s18-p63-02.html"><span class="dir">이전</span>S18-P63-02 9일 과정 핵심 정리</a>
+  <a class="next" href="../../s18/p63/s18-p63-04.html"><span class="dir">다음</span>S18-P63-04 AWS 자원 정리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

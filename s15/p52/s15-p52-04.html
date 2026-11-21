@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P52-04 HTTPS 적용 과정 보기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P52-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P52 로드 밸런서와 HTTPS</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p52-01.html" style="flex:10" data-type="주요 개념" title="ALB와 대상 그룹 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p52-02.html" style="flex:10" data-type="주요 개념" title="ALB 구성 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p52-03.html" style="flex:20" data-type="실습" title="ALB 뒤로 API 옮기기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s15-p52-04.html" style="flex:5" data-type="주요 개념" title="HTTPS 적용 과정 보기 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s15-p52-05.html" style="flex:5" data-type="정리" title="정리: 로드 밸런서 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S15-P52-04</span></div>
+<h1>HTTPS 적용 과정 보기</h1>
+
+<p class="lead">HTTPS를 쓰려면 도메인 이름과 그 도메인의 인증서가 필요합니다. 학생 계정에는 도메인이 없으므로, 이 페이지는 강사가 준비한 도메인으로 시연하는 과정을 보며 단계를 이해합니다.</p>
+
+<h2>왜 HTTPS인가</h2>
+<p>지금 ALB는 HTTP로 받습니다. 로그인할 때 보내는 비밀번호와 응답으로 받는 토큰이 인터넷 구간에서 암호화되지 않은 채 오갑니다. 같은 카페 와이파이에 있는 사람이 엿볼 수 있다는 뜻입니다. HTTPS는 TLS로 이 구간을 암호화하고, 접속한 곳이 진짜 그 도메인인지 인증서로 확인해 줍니다.</p>
+
+<h2>시연 단계</h2>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>할 일</th><th>설명</th></tr></thead><tbody><tr><td>1</td><td>도메인 준비</td><td><code>api.강사도메인</code>처럼 쓸 이름을 정합니다. 도메인은 Route 53이나 다른 등록 업체에서 삽니다.</td></tr><tr><td>2</td><td>ACM에서 인증서 요청</td><td>AWS Certificate Manager에서 퍼블릭 인증서를 요청합니다. ALB에 붙이는 인증서는 무료이고, AWS가 만료 전에 자동으로 갱신합니다.</td></tr><tr><td>3</td><td>DNS 검증</td><td>ACM이 알려 주는 CNAME 레코드를 도메인의 DNS에 넣어 "이 도메인의 주인"임을 증명합니다. Route 53을 쓰면 버튼 하나로 넣어 줍니다. 몇 분 뒤 상태가 "발급됨"이 됩니다.</td></tr><tr><td>4</td><td>HTTPS 리스너 추가</td><td>ALB에 HTTPS 443 리스너를 추가하고, 인증서와 보안 정책(지원할 TLS 버전과 암호 목록, 기본 권장 정책)을 고르고, 대상 그룹으로 전달하게 합니다. ALB 보안 그룹에 443을 엽니다.</td></tr><tr><td>5</td><td>HTTP를 HTTPS로 리디렉션</td><td>HTTP 80 리스너의 기본 작업을 "HTTPS 443으로 리디렉션(301)"으로 바꿉니다. 실수로 http로 들어와도 https로 옮겨 갑니다.</td></tr><tr><td>6</td><td>도메인을 ALB로 연결</td><td>DNS에 <code>api.강사도메인</code>이 ALB를 가리키는 레코드를 만듭니다. Route 53이면 별칭(Alias) 레코드를 씁니다.</td></tr><tr><td>7</td><td>확인</td><td><code>curl -I http://api.강사도메인/health</code>가 301과 <code>Location: https://...</code>를, <code>curl https://api.강사도메인/health</code>가 200을 돌려주는지 봅니다.</td></tr></tbody></table></div>
+
+<p>TLS는 ALB에서 끝납니다(TLS 종료). ALB와 EC2 사이는 VPC 안의 HTTP입니다. 이 구간까지 암호화해야 하는 규정이 있다면 대상 그룹을 HTTPS로 만들고 서버에도 인증서를 둡니다.</p>
+<div class="callout note"><p class="callout-title">HTTPS 다음에 할 수 있는 것</p><p>HTTPS만 쓰는 서비스라면 응답에 <code>Strict-Transport-Security</code> 헤더(HSTS)를 붙여, 브라우저가 다음부터는 처음부터 https로만 접속하게 할 수 있습니다. 한 번 보내면 정한 기간 동안 http로 되돌리기 어려우므로, HTTPS가 안정적으로 동작하는 것을 확인한 뒤에 짧은 기간부터 적용합니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">HTTP 80 리스너를 지우지 않고 HTTPS로 리디렉션하게 두는 이유는 무엇인가요?</p><label><input type="radio" name="p52q0" value="1"> <span>1. 주소창에 http로 들어온 사용자도 https로 옮겨 주려고</span></label><label><input type="radio" name="p52q0" value="2"> <span>2. ACM이 80번을 요구해서</span></label><label><input type="radio" name="p52q0" value="3"> <span>3. 헬스 체크가 80번을 써서</span></label><label><input type="radio" name="p52q0" value="4"> <span>4. HTTP가 더 빨라서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>80번을 닫으면 http로 들어온 사용자는 연결 실패만 보게 됩니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p52/s15-p52-03.html"><span class="dir">이전</span>S15-P52-03 ALB 뒤로 API 옮기기</a>
+  <a class="next" href="../../s15/p52/s15-p52-05.html"><span class="dir">다음</span>S15-P52-05 정리: 로드 밸런서</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

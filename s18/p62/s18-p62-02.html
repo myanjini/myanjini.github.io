@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S18-P62-02 발표 1부 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S18-P62-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S18. 보안 점검, 배포와 발표</a><span class="sep">/</span><span>S18-P62 프로젝트 발표</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s18-p62-01.html" style="flex:5" data-type="주요 개념" title="발표 방법 안내 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s18-p62-02.html" style="flex:20" data-type="실습" title="발표 1부 (20분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s18-p62-03.html" style="flex:20" data-type="실습" title="발표 2부 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s18-p62-04.html" style="flex:5" data-type="정리" title="정리: 발표 총평 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S18-P62-02</span></div>
+<h1>발표 1부</h1>
+
+<p class="lead">발표 전에 발표 자료와 시연을 마지막으로 준비하고, 차례가 되면 발표합니다. 발표하지 않는 동안에는 다른 발표를 들으며 배울 점을 기록합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>배포된 API로 시연하고, 설계 의도와 보안 조치 하나를 근거와 함께 설명할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>발표 문장 쓰기</h3><div class="table-wrap"><table><thead><tr><th>항목</th><th>내 문장</th></tr></thead><tbody><tr><td>한 문장 소개</td><td><input data-save="pr_one" aria-label="내 결과"></td></tr><tr><td>설계에서 가장 고민한 선택과 이유</td><td><input data-save="pr_design" aria-label="내 결과"></td></tr><tr><td>보여 줄 보안 조치(위협, 조치, 테스트)</td><td><input data-save="pr_sec" aria-label="내 결과"></td></tr><tr><td>회고 한 문장</td><td><input data-save="pr_retro" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>시연 스크립트 준비</h3>
+<p>예시 프로젝트의 <code>tools/demo.sh</code>를 내 API에 맞게 고칩니다. 시연은 손으로 명령을 치기보다 스크립트 한 번으로 보여 주는 편이 실수가 없습니다. 실행할 때마다 새 계정을 쓰도록 이메일에 시각을 붙여 두었으므로 여러 번 연습해도 됩니다.</p>
+<div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>BASE=http://book-api-alb-1234567890.ap-northeast-2.elb.amazonaws.com bash tools/demo.sh
+== 1. 서버 상태
+{"status":"ok","database":"ok"}
+...
+== 4. 참가자가 신청(201), 늦은 사람은 정원 초과(409)
+201
+{"code":"CANNOT_JOIN","message":"정원이 모두 찼습니다."}
+== 5. 참가자가 남의 모임 수정 시도(403)
+{"code":"FORBIDDEN","message":"모임을 개설한 사람만 할 수 있습니다."}</code></pre></div>
+<p>터미널 글자를 크게 키우고, 시연 직전에 <code>/health</code>를 한 번 확인합니다. 네트워크 문제에 대비해 성공한 실행 결과를 화면 캡처로 한 장 남겨 둡니다.</p></li><li><h3>예상 질문 2개 준비</h3>
+<p>내 프로젝트에서 들을 만한 질문 두 개를 고르고 답을 적습니다. 다음 페이지에 자주 나오는 질문과 예시 답이 있습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>예상 질문</th><th>내 답</th></tr></thead><tbody><tr><td><input data-save="pq1" aria-label="내 결과"></td><td><input data-save="pa1" aria-label="내 결과"></td></tr><tr><td><input data-save="pq2" aria-label="내 결과"></td><td><input data-save="pa2" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>발표와 듣기 기록</h3>
+<p>내 차례에 발표합니다. 다른 사람의 발표를 들을 때는 아래 표에 한 줄씩 적습니다. 내 프로젝트에 가져올 아이디어가 가장 많이 나오는 시간입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>발표자</th><th>인상 깊은 보안 조치</th><th>내 프로젝트에 가져올 점</th></tr></thead><tbody><tr><td><input data-save="l1a" aria-label="내 결과"></td><td><input data-save="l1b" aria-label="내 결과"></td><td><input data-save="l1c" aria-label="내 결과"></td></tr><tr><td><input data-save="l2a" aria-label="내 결과"></td><td><input data-save="l2b" aria-label="내 결과"></td><td><input data-save="l2c" aria-label="내 결과"></td></tr><tr><td><input data-save="l3a" aria-label="내 결과"></td><td><input data-save="l3b" aria-label="내 결과"></td><td><input data-save="l3c" aria-label="내 결과"></td></tr></tbody></table></div>
+</li></ol>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s18/p62/s18-p62-01.html"><span class="dir">이전</span>S18-P62-01 발표 방법 안내</a>
+  <a class="next" href="../../s18/p62/s18-p62-03.html"><span class="dir">다음</span>S18-P62-03 발표 2부</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

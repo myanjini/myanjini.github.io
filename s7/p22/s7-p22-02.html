@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P22-02 테스트가 필요한 이유 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P22-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 테스트 자동화와 CI</a><span class="sep">/</span><span>S7-P22 pytest와 TestClient</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p22-01.html" style="flex:5" data-type="주요 개념" title="3일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s7-p22-02.html" style="flex:10" data-type="주요 개념" title="테스트가 필요한 이유 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s7-p22-03.html" style="flex:10" data-type="주요 개념" title="첫 API 테스트 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s7-p22-04.html" style="flex:20" data-type="실습" title="CRUD 테스트 작성 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s7-p22-05.html" style="flex:5" data-type="정리" title="정리: 테스트 기초 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S7-P22-02</span></div>
+<h1>테스트가 필요한 이유</h1>
+
+<p class="lead">테스트 코드를 쓰는 데도 시간이 듭니다. 그 시간을 들일 만한 이유와, 테스트의 종류, 그리고 모든 테스트가 따르는 기본 모양을 배웁니다.</p>
+
+<h2>테스트가 필요한 이유</h2>
+<div class="table-wrap"><table><thead><tr><th>이유</th><th>설명</th></tr></thead><tbody><tr><td>고친 곳이 아닌 곳이 망가집니다</td><td>어제 <code>get_db</code>에 <code>rollback</code>을 넣었을 때, 이 변경이 회원가입에는 영향이 없을까요? 사람이 매번 모든 기능을 다시 확인할 수는 없습니다. 이미 되던 기능이 새 변경 때문에 깨지는 것을 <strong>회귀(regression)</strong>라고 하며, 자동 테스트가 이것을 잡아 줍니다.</td></tr><tr><td>고칠 용기가 생깁니다</td><td>테스트가 있으면 구조를 바꾸는 작업(어제의 계층 분리 같은)을 하고 나서 명령 한 번으로 "동작은 그대로인가"를 확인할 수 있습니다.</td></tr><tr><td>살아 있는 설명서가 됩니다</td><td><code>test_return_others_loan_returns_403</code>라는 테스트 이름만 봐도 "남의 대여를 반납하면 403"이라는 규칙을 알 수 있습니다.</td></tr></tbody></table></div>
+
+<h2>단위 테스트와 통합 테스트</h2>
+<div class="table-wrap"><table><thead><tr><th>종류</th><th>무엇을 시험하나요</th><th>이 과정의 예</th><th>특징</th></tr></thead><tbody><tr><td>단위 테스트</td><td>함수나 클래스 하나를 따로 떼어 시험합니다.</td><td><code>hash_password</code>가 원문과 다른 값을 만드는가</td><td>빠르고, 실패하면 원인이 어디인지 바로 압니다.</td></tr><tr><td>통합 테스트</td><td>여러 부분이 함께 동작하는 것을 시험합니다.</td><td><code>POST /books</code>로 등록하면 데이터베이스에 저장되고 201이 오는가</td><td>실제 사용에 가깝지만 조금 느리고, 실패하면 원인을 찾아야 합니다.</td></tr></tbody></table></div>
+
+<p>API 서버에서는 요청부터 데이터베이스까지 한 번에 지나가는 통합 테스트가 가장 쓸모 있는 경우가 많습니다. 이 과정의 테스트도 대부분 FastAPI의 <code>TestClient</code>로 API를 호출하는 통합 테스트입니다. 계산이 복잡한 함수처럼 따로 확인할 가치가 있는 곳에는 단위 테스트를 더합니다.</p>
+
+<h2>준비, 실행, 검증</h2>
+<p>모든 테스트는 세 부분으로 이루어집니다. 영어 첫 글자를 따서 AAA(Arrange, Act, Assert) 패턴이라고도 합니다.</p>
+<div class="codeblock"><pre><code>def test_hash_is_not_plain_password():
+    # 준비: 시험에 필요한 값과 상태를 만듭니다.
+    password = "practice-pass-1"
+    # 실행: 시험할 동작을 한 번 합니다.
+    hashed = hash_password(password)
+    # 검증: 결과가 기대한 대로인지 확인합니다.
+    assert hashed != password
+    assert hashed.startswith("$argon2id$")</code></pre></div>
+
+<p><code>assert 조건</code>은 Python 문법으로, 조건이 거짓이면 그 자리에서 테스트를 실패시킵니다. 테스트 하나는 한 가지 동작만 시험하는 것이 좋습니다. 실패했을 때 이름만 보고도 무엇이 깨졌는지 알 수 있기 때문입니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s7/p22/s7-p22-01.html"><span class="dir">이전</span>S7-P22-01 3일차 복습</a>
+  <a class="next" href="../../s7/p22/s7-p22-03.html"><span class="dir">다음</span>S7-P22-03 첫 API 테스트</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

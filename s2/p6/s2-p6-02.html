@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P6-02 오류 응답 통일하기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P6-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 응답 설계와 프로젝트 구조</a><span class="sep">/</span><span>S2-P6 오류 처리와 API 문서화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p6-01.html" style="flex:10" data-type="주요 개념" title="HTTPException과 예외 처리기 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s2-p6-02.html" style="flex:15" data-type="실습" title="오류 응답 통일하기 (15분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s2-p6-03.html" style="flex:10" data-type="주요 개념" title="API 문서 다듬기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s2-p6-04.html" style="flex:10" data-type="실습" title="CRUD 결과 점검 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s2-p6-05.html" style="flex:5" data-type="정리" title="정리: 오류 처리와 문서화 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S2-P6-02</span></div>
+<h1>오류 응답 통일하기</h1>
+
+<p class="lead">404 오류를 공통 형식으로 바꾸고, 같은 ISBN으로 도서가 두 번 등록되지 않도록 409 오류를 추가합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>사용자 정의 예외와 예외 처리기로 404, 409 오류를 같은 모양으로 보낼 수 있습니다.</p></div>
+<ol class="steps"><li><h3>가져오기 줄 바꾸기</h3>
+<p><code>HTTPException</code> 대신 <code>Request</code>와 <code>JSONResponse</code>를 가져옵니다.</p>
+<div class="codeblock"><span class="file">main.py</span><pre><code>from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field</code></pre></div>
+</li><li><h3>예외 클래스와 처리기 추가</h3>
+<p><code>app = FastAPI(...)</code> 아래, <code>BOOKS</code> 다음에 추가합니다.</p>
+<div class="codeblock"><span class="file">main.py</span><pre><code>class AppError(Exception):
+    """이 앱이 일부러 보내는 오류. 상태 코드, 오류 코드, 메시지를 담습니다."""
+
+    def __init__(self, status_code: int, code: str, message: str):
+        self.status_code = status_code
+        self.code = code
+        self.message = message
+
+
+@app.exception_handler(AppError)
+def handle_app_error(request: Request, exc: AppError):
+    # 어떤 AppError든 같은 모양의 JSON으로 바꿔 응답합니다.
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"code": exc.code, "message": exc.message},
+    )</code></pre></div>
+</li><li><h3>find_book이 AppError를 내도록 바꾸기</h3>
+<div class="codeblock"><span class="file">main.py</span><pre><code>def find_book(book_id: int) -&gt; dict:
+    for book in BOOKS:
+        if book["id"] == book_id:
+            return book
+    raise AppError(404, "BOOK_NOT_FOUND", f"{book_id}번 도서를 찾을 수 없습니다.")</code></pre></div>
+
+<p>조회, 수정, 삭제가 모두 <code>find_book</code>을 쓰므로 이 한 곳만 고치면 세 API의 404 응답이 한꺼번에 바뀝니다. 앞 파트에서 함수로 묶어 둔 덕분입니다.</p>
+</li><li><h3>ISBN 중복 검사 함수 추가</h3>
+<div class="codeblock"><span class="file">main.py</span><pre><code>def check_isbn_unique(isbn: str | None, exclude_id: int | None = None) -&gt; None:
+    """같은 ISBN이 이미 있으면 409 오류를 냅니다. 수정할 때는 자기 자신을 빼고 비교합니다."""
+    if isbn is None:
+        return
+    for book in BOOKS:
+        if book["isbn"] == isbn and book["id"] != exclude_id:
+            raise AppError(409, "DUPLICATE_ISBN", "이미 등록된 ISBN입니다.")</code></pre></div>
+
+<p><code>exclude_id</code>가 필요한 이유는 수정 때문입니다. 1번 도서를 수정하면서 원래 ISBN을 그대로 보내면, 목록에서 1번 도서 자신과 ISBN이 같다고 판단해 409가 나 버립니다. 그래서 자기 자신은 비교에서 뺍니다.</p>
+</li><li><h3>등록과 수정에 중복 검사 넣기</h3>
+<div class="codeblock"><span class="file">main.py</span><pre><code># create_book: 저장하기 전에
+check_isbn_unique(book_in.isbn)
+
+# replace_book: find_book 다음 줄에
+check_isbn_unique(book_in.isbn, exclude_id=book_id)
+
+# update_book: changes를 만든 다음 줄에
+check_isbn_unique(changes.get("isbn"), exclude_id=book_id)</code></pre></div>
+
+<p>PATCH에서는 ISBN을 보내지 않을 수도 있으므로 <code>changes.get("isbn")</code>으로 꺼냅니다. 보내지 않았다면 <code>None</code>이 되어 검사를 건너뜁니다.</p>
+</li><li><h3>오류 응답 확인</h3>
+<div class="table-wrap"><table><thead><tr><th>요청</th><th>보낼 값</th><th>기대하는 결과</th><th>내 결과</th></tr></thead><tbody><tr><td><code>GET /books/99</code></td><td></td><td>404, <code>BOOK_NOT_FOUND</code></td><td><input data-save="t1" aria-label="내 결과"></td></tr><tr><td><code>POST /books</code></td><td><code>{"title": "중복 테스트", "author": "최유나", "price": 1000, "isbn": "9791100000011"}</code></td><td>409, <code>DUPLICATE_ISBN</code></td><td><input data-save="t2" aria-label="내 결과"></td></tr><tr><td><code>PATCH /books/2</code></td><td><code>{"isbn": "9791100000011"}</code></td><td>409</td><td><input data-save="t3" aria-label="내 결과"></td></tr><tr><td><code>PATCH /books/1</code></td><td><code>{"isbn": "9791100000011"}</code></td><td>200(자기 자신의 ISBN)</td><td><input data-save="t4" aria-label="내 결과"></td></tr></tbody></table></div>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>없는 도서 요청에 code와 message가 담긴 404가 나온다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>이미 있는 ISBN으로 등록하거나 수정하면 409가 나온다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>자기 자신의 ISBN을 그대로 보내는 수정은 성공한다.</span></label></li></ul>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s2/p6/s2-p6-01.html"><span class="dir">이전</span>S2-P6-01 HTTPException과 예외 처리기</a>
+  <a class="next" href="../../s2/p6/s2-p6-03.html"><span class="dir">다음</span>S2-P6-03 API 문서 다듬기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

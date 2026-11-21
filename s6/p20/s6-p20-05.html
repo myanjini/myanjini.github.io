@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P20-05 정리: 파일과 백그라운드 작업 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P20-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 서비스 계층과 기능 확장</a><span class="sep">/</span><span>S6-P20 파일 업로드와 백그라운드 작업</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p20-01.html" style="flex:10" data-type="주요 개념" title="파일 업로드와 저장 전략 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p20-02.html" style="flex:10" data-type="주요 개념" title="표지 이미지 업로드 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p20-03.html" style="flex:15" data-type="실습" title="업로드 API 구현 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s6-p20-04.html" style="flex:10" data-type="실습" title="응답 뒤에 실행하는 작업 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s6-p20-05.html" style="flex:5" data-type="정리" title="정리: 파일과 백그라운드 작업 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S6-P20-05</span></div>
+<h1>정리: 파일과 백그라운드 작업</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>파일은 multipart/form-data 형식으로 받고, 매개변수 타입은 <code>UploadFile</code>입니다.</li>
+  <li><code>filename</code>과 <code>content_type</code>은 보내는 쪽이 정하므로 믿지 않습니다. 형식은 허용 목록으로, 크기는 한도보다 1바이트 더 읽어 검사합니다.</li>
+  <li>저장할 이름은 <code>uuid</code>로 새로 짓고, 데이터베이스에는 주소만 저장합니다.</li>
+  <li>파일 작업은 <code>rollback</code>되지 않으므로, 지우는 일은 <code>commit</code>이 성공한 뒤에 합니다.</li>
+  <li><code>BackgroundTasks</code>는 응답 뒤에 가벼운 작업을 실행합니다. 꼭 실행되어야 하는 무거운 작업에는 작업 큐를 씁니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">업로드한 파일을 올린 사람이 정한 이름 그대로 저장하면 생기는 문제가 아닌 것은 무엇인가요?</p><label><input type="radio" name="p20q1" value="1"> <span>1. <code>../</code>가 든 이름으로 다른 폴더에 쓰려는 공격이 가능하다.</span></label><label><input type="radio" name="p20q1" value="2"> <span>2. 파일 크기가 커진다.</span></label><label><input type="radio" name="p20q1" value="3"> <span>3. 공백이나 한글 때문에 주소로 쓰기 불편하다.</span></label><label><input type="radio" name="p20q1" value="4"> <span>4. 같은 이름의 파일이 서로 덮어쓴다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>이름은 크기와 상관이 없습니다. 나머지는 모두 서버가 이름을 새로 지어야 하는 이유입니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">3MB 파일을 올렸을 때 서버가 읽는 양은 얼마인가요?</p><label><input type="radio" name="p20q2" value="1"> <span>1. 1바이트</span></label><label><input type="radio" name="p20q2" value="2"> <span>2. 읽지 않는다</span></label><label><input type="radio" name="p20q2" value="3"> <span>3. 3MB 전체</span></label><label><input type="radio" name="p20q2" value="4"> <span>4. 2MB + 1바이트</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden><code>read(MAX_COVER_SIZE + 1)</code>로 한도보다 1바이트만 더 읽어 보고 넘었는지 판단합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">표지를 바꿀 때 이전 파일을 commit 뒤에 지우는 이유는 무엇인가요?</p><label><input type="radio" name="p20q3" value="1"> <span>1. 파일 삭제가 느려서</span></label><label><input type="radio" name="p20q3" value="2"> <span>2. commit이 실패하면 도서가 지워진 파일을 가리키게 되므로</span></label><label><input type="radio" name="p20q3" value="3"> <span>3. commit 전에는 파일을 지울 수 없어서</span></label><label><input type="radio" name="p20q3" value="4"> <span>4. StaticFiles가 파일을 잠가서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>파일 삭제는 rollback으로 되돌릴 수 없으므로, 데이터베이스 반영이 확실해진 뒤에 합니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>S6-P21은 3일차 통합 실습입니다. 요구사항만 보고 관계, 인증, 서비스 계층, 트랜잭션을 직접 결합해 도서 대여와 반납 기능을 만듭니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p20/s6-p20-04.html"><span class="dir">이전</span>S6-P20-04 응답 뒤에 실행하는 작업</a>
+  <a class="next" href="../../s6/p21/s6-p21-01.html"><span class="dir">다음</span>S6-P21-01 과제 안내</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

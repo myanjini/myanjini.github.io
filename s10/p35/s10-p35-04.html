@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P35-04 캡슐화와 디버그 코드 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P35-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 보안기능과 에러처리</a><span class="sep">/</span><span>S10-P35 에러처리, 캡슐화와 정보 노출</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p35-01.html" style="flex:10" data-type="주요 개념" title="에러처리 보안약점 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p35-02.html" style="flex:10" data-type="주요 개념" title="정보가 새는 응답 찾기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s10-p35-03.html" style="flex:20" data-type="실습" title="안전한 오류 응답 적용 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p35-04.html" style="flex:5" data-type="주요 개념" title="캡슐화와 디버그 코드 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p35-05.html" style="flex:5" data-type="정리" title="정리: 5일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S10-P35-04</span></div>
+<h1>캡슐화와 디버그 코드</h1>
+
+<p class="lead">개발하면서 잠깐 넣은 코드가 그대로 운영에 나가는 일은 생각보다 흔합니다. KISA 가이드의 캡슐화 유형과 이어지는 내용을 정리합니다.</p>
+
+<h2>제거되지 않고 남은 디버그 코드</h2>
+<div class="codeblock"><span class="file">이런 코드가 남아 있으면 안 됩니다</span><pre><code>print(f"로그인 시도: {form.username} / {form.password}")   # 개발 중에 확인하려고 넣은 출력
+breakpoint()                                                # 디버거 정지점
+@app.get("/debug/settings")                                 # 확인용으로 만든 API
+def show_settings():
+    return settings.model_dump()                            # 비밀 키까지 모두 응답</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>코드</th><th>위험</th></tr></thead><tbody><tr><td>비밀번호를 출력하는 <code>print</code></td><td>컨테이너 로그에 비밀번호가 그대로 남습니다(S8에서 출력은 모두 로그가 됩니다).</td></tr><tr><td><code>breakpoint()</code></td><td>운영 서버에서 그 줄에 오면 요청이 멈춥니다.</td></tr><tr><td>확인용 API</td><td>인증 없이 설정과 비밀 키를 보여 줍니다. 만든 사람도 잊어버려 OWASP API9(부적절한 자산 관리)가 됩니다.</td></tr></tbody></table></div>
+
+<p>찾는 방법은 다음과 같습니다. 6일차에는 bandit 같은 자동 점검 도구를 CI에 넣어 이런 코드를 푸시할 때마다 찾게 합니다.</p>
+<div class="codeblock term"><pre><code>git grep -n -E "print\(|breakpoint\(|pdb|/debug|/test"</code></pre></div>
+
+<h2>시스템 데이터와 내부 필드 노출</h2>
+<div class="table-wrap"><table><thead><tr><th>노출</th><th>도서 API에서 한 조치</th></tr></thead><tbody><tr><td>서버 프로그램 이름과 버전</td><td><code>--no-server-header</code>(S10-P35-03)</td></tr><tr><td>오류 속 SQL, 경로, 트레이스백</td><td>전역 예외 처리와 <code>hide_parameters</code>(S10-P35-03)</td></tr><tr><td>전체 API 구조</td><td>운영 환경에서 문서 끄기(S10-P35-03)</td></tr><tr><td>응답 모델의 내부 필드</td><td>입력과 출력 모델 분리, <code>extra="forbid"</code>(S9-P32-04)</td></tr><tr><td>설정값 전체</td><td>설정을 응답하거나 로그에 찍는 코드를 두지 않음, <code>hide_input_in_errors</code>(S10-P33-03)</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p35/s10-p35-03.html"><span class="dir">이전</span>S10-P35-03 안전한 오류 응답 적용</a>
+  <a class="next" href="../../s10/p35/s10-p35-05.html"><span class="dir">다음</span>S10-P35-05 정리: 5일차 마무리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

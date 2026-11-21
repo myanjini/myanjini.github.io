@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P5-03 응답 모델 적용하기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P5-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 응답 설계와 프로젝트 구조</a><span class="sep">/</span><span>S2-P5 응답 모델과 상태 코드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p5-01.html" style="flex:10" data-type="주요 개념" title="응답 모델과 데이터 계약 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s2-p5-02.html" style="flex:5" data-type="주요 개념" title="상태 코드 선택하기 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s2-p5-03.html" style="flex:10" data-type="주요 개념" title="응답 모델 적용하기 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s2-p5-04.html" style="flex:20" data-type="실습" title="수정, 삭제 API 완성 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s2-p5-05.html" style="flex:5" data-type="정리" title="정리: 응답 설계 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S2-P5-03</span></div>
+<h1>응답 모델 적용하기</h1>
+
+<p class="lead">강사 화면으로 응답 모델과 상태 코드를 적용하기 전과 후를 비교합니다. 다음 페이지에서 같은 내용을 직접 작성합니다.</p>
+
+<h2>목록에 ISBN과 매입가 추가</h2>
+<p>도서마다 고유 번호인 ISBN(13자리 숫자)과 내부용 매입가를 추가합니다. ISBN이 없는 도서도 있어 <code>None</code>을 허용합니다.</p>
+<div class="codeblock"><span class="file">main.py</span><pre><code>BOOKS = [
+    {"id": 1, "title": "파이썬 첫걸음", "author": "김하늘", "price": 18000, "isbn": "9791100000011", "cost": 12000},
+    {"id": 2, "title": "웹 개발 입문", "author": "이도윤", "price": 22000, "isbn": "9791100000028", "cost": 15000},
+    {"id": 3, "title": "데이터베이스 기초", "author": "김하늘", "price": 25000, "isbn": None, "cost": 17000},
+    {"id": 4, "title": "알기 쉬운 네트워크", "author": "박서준", "price": 20000, "isbn": None, "cost": 13000},
+]</code></pre></div>
+
+<p>이 상태에서 <code>GET /books/1</code>을 호출하면 응답에 <code>cost</code>가 그대로 보입니다.</p>
+
+<h2>모델 세 개 만들기</h2>
+<div class="codeblock"><span class="file">main.py</span><pre><code>class BookCreate(BaseModel):
+    """등록과 전체 수정(PUT)에 쓰는 입력 모델"""
+    title: str = Field(min_length=1, max_length=100)
+    author: str = Field(min_length=1, max_length=50)
+    price: int = Field(ge=0, le=1_000_000)
+    isbn: str | None = Field(default=None, pattern=r"^\d{13}$")
+
+
+class BookUpdate(BaseModel):
+    """일부 수정(PATCH)에 쓰는 입력 모델. 모든 항목이 선택입니다."""
+    title: str | None = Field(default=None, min_length=1, max_length=100)
+    author: str | None = Field(default=None, min_length=1, max_length=50)
+    price: int | None = Field(default=None, ge=0, le=1_000_000)
+    isbn: str | None = Field(default=None, pattern=r"^\d{13}$")
+
+
+class BookRead(BaseModel):
+    """응답에 쓰는 출력 모델. 여기에 없는 필드는 응답에서 빠집니다."""
+    id: int
+    title: str
+    author: str
+    price: int
+    isbn: str | None = None</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>코드</th><th>뜻</th></tr></thead><tbody><tr><td><code>pattern=r"^\d{13}$"</code></td><td>처음(<code>^</code>)부터 끝(<code>$</code>)까지 숫자(<code>\d</code>)가 정확히 13개여야 한다는 규칙입니다.</td></tr><tr><td><code>str | None = Field(default=None, ...)</code></td><td>보내지 않아도 되지만, 보낸다면 규칙을 지켜야 한다는 뜻입니다.</td></tr><tr><td><code>"""설명"""</code></td><td>클래스 바로 아래의 설명 문자열은 API 문서의 모델 설명으로도 쓰입니다.</td></tr></tbody></table></div>
+
+<h2>응답 모델과 상태 코드 적용</h2>
+<div class="codeblock"><span class="file">main.py</span><pre><code>@app.get("/books/{book_id}", response_model=BookRead)
+def get_book(book_id: int):
+    return find_book(book_id)
+
+
+@app.post("/books", response_model=BookRead, status_code=status.HTTP_201_CREATED)
+def create_book(book_in: BookCreate):
+    ...</code></pre></div>
+
+<p>목록 조회는 도서 여러 권을 돌려주므로 <code>response_model=list[BookRead]</code>로 적습니다.</p>
+
+<h2>달라진 결과</h2>
+<div class="table-wrap"><table><thead><tr><th>확인할 곳</th><th>적용 전</th><th>적용 후</th></tr></thead><tbody><tr><td><code>GET /books/1</code> 응답</td><td><code>cost</code>가 보임</td><td><code>cost</code>가 사라짐</td></tr><tr><td><code>POST /books</code> 상태 코드</td><td>200</td><td>201</td></tr><tr><td>Swagger UI의 Responses</td><td>응답 모양 정보가 없음</td><td><code>BookRead</code> 모양과 201 응답이 표시됨</td></tr><tr><td>Swagger UI 아래쪽 Schemas</td><td><code>BookCreate</code>만 있음</td><td><code>BookCreate</code>, <code>BookUpdate</code>, <code>BookRead</code>가 모두 표시됨</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s2/p5/s2-p5-02.html"><span class="dir">이전</span>S2-P5-02 상태 코드 선택하기</a>
+  <a class="next" href="../../s2/p5/s2-p5-04.html"><span class="dir">다음</span>S2-P5-04 수정, 삭제 API 완성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

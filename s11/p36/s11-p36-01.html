@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P36-01 5일차 복습 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P36-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P36 시간 및 상태와 코드오류</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p36-01.html" style="flex:5" data-type="주요 개념" title="5일차 복습 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p36-02.html" style="flex:10" data-type="주요 개념" title="시간 및 상태와 코드오류 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s11-p36-03.html" style="flex:10" data-type="주요 개념" title="동시 대여 경쟁 조건 재현 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s11-p36-04.html" style="flex:20" data-type="실습" title="경쟁 조건 해결 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s11-p36-05.html" style="flex:5" data-type="정리" title="정리: 시간 및 상태 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S11-P36-01</span></div>
+<h1>5일차 복습</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>경쟁 조건과 자원 처리 오류를 찾아 고칠 수 있습니다.</p></div>
+
+<p class="lead">6일차는 5일차에 배운 보안약점을 떠올리는 것으로 시작합니다. 요약표를 다시 읽기보다, 질문에 먼저 답해 보고 기억이 흐린 부분만 해당 페이지로 돌아가 확인합니다.</p>
+
+<h2>스스로 떠올리기</h2>
+<div class="qa"><p class="question">질문 1. 보고서 API의 검색어를 SQL 문장에 문자열로 이어 붙이면 어떤 일이 생기나요? 그리고 정렬 열처럼 값 바인딩을 쓸 수 없는 자리는 어떻게 막았나요?</p><textarea data-save="r1" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>검색어에 SQL 조각을 넣어 문장의 구조를 바꿀 수 있습니다(SQL 삽입). 값은 <code>:pattern</code>처럼 자리를 비워 두고 따로 넘기고(값 바인딩), 정렬 열처럼 이름이 들어가는 자리는 허용 목록에 있는 값만 쓰게 했습니다(S9-P30).</p></div></details></div>
+<div class="qa"><p class="question">질문 2. 남의 대여 기록을 번호만 바꿔 조회하려 할 때 도서 API는 어떤 상태 코드로 답하나요? 그 이유는 무엇인가요?</p><textarea data-save="r2" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>404로 답합니다. 403으로 답하면 "그 번호의 기록이 있다"는 사실이 드러나기 때문에, 볼 수 없는 기록은 없는 것처럼 다룹니다(S9-P32).</p></div></details></div>
+<div class="qa"><p class="question">질문 3. 로그인 실패 제한은 비밀번호를 확인하기 전과 후 가운데 언제 검사하나요?</p><textarea data-save="r3" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>확인하기 전에 검사합니다. 확인한 뒤에 검사하면, 잠긴 계정에서도 "비밀번호가 맞았는지"를 응답 차이로 알아낼 수 있습니다(S10-P34).</p></div></details></div>
+<div class="qa"><p class="question">질문 4. 처리하지 못한 예외가 나면 사용자에게 무엇을 보여 주고, 자세한 내용은 어디에 남기나요?</p><textarea data-save="r4" placeholder="내 답을 먼저 적어 보세요." aria-label="내 답"></textarea><details><summary>예시 답안 보기</summary><div class="answer"><p>정해진 오류 코드와 문구, 요청 ID만 응답하고, 트레이스백 같은 자세한 내용은 서버 로그에만 남깁니다(S10-P35).</p></div></details></div>
+
+<h2>오늘 배울 것</h2>
+<div class="table-wrap"><table><thead><tr><th>교시</th><th>내용</th><th>KISA 유형</th></tr></thead><tbody><tr><td>1교시</td><td>동시에 요청이 들어올 때 생기는 문제를 재현하고 고칩니다.</td><td>시간 및 상태, 코드오류</td></tr><tr><td>2교시</td><td>위험한 함수를 알아보고 bandit, pip-audit으로 자동 점검합니다.</td><td>API 오용</td></tr><tr><td>3교시</td><td>보안약점이 섞인 예제 API를 직접 진단합니다.</td><td>7개 유형 전체</td></tr><tr><td>4교시</td><td>진단한 약점을 고치고 재발을 막는 테스트를 씁니다.</td><td>7개 유형 전체</td></tr></tbody></table></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p35/s10-p35-05.html"><span class="dir">이전</span>S10-P35-05 정리: 5일차 마무리</a>
+  <a class="next" href="../../s11/p36/s11-p36-02.html"><span class="dir">다음</span>S11-P36-02 시간 및 상태와 코드오류</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

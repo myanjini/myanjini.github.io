@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P38-01 진단 과제 안내 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P38-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 보안 점검과 시큐어코딩 실습</a><span class="sep">/</span><span>S11-P38 보안약점 진단 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p38-01.html" style="flex:5" data-type="주요 개념" title="진단 과제 안내 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s11-p38-02.html" style="flex:20" data-type="실습" title="보안약점 진단 1 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s11-p38-03.html" style="flex:15" data-type="실습" title="보안약점 진단 2 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s11-p38-04.html" style="flex:5" data-type="실습" title="진단 결과 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s11-p38-05.html" style="flex:5" data-type="정리" title="정리: 진단 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S11-P38-01</span></div>
+<h1>진단 과제 안내</h1>
+<div class="goal"><p><strong>이 파트의 학습 목표</strong>KISA 보안약점 유형을 기준으로 코드를 진단할 수 있습니다.</p></div>
+
+<p class="lead">이번 파트에서는 처음 보는 코드를 받아 보안약점을 찾는 "진단"을 해 봅니다. 대상은 보안약점이 일부러 섞여 있는 "동아리 공지 게시판" API입니다. 지금까지 도서 API에서 배운 내용을 남의 코드에 적용해 보는 시간입니다.</p>
+
+<h2>실습 자료 받기</h2>
+<p><a href="../../assets/files/security-lab.zip" download>security-lab.zip 내려받기</a></p>
+<p>압축을 풀고, 도서 API와 다른 폴더에서 작업합니다. 폴더 안의 <code>README.md</code>를 따라 가상 환경을 만들고 패키지를 설치합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>파일</th><th>내용</th></tr></thead><tbody><tr><td>app.py</td><td>진단할 코드입니다. 약 220줄짜리 한 파일이며, FastAPI와 Python 내장 sqlite3 모듈로 만들었습니다.</td></tr><tr><td>diagnosis.md</td><td>진단표 양식(<a href="../../appendix/appendix-f.html">부록 F</a>와 같은 형식)입니다. 여기에 결과를 적습니다.</td></tr><tr><td>tests/</td><td>보안 테스트입니다. S11-P39에서 씁니다. 진단이 끝나기 전에는 열어 보지 않습니다. 테스트 이름이 정답의 힌트가 됩니다.</td></tr></tbody></table></div>
+<div class="callout warn"><p class="callout-title">실습 컴퓨터에서만</p><p>이 코드는 실제로 공격할 수 있는 약점을 담고 있습니다. 자기 컴퓨터의 <code>127.0.0.1</code>에서만 실행하고, 클라우드 서버에 올리거나 다른 사람이 접속할 수 있게 열지 않습니다.</p></div>
+
+<h2>게시판 API의 기능</h2>
+<div class="table-wrap"><table><thead><tr><th>기능</th><th>메서드와 경로</th></tr></thead><tbody><tr><td>회원가입, 로그인, 내 정보</td><td>POST /signup, POST /login, GET /me</td></tr><tr><td>비밀번호 재설정 인증 번호 발급</td><td>POST /password-reset</td></tr><tr><td>공지 목록(검색, 정렬), 등록, 조회, 삭제</td><td>GET /notices, POST /notices, GET /notices/{id}, DELETE /notices/{id}</td></tr><tr><td>좋아요, 관리자의 공지 고정</td><td>POST /notices/{id}/like, POST /admin/notices/{id}/pin</td></tr><tr><td>공지 일괄 등록(YAML)</td><td>POST /notices/import</td></tr><tr><td>첨부 파일 올리기, 내려받기</td><td>POST /files, GET /files/{name}</td></tr><tr><td>링크 미리 보기</td><td>GET /link-preview?url=...</td></tr><tr><td>운영 확인용</td><td>GET /debug/config</td></tr></tbody></table></div>
+
+<h2>진단 방법</h2>
+<div class="table-wrap"><table><thead><tr><th>순서</th><th>할 일</th><th>시간</th></tr></thead><tbody><tr><td>1</td><td>코드를 위에서 아래로 한 번 읽으며 각 함수가 무엇을 받아 어디에 쓰는지 파악합니다.</td><td>5분</td></tr><tr><td>2</td><td>입력데이터 검증 및 표현, 보안기능 영역을 진단합니다(S11-P38-02).</td><td>20분</td></tr><tr><td>3</td><td>나머지 5개 유형을 진단하고, bandit과 pip-audit 결과를 견주어 봅니다(S11-P38-03).</td><td>15분</td></tr><tr><td>4</td><td>점검 질문으로 놓친 약점을 찾고, 예시 진단표와 비교합니다(S11-P38-04).</td><td>5분</td></tr></tbody></table></div>
+
+<p>코드만 읽어도 진단할 수 있지만, 의심되는 곳은 서버를 띄우고 <code>/docs</code>에서 직접 요청을 보내 확인하면 근거가 훨씬 단단해집니다. 진단은 "약점이 있을 것 같다"가 아니라 "이렇게 하면 이런 일이 일어난다"를 적는 일입니다.</p>
+
+<h2>진단표 작성법</h2>
+<div class="table-wrap"><table><thead><tr><th>열</th><th>적는 내용</th><th>예(도서 API의 S9 보고서 API)</th></tr></thead><tbody><tr><td>번호</td><td>1부터 차례로</td><td>1</td></tr><tr><td>보안약점 유형</td><td>KISA 구현 단계 7개 유형 가운데 하나</td><td>입력데이터 검증 및 표현</td></tr><tr><td>보안약점 항목</td><td>유형 안의 항목 이름</td><td>SQL 삽입</td></tr><tr><td>위치(파일, 함수)</td><td>찾아가기 쉽게 파일과 함수 이름</td><td>app/repositories/reports.py, stock_report</td></tr><tr><td>위험도</td><td>상, 중, 하(아래 기준)</td><td>상</td></tr><tr><td>진단 근거</td><td>어떤 입력으로 무슨 일이 일어나는지, 또는 문제가 되는 코드</td><td>keyword를 f-문자열로 이어 붙여, <code>' UNION SELECT</code>로 사용자 이메일과 해시가 응답에 나옴</td></tr><tr><td>조치 내용</td><td>어떻게 고쳤는지(S11-P39에서 적음)</td><td>값 바인딩(<code>:pattern</code>), 정렬 열 허용 목록</td></tr><tr><td>확인 방법(테스트)</td><td>고친 것을 확인하는 테스트 이름(S11-P39에서 적음)</td><td>test_report_sql_injection_does_not_leak_users</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>위험도</th><th>기준</th></tr></thead><tbody><tr><td>상</td><td>로그인 없이, 또는 평범한 사용자 권한으로 바로 악용되어 데이터 유출, 변조, 서버 장악으로 이어집니다.</td></tr><tr><td>중</td><td>특정 조건(다른 약점, 많은 시도, 정보 유출)이 갖춰지면 악용되거나, 피해가 일부에 그칩니다.</td></tr><tr><td>하</td><td>피해가 작거나 서비스 품질 문제에 가깝지만, 다른 약점과 겹치면 커질 수 있습니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">하나의 코드에 여러 약점</p><p>한 함수에 약점이 여러 개 있을 수 있고, 한 약점이 여러 함수에 걸쳐 있을 수도 있습니다. 약점마다 한 줄씩 적고, 위치 열에 관련된 함수를 모두 적습니다. 이 예제에는 7개 유형이 모두 들어 있고, 예시 진단표에는 25개 항목이 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p37/s11-p37-05.html"><span class="dir">이전</span>S11-P37-05 정리: 자동 점검</a>
+  <a class="next" href="../../s11/p38/s11-p38-02.html"><span class="dir">다음</span>S11-P38-02 보안약점 진단 1</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

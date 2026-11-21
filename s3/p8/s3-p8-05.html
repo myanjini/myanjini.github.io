@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P8-05 정리: 의존성 주입 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P8-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. 의존성 주입과 데이터베이스 연동</a><span class="sep">/</span><span>S3-P8 의존성 주입</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p8-01.html" style="flex:5" data-type="주요 개념" title="1일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s3-p8-02.html" style="flex:10" data-type="주요 개념" title="의존성 주입의 개념 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s3-p8-03.html" style="flex:10" data-type="주요 개념" title="공통 파라미터 의존성 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p8-04.html" style="flex:20" data-type="실습" title="의존성 활용하기 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s3-p8-05.html" style="flex:5" data-type="정리" title="정리: 의존성 주입 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S3-P8-05</span></div>
+<h1>정리: 의존성 주입</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>의존성은 경로 함수보다 먼저 실행되어 그 결과를 매개변수로 넣어 주는 함수나 클래스입니다.</li>
+  <li><code>Depends</code>로 연결하고, <code>Annotated</code>로 타입과 의존성을 한 이름(<code>PageDep</code>)에 묶어 재사용합니다.</li>
+  <li>클래스 의존성은 속성으로 값을 꺼내 오타를 줄이고, <code>Query</code>로 검사 규칙을 붙일 수 있습니다.</li>
+  <li><code>yield</code> 의존성은 열기, 넘겨주기, 닫기를 한 함수에 담습니다. 닫는 코드는 <code>finally</code>에 둡니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q"><code>def list_books(page: PageDep)</code>에서 <code>Pagination</code>은 언제 실행되나요?</p><label><input type="radio" name="p8q1" value="1"> <span>1. 서버가 시작될 때 한 번</span></label><label><input type="radio" name="p8q1" value="2"> <span>2. list_books가 실행되기 전에, 요청마다</span></label><label><input type="radio" name="p8q1" value="3"> <span>3. list_books가 끝난 뒤에</span></label><label><input type="radio" name="p8q1" value="4"> <span>4. 직접 호출해야 실행된다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>의존성은 요청이 올 때마다 경로 함수보다 먼저 실행됩니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">yield 의존성에서 자원을 닫는 코드를 <code>finally</code>에 두는 이유는 무엇인가요?</p><label><input type="radio" name="p8q2" value="1"> <span>1. FastAPI가 finally만 인식해서</span></label><label><input type="radio" name="p8q2" value="2"> <span>2. 응답 속도가 빨라져서</span></label><label><input type="radio" name="p8q2" value="3"> <span>3. 코드가 짧아져서</span></label><label><input type="radio" name="p8q2" value="4"> <span>4. 경로 함수에서 오류가 나도 반드시 실행되게 하려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>finally는 오류가 나도 실행되므로, 자원이 열린 채로 남는 것을 막습니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">목록 API 다섯 개가 같은 <code>PageDep</code>를 씁니다. 최대 개수를 50으로 바꾸려면 어디를 고치나요?</p><label><input type="radio" name="p8q3" value="1"> <span>1. 목록 API 다섯 개 모두</span></label><label><input type="radio" name="p8q3" value="2"> <span>2. <code>Pagination</code> 클래스 한 곳</span></label><label><input type="radio" name="p8q3" value="3"> <span>3. <code>app/main.py</code></span></label><label><input type="radio" name="p8q3" value="4"> <span>4. 고칠 수 없다</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>의존성 한 곳만 고치면 그것을 쓰는 모든 API에 반영됩니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>S3-P9에서는 데이터베이스 주소와 비밀 키처럼 환경마다 달라지는 값을 코드 밖으로 빼내고, 모든 요청에 공통으로 적용되는 미들웨어를 만듭니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s3/p8/s3-p8-04.html"><span class="dir">이전</span>S3-P8-04 의존성 활용하기</a>
+  <a class="next" href="../../s3/p9/s3-p9-01.html"><span class="dir">다음</span>S3-P9-01 설정과 비밀정보 분리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

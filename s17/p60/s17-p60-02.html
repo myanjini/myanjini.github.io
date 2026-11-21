@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P60-02 기능 테스트와 보안 테스트 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P60-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P60 구현 3: 핵심 기능과 테스트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p60-01.html" style="flex:20" data-type="실습" title="주제별 핵심 기능 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s17-p60-02.html" style="flex:20" data-type="실습" title="기능 테스트와 보안 테스트 (20분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s17-p60-03.html" style="flex:5" data-type="실습" title="진행 상황 점검 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s17-p60-04.html" style="flex:5" data-type="정리" title="정리: 오전 마무리 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S17-P60-02</span></div>
+<h1>기능 테스트와 보안 테스트</h1>
+
+<p class="lead">기능이 동작하는 것을 손으로 확인했다면, 이제 그 확인을 테스트 코드로 남깁니다. 테스트는 오후의 배포 워크플로가 매번 다시 실행해 주는 "자동 점검표"입니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>정상 흐름, 인증 실패, 권한 위반, 입력 검증 실패, 상태 충돌을 확인하는 테스트를 작성할 수 있습니다.</p></div>
+
+<h2>무엇을 테스트할까요</h2>
+<div class="table-wrap"><table><thead><tr><th>종류</th><th>확인할 것</th><th>예시 테스트</th></tr></thead><tbody><tr><td>정상 흐름</td><td>명세대로 만들고 조회되는가</td><td><code>test_create_and_get_study</code>, <code>test_search_by_keyword</code></td></tr><tr><td>인증 실패</td><td>로그인 없이 쓰기 API가 401인가</td><td><code>test_create_without_login_is_401</code></td></tr><tr><td>권한 위반</td><td>남의 자원 수정, 삭제가 403(또는 404)이고 값이 그대로인가</td><td><code>test_other_user_cannot_update_study</code></td></tr><tr><td>입력 검증 실패</td><td>범위 밖 값, 정의하지 않은 필드가 422인가</td><td><code>test_invalid_study_is_422</code></td></tr><tr><td>상태 충돌</td><td>이미 참가, 정원 초과, 낡은 값으로 자리 차지가 409이거나 막히는가</td><td><code>test_cannot_join_twice</code>, <code>test_last_seat_cannot_be_taken_twice</code></td></tr></tbody></table></div>
+<ol class="steps"><li><h3>도우미 함수</h3><p>테스트마다 모임을 만드는 코드가 반복되므로 <code>tests/helpers.py</code>로 뺍니다. 로그인한 사용자는 템플릿의 <code>make_user</code> 픽스처로 만듭니다.</p><div class="codeblock"><span class="file">tests/helpers.py</span><pre><code>"""여러 테스트에서 함께 쓰는 도우미 함수"""
+
+
+def create_study(client, headers: dict, **fields) -&gt; dict:
+    """테스트에 쓸 모임을 등록하고 응답 본문을 돌려줍니다."""
+    data = {"title": "테스트 모임", "capacity": 3} | fields
+    response = client.post("/studies", json=data, headers=headers)
+    assert response.status_code == 201
+    return response.json()</code></pre></div>
+</li><li><h3>CRUD와 입력 검증</h3><p><code>parametrize</code>로 잘못된 입력 여러 개를 한 테스트에서 확인합니다. 정의하지 않은 필드(<code>owner_id</code>, <code>member_count</code>)도 입력 검증 테스트에 넣습니다.</p><div class="codeblock"><span class="file">tests/test_studies.py</span><pre><code>"""모임 CRUD와 입력 검증 테스트"""
+import pytest
+
+from tests.helpers import create_study
+
+
+def test_create_and_get_study(client, auth_headers):
+    study = create_study(client, auth_headers, title="FastAPI 주말 스터디", capacity=6)
+    assert study["member_count"] == 1 and study["is_open"] is True  # 개설자가 첫 참가자
+    response = client.get(f"/studies/{study['id']}")
+    assert response.status_code == 200
+    assert response.json()["title"] == "FastAPI 주말 스터디"
+
+
+def test_search_by_keyword(client, auth_headers):
+    create_study(client, auth_headers, title="FastAPI 스터디")
+    create_study(client, auth_headers, title="알고리즘 모임")
+    body = client.get("/studies", params={"keyword": "FastAPI"}).json()
+    assert body["total"] == 1
+    assert body["items"][0]["title"] == "FastAPI 스터디"
+
+
+def test_create_without_login_is_401(client):
+    response = client.post("/studies", json={"title": "x", "capacity": 3})
+    assert response.status_code == 401
+
+
+@pytest.mark.parametrize("data", [
+    {"title": "", "capacity": 3},                        # 빈 제목
+    {"title": "x" * 101, "capacity": 3},                 # 너무 긴 제목
+    {"title": "x", "capacity": 1},                       # 정원 범위 밖
+    {"title": "x", "capacity": 51},
+    {"title": "x", "capacity": 3, "owner_id": 999},      # 정의하지 않은 필드(남을 개설자로 지정 시도)
+    {"title": "x", "capacity": 3, "member_count": 0},
+])
+def test_invalid_study_is_422(client, auth_headers, data):
+    response = client.post("/studies", json=data, headers=auth_headers)
+    assert response.status_code == 422
+
+
+def test_invalid_page_is_422(client):
+    assert client.get("/studies", params={"page": 0}).status_code == 422</code></pre></div>
+</li><li><h3>권한</h3><p>상태 코드만 확인하지 않고, 다시 조회해 값이 바뀌지 않았는지까지 확인합니다. 명단 테스트는 권한과 이메일 가림을 함께 확인합니다.</p><div class="codeblock"><span class="file">tests/test_permissions.py</span><pre><code>"""권한 테스트: 개설자만 수정, 삭제, 명단 조회"""
+from tests.helpers import create_study
+
+
+def test_other_user_cannot_update_study(client, make_user):
+    owner = make_user("owner@example.com")
+    other = make_user("other@example.com")
+    study = create_study(client, owner)
+    response = client.patch(f"/studies/{study['id']}", json={"title": "바꿔 버림"}, headers=other)
+    assert response.status_code == 403
+    assert client.get(f"/studies/{study['id']}").json()["title"] == "테스트 모임"  # 바뀌지 않았는지 확인
+
+
+def test_other_user_cannot_delete_study(client, make_user):
+    owner = make_user("owner@example.com")
+    other = make_user("other@example.com")
+    study = create_study(client, owner)
+    assert client.delete(f"/studies/{study['id']}", headers=other).status_code == 403
+    assert client.delete(f"/studies/{study['id']}", headers=owner).status_code == 204
+    assert client.get(f"/studies/{study['id']}").status_code == 404
+
+
+def test_admin_can_delete_any_study(client, make_user):
+    owner = make_user("owner@example.com")
+    admin = make_user("admin@example.com", role="admin")
+    study = create_study(client, owner)
+    assert client.delete(f"/studies/{study['id']}", headers=admin).status_code == 204
+
+
+def test_members_list_is_owner_only_and_masked(client, make_user):
+    owner = make_user("owner@example.com")
+    member = make_user("member@example.com")
+    study = create_study(client, owner)
+    client.post(f"/studies/{study['id']}/members", headers=member)
+
+    assert client.get(f"/studies/{study['id']}/members", headers=member).status_code == 403
+    response = client.get(f"/studies/{study['id']}/members", headers=owner)
+    assert response.status_code == 200
+    emails = [m["email"] for m in response.json()]
+    assert emails == ["ow***@example.com", "me***@example.com"]  # 전체 이메일은 보이지 않습니다.</code></pre></div>
+</li><li><h3>상태 충돌과 경쟁 조건</h3><p>마지막 테스트는 S11-P36의 방법 그대로, 자리가 남았을 때 읽어 둔 낡은 객체로 자리를 차지하려 하면 조건부 UPDATE가 막는지 확인합니다.</p><div class="codeblock"><span class="file">tests/test_members.py</span><pre><code>"""참가 신청과 정원 테스트"""
+import pytest
+
+from app.errors import AppError
+from app.models import Study
+from app.repositories import studies as study_repo
+from tests.helpers import create_study
+
+
+def test_join_and_leave(client, make_user):
+    owner = make_user("owner@example.com")
+    member = make_user("member@example.com")
+    study = create_study(client, owner)
+    response = client.post(f"/studies/{study['id']}/members", headers=member)
+    assert response.status_code == 201
+    assert response.json()["member_count"] == 2
+    assert [s["id"] for s in client.get("/studies/joined", headers=member).json()] == [study["id"]]
+
+    assert client.delete(f"/studies/{study['id']}/members/me", headers=member).status_code == 204
+    assert client.get(f"/studies/{study['id']}").json()["member_count"] == 1
+
+
+def test_cannot_join_twice(client, make_user):
+    owner = make_user("owner@example.com")
+    member = make_user("member@example.com")
+    study = create_study(client, owner)
+    client.post(f"/studies/{study['id']}/members", headers=member)
+    response = client.post(f"/studies/{study['id']}/members", headers=member)
+    assert response.status_code == 409
+    assert response.json()["code"] == "ALREADY_JOINED"
+
+
+def test_cannot_join_full_or_closed_study(client, make_user):
+    owner = make_user("owner@example.com")
+    first = make_user("first@example.com")
+    late = make_user("late@example.com")
+    study = create_study(client, owner, capacity=2)  # 개설자 + 1명
+    assert client.post(f"/studies/{study['id']}/members", headers=first).status_code == 201
+    response = client.post(f"/studies/{study['id']}/members", headers=late)
+    assert response.status_code == 409 and response.json()["message"] == "정원이 모두 찼습니다."
+
+    other = create_study(client, owner)
+    client.patch(f"/studies/{other['id']}", json={"is_open": False}, headers=owner)
+    response = client.post(f"/studies/{other['id']}/members", headers=late)
+    assert response.status_code == 409 and response.json()["message"] == "모집이 마감된 모임입니다."
+
+
+def test_capacity_cannot_be_less_than_members(client, make_user):
+    owner = make_user("owner@example.com")
+    study = create_study(client, owner, capacity=3)
+    for email in ("m1@example.com", "m2@example.com"):
+        client.post(f"/studies/{study['id']}/members", headers=make_user(email))  # 3명이 됩니다.
+    response = client.patch(f"/studies/{study['id']}", json={"capacity": 2}, headers=owner)
+    assert response.status_code == 409
+    assert response.json()["code"] == "CAPACITY_TOO_SMALL"
+    assert client.patch(f"/studies/{study['id']}", json={"capacity": 4}, headers=owner).status_code == 200
+
+
+def test_last_seat_cannot_be_taken_twice(client, db_session, make_user):
+    """늦게 도착한 요청이 낡은 인원 수를 믿고 자리를 차지하지 못하는지 확인합니다."""
+    owner = make_user("owner@example.com")
+    first = make_user("first@example.com")
+    study = create_study(client, owner, capacity=2)
+
+    stale = db_session.get(Study, study["id"])  # 자리가 1개 남았을 때 읽어 둔 객체
+    assert stale.member_count == 1
+    assert client.post(f"/studies/{study['id']}/members", headers=first).status_code == 201  # 다른 요청이 먼저 차지
+
+    assert study_repo.increase_member_count(db_session, stale.id) is False  # 조건부 UPDATE가 막습니다.
+    db_session.rollback()
+    assert client.get(f"/studies/{study['id']}").json()["member_count"] == 2
+
+
+def test_owner_cannot_leave(client, auth_headers):
+    study = create_study(client, auth_headers)
+    response = client.delete(f"/studies/{study['id']}/members/me", headers=auth_headers)
+    assert response.status_code == 409</code></pre></div>
+</li><li><h3>실행과 커밋</h3><div class="codeblock term"><pre><code>pytest -q
+............................                                             [100%]
+28 passed in 7.46s
+bandit -q -r app -ll
+git add . &amp;&amp; git commit -m "권한, 입력 검증, 정원 테스트"
+git push</code></pre></div>
+<p>푸시하면 GitHub Actions에서 같은 테스트와 보안 점검이 실행됩니다. Actions 화면에서 초록색 체크를 확인합니다. 발표에서 보여 줄 자료가 하나 생겼습니다(<a href="../../appendix/appendix-d.html">부록 D</a>의 5번).</p></li></ol>
+<div class="callout note"><p class="callout-title">테스트를 먼저 줄이지 않습니다</p><p>시간이 부족하면 기능을 줄이고 테스트는 남깁니다. 최소 요건은 테스트 3개 이상이지만, 보안 요구사항마다 하나씩은 있어야 "지켰다"고 말할 수 있습니다. 예시의 보안 요구사항 표(S17-P57-03)의 "확인 테스트" 열과 실제 테스트 이름이 같은지 맞춰 봅니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s17/p60/s17-p60-01.html"><span class="dir">이전</span>S17-P60-01 주제별 핵심 기능</a>
+  <a class="next" href="../../s17/p60/s17-p60-03.html"><span class="dir">다음</span>S17-P60-03 진행 상황 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

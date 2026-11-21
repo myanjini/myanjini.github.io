@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P13-05 정리: 관계 매핑 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P13-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 데이터베이스 활용과 마이그레이션</a><span class="sep">/</span><span>S4-P13 관계 매핑</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p13-01.html" style="flex:5" data-type="주요 개념" title="관계가 필요한 이유 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s4-p13-02.html" style="flex:10" data-type="주요 개념" title="1:N 관계와 외래키 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s4-p13-03.html" style="flex:10" data-type="주요 개념" title="저자와 도서 연결하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s4-p13-04.html" style="flex:20" data-type="실습" title="저자 API와 관계 조회 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s4-p13-05.html" style="flex:5" data-type="정리" title="정리: 관계 매핑 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S4-P13-05</span></div>
+<h1>정리: 관계 매핑</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+  <li>같은 정보를 여러 행에 반복 저장하지 않도록 테이블을 나누고, 번호(외래키)로 연결합니다.</li>
+  <li>1:N 관계에서 외래키는 N 쪽(<code>books.author_id</code>)에 둡니다.</li>
+  <li><code>relationship</code>과 <code>back_populates</code>로 <code>book.author</code>, <code>author.books</code>처럼 객체를 따라갈 수 있습니다.</li>
+  <li>응답 모델 안에 응답 모델을 넣어 관계를 중첩해 보여 줍니다.</li>
+  <li>목록에서 관계를 읽을 때는 <code>selectinload</code>로 미리 함께 읽어 N+1 문제를 막습니다.</li>
+</ul>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">저자 1명이 도서 여러 권을 씁니다. 외래키 열은 어느 테이블에 두나요?</p><label><input type="radio" name="p13q1" value="1"> <span>1. 별도의 세 번째 테이블</span></label><label><input type="radio" name="p13q1" value="2"> <span>2. authors</span></label><label><input type="radio" name="p13q1" value="3"> <span>3. books</span></label><label><input type="radio" name="p13q1" value="4"> <span>4. 두 테이블 모두</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>N 쪽인 books에 author_id를 두면 도서 한 권이 저자 하나를 가리킵니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q"><code>Book.author = relationship(...)</code>에 대한 설명으로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p13q2" value="1"> <span>1. 테이블에 열은 생기지 않고, 파이썬에서 저자 객체로 접근하게 해 준다.</span></label><label><input type="radio" name="p13q2" value="2"> <span>2. 저자를 자동으로 삭제한다.</span></label><label><input type="radio" name="p13q2" value="3"> <span>3. 외래키 검사를 끈다.</span></label><label><input type="radio" name="p13q2" value="4"> <span>4. books 테이블에 author 열이 생긴다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>열은 <code>author_id</code>이고, <code>author</code>는 그 번호를 따라 저자 객체를 꺼내 주는 속성입니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">도서 50권(저자 30명)의 목록을 응답하는데 쿼리가 31번 실행되었습니다. 원인과 해결로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p13q3" value="1"> <span>1. 페이지 나누기가 없어서, limit 추가</span></label><label><input type="radio" name="p13q3" value="2"> <span>2. 인덱스가 없어서, 인덱스 추가</span></label><label><input type="radio" name="p13q3" value="3"> <span>3. N+1 문제, selectinload로 저자를 함께 읽기</span></label><label><input type="radio" name="p13q3" value="4"> <span>4. 세션을 닫지 않아서, close 추가</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>도서 목록 1번에 저자를 30번 따로 읽은 것입니다. selectinload를 쓰면 저자를 한 번에 가져옵니다.</p></div>
+
+<h2>다음 파트</h2>
+<p>이번 파트에서는 테이블을 바꾸려고 데이터베이스를 지웠습니다. S4-P14에서는 데이터를 지키면서 테이블 구조를 바꾸는 마이그레이션 도구 Alembic을 배웁니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s4/p13/s4-p13-04.html"><span class="dir">이전</span>S4-P13-04 저자 API와 관계 조회</a>
+  <a class="next" href="../../s4/p14/s4-p14-01.html"><span class="dir">다음</span>S4-P14-01 왜 마이그레이션인가</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

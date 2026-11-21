@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S18-P63-04 AWS 자원 정리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S18-P63-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S18. 보안 점검, 배포와 발표</a><span class="sep">/</span><span>S18-P63 평가, 회고와 자원 정리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s18-p63-01.html" style="flex:15" data-type="실습" title="자기 평가와 회고 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s18-p63-02.html" style="flex:10" data-type="주요 개념" title="9일 과정 핵심 정리 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s18-p63-03.html" style="flex:5" data-type="주요 개념" title="후속 학습 로드맵 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s18-p63-04.html" style="flex:15" data-type="실습" title="AWS 자원 정리 (15분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s18-p63-05.html" style="flex:5" data-type="정리" title="정리: 수료 안내 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S18-P63-04</span></div>
+<h1>AWS 자원 정리</h1>
+
+<p class="lead">과정의 마지막 실습입니다. 9일 동안 만든 AWS 자원을 <a href="../../appendix/appendix-g.html">부록 G</a>의 순서대로 모두 지웁니다. 남겨 둔 자원은 과정이 끝난 뒤에도 요금이 계속 나갑니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>의존 관계에 맞는 순서로 자원을 삭제하고, 남은 자원과 비용이 없는지 확인할 수 있습니다.</p></div>
+<div class="callout warn"><p class="callout-title">지우기 전에</p><p>삭제는 되돌릴 수 없습니다. (1) 발표와 평가가 끝났는지 확인합니다. (2) 남기고 싶은 데이터가 있다면 지금 내 PC로 옮깁니다. 이 과정의 데이터는 모두 가상 데이터이므로 보통 남길 것이 없습니다. (3) 지울 자원이 내 것인지 Owner 태그로 확인합니다. 다른 사람의 자원은 지우지 않습니다.</p></div>
+
+<p>S16-P56-02에서 만든 정리 목록(<a href="../../assets/files/cleanup-list.md" download>양식</a>)을 열고, 한 줄씩 지우며 "삭제 확인" 칸을 채웁니다. 아래 명령은 CLI로 지우는 방법이고, 콘솔에서 지워도 됩니다.</p>
+<ol class="steps"><li><h3>ALB와 대상 그룹</h3><div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>ALB_ARN=$(aws elbv2 describe-load-balancers --names book-api-alb --query "LoadBalancers[0].LoadBalancerArn" --output text)
+aws elbv2 delete-load-balancer --load-balancer-arn $ALB_ARN
+aws elbv2 wait load-balancers-deleted --load-balancer-arns $ALB_ARN
+aws elbv2 delete-target-group --target-group-arn $(aws elbv2 describe-target-groups --names book-api-tg --query "TargetGroups[0].TargetGroupArn" --output text)</code></pre></div>
+<p>리스너는 ALB와 함께 지워집니다. 대상 그룹은 ALB가 사라진 뒤에야 지울 수 있어 기다리는 명령을 넣었습니다.</p></li><li><h3>EC2</h3><div class="codeblock term"><pre><code>aws ec2 terminate-instances --instance-ids i-0123456789abcdef0
+aws ec2 wait instance-terminated --instance-ids i-0123456789abcdef0
+aws ec2 describe-volumes --filters Name=tag:Owner,Values=student07 --query "Volumes[].[VolumeId,State]" --output text</code></pre></div>
+<p>루트 볼륨은 인스턴스와 함께 지워지는 것이 기본입니다. 마지막 명령의 결과가 비어 있어야 합니다. 남은 볼륨이 있으면 <code>aws ec2 delete-volume</code>으로 지웁니다.</p></li><li><h3>RDS와 DB 서브넷 그룹</h3><div class="codeblock term"><pre><code>aws rds delete-db-instance --db-instance-identifier book-api-db --skip-final-snapshot --delete-automated-backups
+aws rds wait db-instance-deleted --db-instance-identifier book-api-db
+aws rds delete-db-subnet-group --db-subnet-group-name book-api-db-subnets
+aws rds describe-db-snapshots --snapshot-type manual --query "DBSnapshots[].DBSnapshotIdentifier" --output text</code></pre></div>
+<p>실습 데이터는 가상 데이터이므로 최종 스냅샷을 만들지 않습니다(<code>--skip-final-snapshot</code>). 운영 DB였다면 반드시 최종 스냅샷을 남깁니다. 삭제에는 5~10분쯤 걸립니다. 마지막 명령으로 직접 만든 수동 스냅샷이 남아 있지 않은지 확인합니다.</p></li><li><h3>ECR, S3</h3><div class="codeblock term"><pre><code>aws ecr delete-repository --repository-name book-api --force
+aws ecr delete-repository --repository-name project-api --force
+aws s3 rm s3://book-api-covers-student07-7f3k --recursive
+aws s3 rb s3://book-api-covers-student07-7f3k</code></pre></div>
+<p><code>--force</code>는 저장소 안의 이미지까지 함께 지웁니다. S3 버킷은 비워야 지워집니다.</p></li><li><h3>탄력적 IP, CloudWatch, SNS, Parameter Store</h3><div class="codeblock term"><pre><code>aws ec2 describe-addresses --query "Addresses[].AllocationId" --output text      # 비어 있으면 할 일 없음
+aws cloudwatch delete-alarms --alarm-names book-api-cpu-high book-api-status-check
+aws logs delete-log-group --log-group-name /book-api/app
+aws logs delete-log-group --log-group-name /project-api/app
+aws sns delete-topic --topic-arn arn:aws:sns:ap-northeast-2:123456789012:book-api-alerts
+aws ssm delete-parameters --names /book-api/SECRET_KEY /book-api/DATABASE_URL /project-api/SECRET_KEY /project-api/DATABASE_URL</code></pre></div>
+</li><li><h3>VPC</h3>
+<p>콘솔의 VPC 화면에서 <code>book-api-vpc</code>를 선택하고 <strong>작업</strong>, <strong>VPC 삭제</strong>를 누릅니다. 함께 지워질 서브넷, 라우팅 테이블, 인터넷 게이트웨이, 보안 그룹 목록이 나옵니다. 기본 VPC가 아닌지 한 번 더 확인하고 삭제합니다. "사용 중인 네트워크 인터페이스가 있다"는 오류가 나면 아직 지워지는 중인 ALB, EC2, RDS가 있는 것이므로 몇 분 뒤 다시 시도합니다.</p>
+</li><li><h3>IAM 역할과 OIDC 공급자</h3>
+<p>IAM의 역할 화면에서 <code>book-api-ec2-role</code>, <code>book-api-github-deploy</code>를 지웁니다. 콘솔에서 역할을 지우면 붙은 정책과 인스턴스 프로파일도 함께 정리됩니다. 자격 증명 공급자 화면에서 <code>token.actions.githubusercontent.com</code>을 지웁니다. 단, 기관이 계정 공용으로 만들어 둔 공급자라면 지우지 않습니다.</p>
+<div class="codeblock term"><pre><code>aws iam list-roles --query "Roles[?starts_with(RoleName, 'book-api')].RoleName" --output text</code></pre></div>
+<p>결과가 비어 있어야 합니다.</p></li><li><h3>GitHub 정리</h3><p>두 저장소(도서 API, 프로젝트)의 Actions Variables에서 <code>AWS_DEPLOY_ROLE_ARN</code>을 지웁니다. 그래야 이후에 푸시해도 배포 단계는 건너뛰고 테스트만 실행되어, 없는 역할로 배포를 시도하다 실패하지 않습니다. 저장소 자체는 포트폴리오로 남깁니다.</p></li><li><h3>남은 자원과 비용 확인</h3><div class="codeblock term"><pre><code>aws resourcegroupstaggingapi get-resources --tag-filters Key=Owner,Values=student07 --query "ResourceTagMappingList[].ResourceARN" --output text</code></pre></div>
+<p>결과가 비어 있으면 됩니다. 막 지운 자원이 잠시 목록에 남아 있을 수 있으므로, 남은 것이 보이면 해당 서비스 화면에서 실제로 있는지 확인합니다. 내일 Cost Explorer에서 일별 비용이 0에 가까워졌는지 한 번 더 봅니다. 과정 다음 날에는 운영 담당자가 남은 자원을 한 번 더 점검합니다.</p></li></ol>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p63c1"> <span>ALB, 대상 그룹, EC2, RDS, DB 서브넷 그룹을 지웠다.</span></label></li><li><label><input type="checkbox" data-save="p63c2"> <span>ECR 저장소 두 개와 S3 버킷을 지웠다.</span></label></li><li><label><input type="checkbox" data-save="p63c3"> <span>경보, 로그 그룹 두 개, SNS 주제, 파라미터 네 개를 지웠다.</span></label></li><li><label><input type="checkbox" data-save="p63c4"> <span>VPC와 그 안의 구성 요소를 지웠다.</span></label></li><li><label><input type="checkbox" data-save="p63c5"> <span>IAM 역할 두 개(와 내가 만든 OIDC 공급자)를 지웠다.</span></label></li><li><label><input type="checkbox" data-save="p63c6"> <span>GitHub 저장소의 배포 역할 변수를 지웠다.</span></label></li><li><label><input type="checkbox" data-save="p63c7"> <span>Owner 태그로 조회한 결과가 비어 있다.</span></label></li></ul>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s18/p63/s18-p63-03.html"><span class="dir">이전</span>S18-P63-03 후속 학습 로드맵</a>
+  <a class="next" href="../../s18/p63/s18-p63-05.html"><span class="dir">다음</span>S18-P63-05 정리: 수료 안내</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

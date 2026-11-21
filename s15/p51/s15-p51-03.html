@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P51-03 로그 조회와 경보 설정 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P51-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P51 CloudWatch 로그와 모니터링</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p51-01.html" style="flex:10" data-type="주요 개념" title="CloudWatch 개요 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p51-02.html" style="flex:10" data-type="주요 개념" title="컨테이너 로그 전송 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p51-03.html" style="flex:20" data-type="실습" title="로그 조회와 경보 설정 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s15-p51-04.html" style="flex:5" data-type="주요 개념" title="로그 보안 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s15-p51-05.html" style="flex:5" data-type="정리" title="정리: 모니터링 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S15-P51-03</span></div>
+<h1>로그 조회와 경보 설정</h1>
+
+<p class="lead">로그 그룹을 만들고 컨테이너 로그를 CloudWatch로 보냅니다. Logs Insights로 요청 ID를 따라가 한 요청의 로그를 찾고, CPU와 상태 검사 경보를 만들어 메일로 받아 봅니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>컨테이너 로그를 CloudWatch에서 검색하고, 서버 이상을 알리는 경보를 설정할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>로그 그룹 만들기(내 PC)</h3><div class="codeblock term"><pre><code>aws logs create-log-group --log-group-name /book-api/app --tags Owner=student07
+aws logs put-retention-policy --log-group-name /book-api/app --retention-in-days 30
+aws logs describe-log-groups --log-group-name-prefix /book-api --query "logGroups[].[logGroupName,retentionInDays]" --output text
+/book-api/app	30</code></pre></div>
+</li><li><h3>역할에 권한 더하기</h3><p>IAM 콘솔에서 <code>book-api-ec2-role</code>에 앞 페이지의 정책을 인라인 정책 <code>book-api-logs</code>로 더합니다. Resource의 계정 ID를 내 값으로 바꿉니다.</p></li><li><h3>Compose 바꾸고 다시 시작(내 PC, EC2)</h3>
+<p>내 PC에서 <code>compose.prod.yaml</code>을 앞 페이지의 최종 파일로 바꿔 푸시하고, 서버에서 받아 다시 시작합니다. 이미지는 그대로(1.1.0)입니다.</p>
+<div class="codeblock term"><pre><code>cd ~/book-api
+git pull
+docker compose -f compose.prod.yaml up -d
+docker compose -f compose.prod.yaml ps --format "{{.Name}}  {{.Status}}"
+book-api-api-1  Up 40 seconds (healthy)</code></pre></div>
+</li><li><h3>로그 확인</h3>
+<p>내 PC에서 요청을 몇 번 보낸 뒤, 응답 헤더의 요청 ID를 적어 둡니다.</p>
+<div class="codeblock term"><pre><code>curl -s -D - -o /dev/null http://3.35.120.45:8000/books | grep -i x-request-id
+x-request-id: 3bdf17d7efda407c
+
+aws logs tail /book-api/app --since 5m
+2026-11-24T01:12:03.412000+00:00 7c1e... {"time": "...", "level": "INFO", "logger": "app.request", "message": "요청 처리", "request_id": "3bdf17d7efda407c", "method": "GET", "path": "/books", "status": 200, "duration_ms": 12.4}</code></pre></div>
+<p><code>aws logs tail</code>에 <code>--follow</code>를 붙이면 새 로그가 들어오는 대로 보여 줍니다. 콘솔의 CloudWatch, 로그 그룹, <code>/book-api/app</code>에서도 같은 로그를 볼 수 있습니다.</p></li><li><h3>Logs Insights로 요청 추적</h3>
+<p>CloudWatch 콘솔의 <strong>Logs Insights</strong>에서 로그 그룹 <code>/book-api/app</code>을 고르고 아래 질의를 실행합니다. 요청 ID는 내 값으로 바꿉니다.</p>
+<div class="codeblock"><span class="file">요청 ID로 한 요청 찾기</span><pre><code>fields @timestamp, level, message, method, path, status, duration_ms
+| filter request_id = "3bdf17d7efda407c"
+| sort @timestamp asc</code></pre></div>
+
+<p>사용자가 "오류가 났고 요청 ID가 3bdf...였다"고 알려 주면, 이 질의 하나로 그 요청에서 남은 모든 로그(경고, 오류 포함)를 시간 순서로 볼 수 있습니다. 다음 질의는 최근 오류 응답을 경로별로 셉니다. 일부러 틀린 비밀번호로 로그인하거나 없는 도서를 몇 번 조회한 뒤 실행해 봅니다.</p>
+<div class="codeblock"><span class="file">4xx, 5xx 응답 집계</span><pre><code>fields @timestamp, path, status
+| filter status &gt;= 400
+| stats count() as requests by status, path
+| sort requests desc
+| limit 20</code></pre></div>
+</li><li><h3>알림 받을 곳 만들기(SNS)</h3><div class="codeblock term"><pre><code>aws sns create-topic --name book-api-alerts --tags Key=Owner,Value=student07 --query TopicArn --output text
+arn:aws:sns:ap-northeast-2:123456789012:book-api-alerts
+aws sns subscribe --topic-arn arn:aws:sns:ap-northeast-2:123456789012:book-api-alerts --protocol email --notification-endpoint 내메일@example.com</code></pre></div>
+<p>메일함에 온 "AWS Notification - Subscription Confirmation" 메일의 <strong>Confirm subscription</strong>을 눌러야 알림을 받습니다. SNS(Simple Notification Service)는 메시지를 메일, 문자 같은 여러 곳으로 나눠 보내는 서비스입니다.</p></li><li><h3>경보 두 개 만들기</h3><div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>INSTANCE=i-0123456789abcdef0
+TOPIC=arn:aws:sns:ap-northeast-2:123456789012:book-api-alerts
+
+aws cloudwatch put-metric-alarm --alarm-name book-api-cpu-high \
+  --namespace AWS/EC2 --metric-name CPUUtilization --dimensions Name=InstanceId,Value=$INSTANCE \
+  --statistic Average --period 300 --evaluation-periods 2 --threshold 80 \
+  --comparison-operator GreaterThanOrEqualToThreshold \
+  --alarm-actions $TOPIC --ok-actions $TOPIC --tags Key=Owner,Value=student07
+
+aws cloudwatch put-metric-alarm --alarm-name book-api-status-check \
+  --namespace AWS/EC2 --metric-name StatusCheckFailed --dimensions Name=InstanceId,Value=$INSTANCE \
+  --statistic Maximum --period 60 --evaluation-periods 2 --threshold 1 \
+  --comparison-operator GreaterThanOrEqualToThreshold \
+  --alarm-actions $TOPIC --tags Key=Owner,Value=student07</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>경보</th><th>조건</th><th>뜻</th></tr></thead><tbody><tr><td>book-api-cpu-high</td><td>5분 평균 CPU 80% 이상이 2번 연속</td><td>서버가 10분 넘게 바쁩니다. 무한 반복이나 공격을 의심합니다.</td></tr><tr><td>book-api-status-check</td><td>1분 동안 상태 검사 실패가 2번 연속</td><td>서버나 그 아래 하드웨어에 문제가 생겼습니다.</td></tr></tbody></table></div>
+</li><li><h3>경보가 오는지 시험</h3><div class="codeblock term"><pre><code>aws cloudwatch set-alarm-state --alarm-name book-api-cpu-high --state-value ALARM --state-reason "알림 시험"</code></pre></div>
+<p>몇 분 안에 "ALARM: book-api-cpu-high" 메일이 옵니다. 경보 상태는 다음 평가 때 실제 지표에 따라 OK로 돌아오고, OK 알림도 옵니다(<code>--ok-actions</code>).</p></li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>로그 그룹과 보존 기간</td><td><input data-save="lg" aria-label="내 결과"></td></tr><tr><td>Logs Insights로 찾은 요청의 path와 status</td><td><input data-save="li" aria-label="내 결과"></td></tr><tr><td>받은 경보 메일 제목</td><td><input data-save="alarm" aria-label="내 결과"></td></tr></tbody></table></div>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p51c1"> <span>로그 그룹 /book-api/app의 보존 기간이 30일이다.</span></label></li><li><label><input type="checkbox" data-save="p51c2"> <span>역할의 로그 권한이 이 로그 그룹에만 있다.</span></label></li><li><label><input type="checkbox" data-save="p51c3"> <span>컨테이너 로그가 CloudWatch에 들어오고, docker compose logs로도 볼 수 있다.</span></label></li><li><label><input type="checkbox" data-save="p51c4"> <span>요청 ID로 Logs Insights에서 그 요청의 로그를 찾았다.</span></label></li><li><label><input type="checkbox" data-save="p51c5"> <span>SNS 구독을 확인했고, 시험 경보 메일을 받았다.</span></label></li></ul>
+<details><summary>로그가 들어오지 않을 때</summary><div class="answer"><div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>up -d</code>에서 <code>failed to initialize logging driver ... AccessDeniedException</code></td><td>역할의 로그 정책 Resource(계정 ID, 그룹 이름)를 확인합니다.</td></tr><tr><td><code>... ResourceNotFoundException: The specified log group does not exist</code></td><td>로그 그룹을 먼저 만들지 않았거나 이름이 다릅니다.</td></tr><tr><td>로그가 몇 분 늦게 보임</td><td>정상입니다. 콘솔은 새로 고침이 필요하고, <code>aws logs tail --follow</code>가 가장 빠릅니다.</td></tr></tbody></table></div>
+</div></details>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p51/s15-p51-02.html"><span class="dir">이전</span>S15-P51-02 컨테이너 로그 전송</a>
+  <a class="next" href="../../s15/p51/s15-p51-04.html"><span class="dir">다음</span>S15-P51-04 로그 보안</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

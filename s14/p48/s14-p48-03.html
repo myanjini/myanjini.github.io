@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P48-03 이미지 푸시와 EC2에서 실행 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P48-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 안전한 배포 구성</a><span class="sep">/</span><span>S14-P48 ECR로 이미지 배포</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p48-01.html" style="flex:5" data-type="주요 개념" title="컨테이너 레지스트리와 ECR (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s14-p48-02.html" style="flex:10" data-type="주요 개념" title="이미지 푸시 과정 보기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s14-p48-03.html" style="flex:25" data-type="실습" title="이미지 푸시와 EC2에서 실행 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s14-p48-04.html" style="flex:5" data-type="주요 개념" title="이미지 태그 전략 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s14-p48-05.html" style="flex:5" data-type="정리" title="정리: ECR (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S14-P48-03</span></div>
+<h1>이미지 푸시와 EC2에서 실행</h1>
+
+<p class="lead">ECR 저장소를 만들고 내 PC에서 만든 이미지를 버전 태그와 커밋 태그로 올립니다. 그다음 EC2에서 그 이미지를 받아 서버에서 빌드한 컨테이너를 교체합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>이미지를 ECR에 버전 태그로 올리고, EC2가 IAM 역할로 받아 실행하게 할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>저장소 만들기(내 PC)</h3><div class="callout note"><p class="callout-title">Windows에서 실행할 때</p><p>아래 명령에는 bash 문법(<code>이름=값</code>, <code>$(...)</code> 등)이 들어 있습니다. 내 PC가 Windows라면 명령 프롬프트가 아니라 Git Bash에서 실행합니다(<a href="../../s12/p40/s12-p40-03.html">S12-P40-03</a>). EC2 서버의 접속 화면에서 실행하는 명령은 그대로 입력합니다.</p></div>
+<div class="codeblock term"><pre><code>aws ecr create-repository --repository-name book-api \
+  --image-tag-mutability IMMUTABLE \
+  --image-scanning-configuration scanOnPush=true \
+  --tags Key=Owner,Value=student07 \
+  --query "repository.repositoryUri" --output text
+123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/book-api</code></pre></div>
+<p>한 계정을 여러 학생이 함께 쓰면 저장소 이름에 식별자를 붙입니다(<code>book-api-student07</code>). 아래 명령의 저장소 이름도 같이 바꿉니다.</p></li><li><h3>이미지 만들고 두 태그로 올리기</h3>
+<p>내 PC의 도서 API 폴더에서 실행합니다. Parameter Store 코드를 푸시한 최신 커밋인지 먼저 확인합니다. Windows 명령 프롬프트에서는 변수를 <code>set REGISTRY=...</code>로 정하고 <code>%REGISTRY%</code>로 씁니다.</p>
+<div class="codeblock term"><pre><code>git log --oneline -1
+4f2c9a1 Parameter Store에서 비밀 값 읽기
+
+REGISTRY=123456789012.dkr.ecr.ap-northeast-2.amazonaws.com
+VERSION=1.0.0
+SHA=$(git rev-parse --short HEAD)
+aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $REGISTRY
+Login Succeeded
+
+docker build --platform linux/amd64 -t $REGISTRY/book-api:$VERSION -t $REGISTRY/book-api:git-$SHA .
+docker push $REGISTRY/book-api:$VERSION
+docker push $REGISTRY/book-api:git-$SHA</code></pre></div>
+</li><li><h3>올라간 이미지와 스캔 확인</h3><div class="codeblock term"><pre><code>aws ecr describe-images --repository-name book-api --query "imageDetails[].[imageTags,imageDigest,imagePushedAt]" --output json
+[
+    [
+        ["1.0.0", "git-4f2c9a1"],
+        "sha256:9b1d...",
+        "2026-11-23T14:20:31+09:00"
+    ]
+]
+aws ecr describe-image-scan-findings --repository-name book-api --image-id imageTag=1.0.0 --query "imageScanFindings.findingSeverityCounts"</code></pre></div>
+
+<p>두 태그가 같은 이미지(같은 digest)를 가리키는지 확인합니다. 스캔은 푸시하고 1~2분 뒤에 끝납니다. 같은 태그로 다시 푸시해 보면 태그 변경 불가 설정 때문에 거부됩니다.</p>
+<div class="codeblock term"><pre><code>docker push $REGISTRY/book-api:1.0.0
+... tag invalid: The image tag '1.0.0' already exists in the 'book-api' repository and cannot be overwritten because the repository is immutable.</code></pre></div>
+</li><li><h3>EC2에서 받기</h3>
+<p>Session Manager로 접속해, 서버의 역할로 ECR에 로그인하고 이미지를 받습니다. 역할의 <code>AmazonEC2ContainerRegistryPullOnly</code> 정책이 이를 허용합니다.</p>
+<div class="codeblock term"><pre><code>REGISTRY=123456789012.dkr.ecr.ap-northeast-2.amazonaws.com
+aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin $REGISTRY
+docker pull $REGISTRY/book-api:1.0.0
+docker images --format "{{.Repository}}:{{.Tag}}  {{.Size}}"
+123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/book-api:1.0.0  536MB
+book-api:latest  536MB</code></pre></div>
+</li><li><h3>컨테이너 교체</h3><div class="codeblock term"><pre><code>docker rm -f book-api
+docker run -d --name book-api -p 8000:8000 \
+  -e SSM_PREFIX=/book-api/ -e AWS_DEFAULT_REGION=ap-northeast-2 -e APP_ENV=development \
+  -v book-uploads:/app/uploads --restart unless-stopped \
+  $REGISTRY/book-api:1.0.0
+curl -s localhost:8000/health
+{"status":"ok","database":"ok"}
+docker ps --format "{{.Names}}  {{.Image}}  {{.Status}}"
+book-api  123456789012.dkr.ecr.ap-northeast-2.amazonaws.com/book-api:1.0.0  Up 8 seconds</code></pre></div>
+<p>이제 서버에서 빌드한 이미지는 쓰지 않으므로 지웁니다.</p><div class="codeblock term"><pre><code>docker rmi book-api:latest</code></pre></div>
+</li></ol>
+<div class="table-wrap"><table><thead><tr><th>확인</th><th>내 결과</th></tr></thead><tbody><tr><td>저장소 URI</td><td><input data-save="ecr1" aria-label="내 결과"></td></tr><tr><td>올린 태그 두 개</td><td><input data-save="ecr2" aria-label="내 결과"></td></tr><tr><td>스캔 결과(심각도별 수)</td><td><input data-save="ecr3" aria-label="내 결과"></td></tr><tr><td>EC2의 실행 중 이미지</td><td><input data-save="ecr4" aria-label="내 결과"></td></tr></tbody></table></div>
+<ul class="checklist"><li><label><input type="checkbox" data-save="p48c1"> <span>저장소의 태그 변경 불가와 푸시 시 스캔이 켜져 있다.</span></label></li><li><label><input type="checkbox" data-save="p48c2"> <span>버전 태그와 커밋 태그가 같은 이미지를 가리킨다.</span></label></li><li><label><input type="checkbox" data-save="p48c3"> <span>EC2가 역할로 ECR에 로그인해 이미지를 받았다.</span></label></li><li><label><input type="checkbox" data-save="p48c4"> <span>EC2의 컨테이너가 ECR 이미지로 실행 중이고 /health가 ok다.</span></label></li></ul>
+<details><summary>문제가 생길 때</summary><div class="answer"><div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>exec format error</code>로 컨테이너가 바로 멈춤</td><td>ARM용 이미지입니다. <code>--platform linux/amd64</code>를 붙여 새 태그(예: 1.0.1)로 다시 올립니다.</td></tr><tr><td><code>no basic auth credentials</code></td><td>ECR 로그인이 안 됐거나 12시간이 지났습니다. 로그인 명령을 다시 실행합니다.</td></tr><tr><td><code>denied: ... not authorized to perform: ecr:InitiateLayerUpload</code></td><td>내 계정에 푸시 권한이 없습니다. 강사에게 알립니다.</td></tr><tr><td><code>name unknown: The repository with name 'book-api' does not exist</code></td><td>저장소 이름이나 리전이 다릅니다.</td></tr></tbody></table></div>
+</div></details>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p48/s14-p48-02.html"><span class="dir">이전</span>S14-P48-02 이미지 푸시 과정 보기</a>
+  <a class="next" href="../../s14/p48/s14-p48-04.html"><span class="dir">다음</span>S14-P48-04 이미지 태그 전략</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

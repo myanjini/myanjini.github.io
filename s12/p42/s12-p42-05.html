@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P42-05 정리: 6일차 마무리 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P42-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P42 VPC와 네트워크 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p42-01.html" style="flex:15" data-type="주요 개념" title="VPC 구성 요소 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s12-p42-02.html" style="flex:10" data-type="주요 개념" title="보안 그룹과 네트워크 ACL (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p42-03.html" style="flex:15" data-type="실습" title="배포 네트워크 설계 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s12-p42-04.html" style="flex:5" data-type="실습" title="설계 자기 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p42-05.html" style="flex:5" data-type="정리" title="정리: 6일차 마무리 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S12-P42-05</span></div>
+<h1>정리: 6일차 마무리</h1>
+
+<h2>6일차 핵심 요약</h2>
+<div class="table-wrap"><table><thead><tr><th>시간</th><th>배운 것</th><th>남은 산출물</th></tr></thead><tbody><tr><td>오전</td><td>경쟁 조건 조치, bandit과 pip-audit 자동 점검, 보안약점 진단과 조치</td><td>고친 도서 API와 회귀 테스트, CI의 보안 점검, 진단표</td></tr><tr><td>오후 1</td><td>클라우드 개념, 공동 책임 모델, 리전과 가용 영역, 비용 원칙</td><td>콘솔과 CLI 로그인 환경</td></tr><tr><td>오후 2</td><td>IAM 구성 요소, 정책 읽기, 최소 권한, 액세스 키 수칙</td><td>EC2용 IAM 역할 <code>book-api-ec2-role</code></td></tr><tr><td>오후 3</td><td>VPC, 서브넷, 라우팅, 보안 그룹, 네트워크 ACL</td><td>서브넷 설계와 보안 그룹 규칙 표, 배치도</td></tr></tbody></table></div>
+
+<p>오늘 오후의 두 산출물은 "권한은 최소로"와 "연결은 꼭 필요한 것만"이라는 같은 원칙을 AWS에서 적용한 결과입니다. 5일차에 도서 API의 권한 검사와 입력 검증에서 지킨 원칙이 인프라에서도 그대로 이어집니다.</p>
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">서브넷을 퍼블릭 서브넷으로 만드는 것은 무엇인가요?</p><label><input type="radio" name="p42q1" value="1"> <span>1. 보안 그룹에 0.0.0.0/0 규칙이 있는 것</span></label><label><input type="radio" name="p42q1" value="2"> <span>2. CIDR가 /24인 것</span></label><label><input type="radio" name="p42q1" value="3"> <span>3. 서브넷을 만들 때 고르는 퍼블릭 옵션</span></label><label><input type="radio" name="p42q1" value="4"> <span>4. 연결된 라우팅 테이블에 인터넷 게이트웨이로 가는 경로가 있는 것</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>퍼블릭과 프라이빗은 라우팅으로 정해집니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">RDS의 보안 그룹 인바운드 규칙으로 가장 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p42q2" value="1"> <span>1. TCP 5432, 출처 0.0.0.0/0</span></label><label><input type="radio" name="p42q2" value="2"> <span>2. TCP 5432, 출처 API 서버의 보안 그룹</span></label><label><input type="radio" name="p42q2" value="3"> <span>3. 모든 트래픽, 출처 VPC CIDR</span></label><label><input type="radio" name="p42q2" value="4"> <span>4. TCP 22, 출처 내 IP</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>API 서버의 보안 그룹을 출처로 두면 그 서버에서 오는 연결만 허용됩니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">보안 그룹과 네트워크 ACL의 차이로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="p42q3" value="1"> <span>1. 둘 다 서브넷 단위로 적용된다.</span></label><label><input type="radio" name="p42q3" value="2"> <span>2. 보안 그룹은 거부 규칙을 쓸 수 있다.</span></label><label><input type="radio" name="p42q3" value="3"> <span>3. 네트워크 ACL은 상태 저장이라 응답이 자동으로 허용된다.</span></label><label><input type="radio" name="p42q3" value="4"> <span>4. 보안 그룹은 자원 단위, 상태 저장이고 허용 규칙만 있다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>네트워크 ACL은 서브넷 단위, 상태 비저장이며 허용과 거부를 모두 씁니다.</p></div>
+
+<h2>7일차 예고</h2>
+<p>7일차에는 오늘 설계한 대로 실습 VPC와 보안 그룹을 만들고, 오늘 만든 IAM 역할을 붙인 EC2 서버를 띄워 Session Manager로 접속합니다. 서버에 Docker를 설치해 도서 API를 실행하고, RDS PostgreSQL에 연결한 뒤, 비밀 값을 Parameter Store로 옮기고 이미지를 ECR에 올려 AWS 배포를 완성합니다.</p>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p42/s12-p42-04.html"><span class="dir">이전</span>S12-P42-04 설계 자기 점검</a>
+  <a class="next" href="../../s13/p43/s13-p43-01.html"><span class="dir">다음</span>S13-P43-01 6일차 복습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

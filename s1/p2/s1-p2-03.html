@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P2-03 첫 앱 실행 과정 보기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P2-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. REST API와 FastAPI 기초</a><span class="sep">/</span><span>S1-P2 개발 환경 구성과 첫 FastAPI 앱</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p2-01.html" style="flex:10" data-type="주요 개념" title="FastAPI와 Uvicorn (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p2-02.html" style="flex:15" data-type="실습" title="개발 환경 구성 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s1-p2-03.html" style="flex:5" data-type="주요 개념" title="첫 앱 실행 과정 보기 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s1-p2-04.html" style="flex:15" data-type="실습" title="첫 API 만들기 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s1-p2-05.html" style="flex:5" data-type="정리" title="정리: 서버 실행 흐름 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S1-P2-03</span></div>
+<h1>첫 앱 실행 과정 보기</h1>
+
+<p class="lead">강사 화면을 보며 가장 작은 FastAPI 앱이 실행되는 과정을 따라갑니다. 직접 입력은 다음 페이지에서 합니다.</p>
+
+<h2>가장 작은 FastAPI 앱</h2>
+<div class="codeblock"><span class="file">main.py</span><pre><code>from fastapi import FastAPI
+
+app = FastAPI()
+
+
+@app.get("/")
+def read_root():
+    return {"message": "안녕하세요, FastAPI"}</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>코드</th><th>하는 일</th></tr></thead><tbody><tr><td><code>app = FastAPI()</code></td><td>API 서버의 중심이 되는 앱 객체를 만듭니다. 모든 경로는 이 객체에 등록됩니다.</td></tr><tr><td><code>@app.get("/")</code></td><td>GET 방식으로 <code>/</code> 주소에 요청이 오면 바로 아래 함수를 실행하라고 등록합니다.</td></tr><tr><td><code>return {...}</code></td><td>딕셔너리를 돌려주면 FastAPI가 JSON으로 바꿔 응답합니다.</td></tr></tbody></table></div>
+
+<h2>서버 실행</h2>
+<div class="codeblock term"><pre><code>fastapi dev main.py</code></pre></div>
+
+<p>실행하면 다음과 비슷한 안내가 나옵니다. 출력 모양은 버전에 따라 조금씩 다르고, 줄 앞에 작은 기호가 붙어 보이기도 합니다.</p>
+<div class="codeblock term"><pre><code>Starting FastAPI in development mode
+Using import string: main:app
+Server started at http://127.0.0.1:8000
+Documentation at http://127.0.0.1:8000/docs
+
+INFO:     Will watch for changes in these directories: [...]
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [...] using WatchFiles
+INFO:     Application startup complete.</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>출력</th><th>뜻</th></tr></thead><tbody><tr><td><code>Server started at http://127.0.0.1:8000</code></td><td>내 PC의 8000번 포트에서 요청을 기다리고 있습니다. 127.0.0.1은 내 컴퓨터 자신을 가리키는 주소입니다.</td></tr><tr><td><code>Documentation at .../docs</code></td><td>자동으로 만들어진 API 문서 주소입니다.</td></tr><tr><td><code>Will watch for changes</code></td><td>파일이 바뀌는지 지켜보다가, 저장하면 서버를 자동으로 다시 시작합니다.</td></tr><tr><td><code>Application startup complete.</code></td><td>앱이 요청을 받을 준비를 마쳤습니다.</td></tr></tbody></table></div>
+
+<h2>브라우저로 확인</h2>
+<p>브라우저에서 <code>http://127.0.0.1:8000</code>을 열면 <code>{"message":"안녕하세요, FastAPI"}</code>가 보입니다. <code>http://127.0.0.1:8000/docs</code>를 열면 FastAPI가 자동으로 만든 API 문서가 나타납니다.</p>
+
+<h2>dev와 run</h2>
+<p><code>fastapi dev</code>는 개발용 명령입니다. 코드를 저장할 때마다 자동으로 다시 시작해 편리하지만, 그만큼 자원을 더 씁니다. 실제 서비스에 올릴 때는 자동 재시작이 없는 <code>fastapi run</code>을 씁니다. 4일차 컨테이너 실습에서 다시 다룹니다.</p>
+<div class="callout note"><p class="callout-title">서버 끄기</p><p>서버가 실행 중인 터미널에서 <code>Ctrl + C</code>를 누릅니다. 서버가 켜져 있는 동안 그 터미널은 다른 명령을 받지 않으므로, 다른 명령이 필요하면 터미널을 하나 더 열고 그 창에서도 가상환경을 켭니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p2/s1-p2-02.html"><span class="dir">이전</span>S1-P2-02 개발 환경 구성</a>
+  <a class="next" href="../../s1/p2/s1-p2-04.html"><span class="dir">다음</span>S1-P2-04 첫 API 만들기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

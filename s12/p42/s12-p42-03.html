@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P42-03 배포 네트워크 설계 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P42-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. AWS 기초</a><span class="sep">/</span><span>S12-P42 VPC와 네트워크 기초</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p42-01.html" style="flex:15" data-type="주요 개념" title="VPC 구성 요소 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s12-p42-02.html" style="flex:10" data-type="주요 개념" title="보안 그룹과 네트워크 ACL (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p42-03.html" style="flex:15" data-type="실습" title="배포 네트워크 설계 (15분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s12-p42-04.html" style="flex:5" data-type="실습" title="설계 자기 점검 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p42-05.html" style="flex:5" data-type="정리" title="정리: 6일차 마무리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S12-P42-03</span></div>
+<h1>배포 네트워크 설계</h1>
+
+<p class="lead">지금까지 배운 내용으로 도서 API를 배포할 네트워크를 설계합니다. 7일차에는 이 설계표를 보며 콘솔에서 그대로 만들고, 8일차에 ALB를 더할 때 보안 그룹을 고칩니다. 설계표가 이 파트의 산출물입니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>EC2와 RDS의 배치도를 그리고, 꼭 필요한 연결만 여는 보안 그룹 규칙 표를 작성할 수 있습니다.</p></div>
+<ol class="steps"><li><h3>요구사항 확인</h3><div class="table-wrap"><table><thead><tr><th>번호</th><th>요구사항</th></tr></thead><tbody><tr><td>R1</td><td>도서 API는 EC2 한 대에서 Docker 컨테이너로 8000번 포트로 실행합니다.</td></tr><tr><td>R2</td><td>7일차에는 실습하는 내 컴퓨터(교육장의 공인 IP)에서만 API에 접속할 수 있어야 합니다.</td></tr><tr><td>R3</td><td>서버 접속은 Session Manager로만 합니다. SSH(22번 포트)는 열지 않습니다.</td></tr><tr><td>R4</td><td>데이터베이스는 RDS for PostgreSQL이고, 인터넷에서 닿지 않아야 하며, API 서버만 접속합니다.</td></tr><tr><td>R5</td><td>NAT 게이트웨이는 쓰지 않습니다.</td></tr><tr><td>R6</td><td>8일차에는 ALB를 앞에 두고, 인터넷의 사용자는 ALB를 통해서만 API에 접속합니다.</td></tr><tr><td>R7</td><td>모든 자원에 Owner 태그를 붙이고, 이름은 <code>book-api-</code>로 시작합니다.</td></tr></tbody></table></div>
+</li><li><h3>내 공인 IP 확인</h3>
+<p>R2를 위해 교육장(또는 내 컴퓨터)의 공인 IP를 확인합니다. 아래 명령은 AWS가 제공하는 주소 확인 서비스에 요청해 내 공인 IP를 돌려받습니다. 보안 그룹에는 <code>/32</code>를 붙여 "이 주소 하나"로 적습니다.</p>
+<div class="codeblock term"><pre><code>curl https://checkip.amazonaws.com
+203.0.113.25</code></pre></div>
+<p>교육장의 여러 컴퓨터가 같은 공인 IP를 쓰는 경우가 많습니다. 집에서 복습할 때는 공인 IP가 바뀌므로 규칙을 다시 고쳐야 합니다.</p></li><li><h3>서브넷 설계</h3>
+<p>빈칸을 채웁니다. 가용 영역은 a와 c를 씁니다.</p>
+<div class="table-wrap"><table><thead><tr><th>이름</th><th>가용 영역</th><th>CIDR</th><th>종류</th><th>들어갈 자원</th></tr></thead><tbody><tr><td>book-api-public-a</td><td>ap-northeast-2a</td><td><input data-save="sn1" aria-label="내 결과"></td><td>퍼블릭</td><td><input data-save="sn1r" aria-label="내 결과"></td></tr><tr><td>book-api-public-c</td><td>ap-northeast-2c</td><td><input data-save="sn2" aria-label="내 결과"></td><td>퍼블릭</td><td><input data-save="sn2r" aria-label="내 결과"></td></tr><tr><td>book-api-private-a</td><td>ap-northeast-2a</td><td><input data-save="sn3" aria-label="내 결과"></td><td>프라이빗</td><td><input data-save="sn3r" aria-label="내 결과"></td></tr><tr><td>book-api-private-c</td><td>ap-northeast-2c</td><td><input data-save="sn4" aria-label="내 결과"></td><td>프라이빗</td><td><input data-save="sn4r" aria-label="내 결과"></td></tr></tbody></table></div>
+<p>VPC CIDR: <input data-save="vpccidr" aria-label="내 결과"></p></li><li><h3>보안 그룹 규칙 표(7일차)</h3>
+<p>각 보안 그룹의 인바운드 규칙을 적습니다. 아웃바운드는 기본값(모두 허용)으로 둡니다.</p>
+<div class="table-wrap"><table><thead><tr><th>보안 그룹</th><th>프로토콜과 포트</th><th>출처</th><th>이유</th></tr></thead><tbody><tr><td>book-api-sg(EC2)</td><td><input data-save="sg1p" aria-label="내 결과"></td><td><input data-save="sg1s" aria-label="내 결과"></td><td><input data-save="sg1w" aria-label="내 결과"></td></tr><tr><td>book-api-db-sg(RDS)</td><td><input data-save="sg2p" aria-label="내 결과"></td><td><input data-save="sg2s" aria-label="내 결과"></td><td><input data-save="sg2w" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>보안 그룹 규칙 표(8일차, ALB 추가 뒤)</h3><div class="table-wrap"><table><thead><tr><th>보안 그룹</th><th>프로토콜과 포트</th><th>출처</th><th>이유</th></tr></thead><tbody><tr><td>book-api-alb-sg(ALB)</td><td><input data-save="sg3p" aria-label="내 결과"></td><td><input data-save="sg3s" aria-label="내 결과"></td><td><input data-save="sg3w" aria-label="내 결과"></td></tr><tr><td>book-api-sg(EC2)</td><td><input data-save="sg4p" aria-label="내 결과"></td><td><input data-save="sg4s" aria-label="내 결과"></td><td><input data-save="sg4w" aria-label="내 결과"></td></tr><tr><td>book-api-db-sg(RDS)</td><td><input data-save="sg5p" aria-label="내 결과"></td><td><input data-save="sg5s" aria-label="내 결과"></td><td><input data-save="sg5w" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>배치도 그리기</h3>
+<p>종이나 그리기 도구(draw.io 등)에 VPC, 가용 영역 2개, 서브넷 4개, 인터넷 게이트웨이, EC2, RDS를 그리고, 보안 그룹 규칙에 따라 허용되는 연결을 화살표로 표시합니다. 사진이나 파일로 저장해 두면 7일차에 만들 때 그대로 따라갈 수 있습니다.</p>
+</li></ol>
+<details><summary>예시 답안 보기</summary><div class="answer">
+<div class="table-wrap"><table><thead><tr><th>이름</th><th>가용 영역</th><th>CIDR</th><th>들어갈 자원</th></tr></thead><tbody><tr><td>(VPC) book-api-vpc</td><td></td><td><code>10.0.0.0/16</code></td><td></td></tr><tr><td>book-api-public-a</td><td>ap-northeast-2a</td><td><code>10.0.1.0/24</code></td><td>EC2(도서 API), 8일차 ALB</td></tr><tr><td>book-api-public-c</td><td>ap-northeast-2c</td><td><code>10.0.2.0/24</code></td><td>8일차 ALB(가용 영역 두 곳 필요)</td></tr><tr><td>book-api-private-a</td><td>ap-northeast-2a</td><td><code>10.0.11.0/24</code></td><td>RDS</td></tr><tr><td>book-api-private-c</td><td>ap-northeast-2c</td><td><code>10.0.12.0/24</code></td><td>RDS의 DB 서브넷 그룹을 이루는 두 번째 서브넷</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>시점</th><th>보안 그룹</th><th>인바운드 규칙</th><th>이유</th></tr></thead><tbody><tr><td>7일차</td><td>book-api-sg</td><td>TCP 8000, 출처 <code>내 공인 IP/32</code></td><td>R1, R2. 22번은 열지 않음(R3)</td></tr><tr><td>7일차</td><td>book-api-db-sg</td><td>TCP 5432, 출처 <code>book-api-sg</code></td><td>R4. API 서버에서만</td></tr><tr><td>8일차</td><td>book-api-alb-sg</td><td>TCP 80과 443, 출처 <code>0.0.0.0/0</code></td><td>R6. 인터넷 사용자가 들어오는 유일한 문</td></tr><tr><td>8일차</td><td>book-api-sg</td><td>TCP 8000, 출처 <code>book-api-alb-sg</code>(내 IP 규칙은 삭제)</td><td>R6. ALB를 거친 요청만</td></tr><tr><td>8일차</td><td>book-api-db-sg</td><td>변경 없음</td><td></td></tr></tbody></table></div>
+<p>CIDR 숫자는 겹치지 않고 VPC 범위 안에 있으면 다르게 정해도 괜찮습니다. 퍼블릭은 1, 2, 프라이빗은 11, 12처럼 규칙을 정해 두면 숫자만 보고도 종류를 알 수 있습니다.</p><figure><svg viewBox="0 0 760 440" role="img" aria-label="실습 VPC의 배치. 퍼블릭 서브넷만 인터넷 게이트웨이로 가는 경로를 갖고, 프라이빗 서브넷은 VPC 안에서만 통신합니다." xmlns="http://www.w3.org/2000/svg"><defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" style="fill:var(--ink-soft)"/></marker></defs><rect x="320" y="5" width="120" height="36" rx="8" class="svg-box"/><text x="380.0" y="28.0" text-anchor="middle" class="svg-text">인터넷</text><rect x="290" y="62" width="180" height="42" rx="8" class="svg-box-accent"/><text x="380.0" y="88.0" text-anchor="middle" class="svg-text">인터넷 게이트웨이</text><rect x="20" y="120" width="720" height="310" rx="10" class="svg-zone"/><text x="32" y="140" text-anchor="start" class="svg-label">VPC 10.0.0.0/16</text><rect x="35" y="150" width="335" height="268" rx="10" class="svg-zone"/><text x="47" y="170" text-anchor="start" class="svg-label">가용 영역 ap-northeast-2a</text><rect x="390" y="150" width="335" height="268" rx="10" class="svg-zone"/><text x="402" y="170" text-anchor="start" class="svg-label">가용 영역 ap-northeast-2c</text><rect x="50" y="180" width="305" height="105" rx="10" class="svg-zone-public"/><text x="62" y="200" text-anchor="start" class="svg-label">퍼블릭 서브넷 10.0.1.0/24</text><rect x="140" y="220" width="125" height="50" rx="8" class="svg-box-accent"/><text x="202.5" y="241.0" text-anchor="middle" class="svg-text">EC2</text><text x="202.5" y="260.0" text-anchor="middle" class="svg-small">도서 API</text><rect x="50" y="300" width="305" height="105" rx="10" class="svg-zone-private"/><text x="62" y="320" text-anchor="start" class="svg-label">프라이빗 서브넷 10.0.11.0/24</text><rect x="140" y="340" width="125" height="50" rx="8" class="svg-box"/><text x="202.5" y="361.0" text-anchor="middle" class="svg-text">RDS</text><text x="202.5" y="380.0" text-anchor="middle" class="svg-small">주 DB</text><rect x="405" y="180" width="305" height="105" rx="10" class="svg-zone-public"/><text x="417" y="200" text-anchor="start" class="svg-label">퍼블릭 서브넷 10.0.2.0/24</text><text x="557" y="250" text-anchor="middle" class="svg-small">8일차에 ALB가 함께 씁니다</text><rect x="405" y="300" width="305" height="105" rx="10" class="svg-zone-private"/><text x="417" y="320" text-anchor="start" class="svg-label">프라이빗 서브넷 10.0.12.0/24</text><text x="557" y="370" text-anchor="middle" class="svg-small">DB 서브넷 그룹의 두 번째 칸</text><line x1="380" y1="41" x2="380" y2="60" class="svg-line" marker-end="url(#arr)"/><line x1="340" y1="104" x2="230" y2="218" class="svg-line" marker-end="url(#arr)"/><line x1="420" y1="104" x2="640" y2="228" class="svg-line" marker-end="url(#arr)"/></svg><figcaption>실습 VPC의 배치. 퍼블릭 서브넷만 인터넷 게이트웨이로 가는 경로를 갖고, 프라이빗 서브넷은 VPC 안에서만 통신합니다.</figcaption></figure>
+</div></details>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p42/s12-p42-02.html"><span class="dir">이전</span>S12-P42-02 보안 그룹과 네트워크 ACL</a>
+  <a class="next" href="../../s12/p42/s12-p42-04.html"><span class="dir">다음</span>S12-P42-04 설계 자기 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

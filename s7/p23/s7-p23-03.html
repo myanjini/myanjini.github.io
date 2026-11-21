@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P23-03 테스트 환경 구성 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P23-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 테스트 자동화와 CI</a><span class="sep">/</span><span>S7-P23 테스트 DB와 fixture</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p23-01.html" style="flex:10" data-type="주요 개념" title="fixture와 테스트 격리 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s7-p23-02.html" style="flex:10" data-type="주요 개념" title="테스트용 DB 연결 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s7-p23-03.html" style="flex:25" data-type="실습" title="테스트 환경 구성 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s7-p23-04.html" style="flex:5" data-type="정리" title="정리: 테스트 격리 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S7-P23-03</span></div>
+<h1>테스트 환경 구성</h1>
+
+<p class="lead">conftest.py를 만들고 도서 테스트를 fixture 기반으로 고칩니다. 몇 번을 실행해도 같은 결과가 나오는지, 개발용 데이터베이스가 그대로인지 확인합니다.</p>
+<div class="goal"><p><strong>실습 목표</strong>dependency_overrides와 fixture로 테스트마다 깨끗한 데이터베이스를 쓰게 만들 수 있습니다.</p></div>
+<ol class="steps"><li><h3>개발용 데이터베이스의 도서 수 기억하기</h3>
+<div class="codeblock term"><pre><code>python -c "import sqlite3; print(sqlite3.connect('books.db').execute('select count(*) from books').fetchone())"</code></pre></div>
+
+<p>나온 숫자를 적어 둡니다. 실습이 끝난 뒤에도 이 숫자가 그대로여야 합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>시점</th><th>도서 수</th></tr></thead><tbody><tr><td>실습 전</td><td><input data-save="c1" aria-label="내 결과"></td></tr></tbody></table></div>
+</li><li><h3>conftest.py 만들기</h3>
+<p>앞 페이지의 코드로 <code>tests/conftest.py</code>를 만듭니다.</p>
+</li><li><h3>도우미 함수를 helpers.py로 옮기기</h3>
+<p><code>create_book</code>은 다음 파트의 다른 테스트 파일에서도 씁니다. 여러 파일이 함께 쓰는 도우미 함수는 따로 모읍니다. 이제 <code>client</code>와 <code>author_id</code>를 인자로 받습니다.</p>
+<div class="codeblock"><span class="file">tests/helpers.py</span><pre><code>"""여러 테스트 파일에서 함께 쓰는 도우미 함수"""
+
+
+def create_book(client, headers: dict, author_id: int, **fields) -&gt; dict:
+    """테스트에 쓸 도서를 등록하고 응답 본문을 돌려줍니다."""
+    data = {"title": "테스트 도서", "author_id": author_id, "price": 10000} | fields
+    response = client.post("/books", json=data, headers=headers)
+    assert response.status_code == 201
+    return response.json()</code></pre></div>
+</li><li><h3>도서 테스트 고치기</h3>
+<p><code>tests/test_books.py</code>를 고칩니다. 바뀌는 점은 세 가지입니다.</p>
+<ul>
+  <li>모듈 맨 위의 <code>client = TestClient(app)</code>와 <code>login</code> 함수를 지우고, 테스트 함수가 <code>client</code>, <code>auth_headers</code>, <code>author_id</code> fixture를 매개변수로 받습니다.</li>
+  <li>빈 데이터베이스에서 시작하므로 목록은 정확히 <code>total == 0</code>으로 검증할 수 있습니다.</li>
+  <li>앞 파트에서는 할 수 없었던 ISBN 중복 409 테스트를 추가합니다.</li>
+</ul>
+<details><summary>tests/test_books.py 전체 펼치기</summary><div class="answer"><div class="codeblock"><span class="file">tests/test_books.py</span><pre><code>from tests.helpers import create_book
+
+
+def test_health(client):
+    response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_list_books_is_empty_at_start(client):
+    response = client.get("/books")
+    assert response.status_code == 200
+    assert response.json()["total"] == 0  # 테스트마다 빈 데이터베이스이므로 항상 0입니다.
+
+
+def test_get_missing_book_returns_404(client):
+    response = client.get("/books/1")
+    assert response.status_code == 404
+    assert response.json()["code"] == "BOOK_NOT_FOUND"
+
+
+def test_create_book(client, auth_headers, author_id):
+    data = {"title": "테스트 도서", "author_id": author_id, "price": 15000, "isbn": "9790000000017", "stock": 2}
+    response = client.post("/books", json=data, headers=auth_headers)
+    assert response.status_code == 201
+    body = response.json()
+    assert body["title"] == "테스트 도서"
+    assert body["stock"] == 2
+    assert body["author"] == {"id": author_id, "name": "테스트 저자"}
+
+
+def test_create_book_with_duplicate_isbn_returns_409(client, auth_headers, author_id):
+    create_book(client, auth_headers, author_id, isbn="9790000000017")
+    response = client.post("/books", headers=auth_headers,
+                           json={"title": "다른 도서", "author_id": author_id, "price": 1000, "isbn": "9790000000017"})
+    assert response.status_code == 409
+    assert response.json()["code"] == "DUPLICATE_ISBN"
+
+
+def test_get_book(client, auth_headers, author_id):
+    book = create_book(client, auth_headers, author_id, title="조회 테스트")
+    response = client.get(f"/books/{book['id']}")
+    assert response.status_code == 200
+    assert response.json()["title"] == "조회 테스트"
+
+
+def test_update_book(client, auth_headers, author_id):
+    book = create_book(client, auth_headers, author_id)
+    response = client.patch(f"/books/{book['id']}", json={"price": 20000}, headers=auth_headers)
+    assert response.status_code == 200
+    assert response.json()["price"] == 20000
+    assert client.get(f"/books/{book['id']}").json()["price"] == 20000
+
+
+def test_delete_book(client, auth_headers, author_id):
+    book = create_book(client, auth_headers, author_id)
+    response = client.delete(f"/books/{book['id']}", headers=auth_headers)
+    assert response.status_code == 204
+    assert client.get(f"/books/{book['id']}").status_code == 404</code></pre></div>
+</div></details>
+</li><li><h3>여러 번 실행</h3>
+<div class="codeblock term"><pre><code>pytest -v
+pytest
+pytest</code></pre></div>
+
+<p>세 번 모두 <code>10 passed</code>가 나와야 합니다. 테스트 하나만 골라 실행하거나 순서를 바꿔 실행해도 통과해야 합니다.</p>
+<div class="codeblock term"><pre><code>pytest tests/test_books.py::test_create_book
+pytest tests/test_books.py::test_delete_book tests/test_books.py::test_list_books_is_empty_at_start</code></pre></div>
+</li><li><h3>개발용 데이터베이스 확인</h3>
+<p>1단계의 명령을 다시 실행합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>시점</th><th>도서 수</th></tr></thead><tbody><tr><td>실습 후</td><td><input data-save="c2" aria-label="내 결과"></td></tr></tbody></table></div>
+
+<p>실습 전과 같으면 테스트가 개발용 데이터베이스를 전혀 건드리지 않은 것입니다.</p>
+</li><li><h3>바꿔 끼우기를 빼면 어떻게 되는지 보기</h3>
+<p><code>conftest.py</code>에서 <code>app.dependency_overrides[get_db] = override_get_db</code> 줄 앞에 <code>#</code>을 붙여 주석으로 만들고 실행합니다.</p>
+<div class="codeblock term"><pre><code>pytest tests/test_books.py::test_list_books_is_empty_at_start
+...
+E       assert 15 == 0</code></pre></div>
+
+<p>숫자는 내 개발용 데이터베이스의 도서 수입니다. 바꿔 끼우지 않으면 앱이 원래대로 <code>books.db</code>를 쓴다는 것을 확인했습니다. <code>#</code>을 지워 원래대로 돌립니다.</p>
+</li></ol>
+
+<h2>확인 체크리스트</h2>
+<ul class="checklist"><li><label><input type="checkbox" data-save="check1"> <span>pytest를 여러 번 실행해도 10개가 모두 통과한다.</span></label></li><li><label><input type="checkbox" data-save="check2"> <span>테스트 하나만 실행하거나 순서를 바꿔도 통과한다.</span></label></li><li><label><input type="checkbox" data-save="check3"> <span>테스트 전후로 개발용 데이터베이스의 도서 수가 같다.</span></label></li><li><label><input type="checkbox" data-save="check4"> <span>conftest.py의 주석 처리를 원래대로 돌렸다.</span></label></li></ul>
+
+<h2>문제 해결</h2>
+<div class="table-wrap"><table><thead><tr><th>증상</th><th>원인과 해결</th></tr></thead><tbody><tr><td><code>fixture 'client' not found</code></td><td><code>conftest.py</code>의 파일 이름이나 위치가 틀렸습니다. <code>tests</code> 폴더 바로 안에 있어야 합니다.</td></tr><tr><td><code>no such table: books</code></td><td><code>client</code> fixture가 <code>db_session</code>을 매개변수로 받지 않아 테이블이 만들어지기 전에 요청을 보냈습니다.</td></tr><tr><td><code>ModuleNotFoundError: No module named 'tests'</code></td><td><code>tests/__init__.py</code>가 없습니다. 빈 파일을 만듭니다.</td></tr><tr><td>한 번에 실행하면 실패하고 하나씩은 통과</td><td>어딘가에 테스트끼리 함께 쓰는 상태가 남아 있습니다. <code>dependency_overrides.clear()</code>와 <code>drop_all</code>이 <code>yield</code> 뒤에 있는지 확인합니다.</td></tr></tbody></table></div>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>예제 저장소의 <code>p23-done</code> 브랜치에 있습니다.</p></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s7/p23/s7-p23-02.html"><span class="dir">이전</span>S7-P23-02 테스트용 DB 연결</a>
+  <a class="next" href="../../s7/p23/s7-p23-04.html"><span class="dir">다음</span>S7-P23-04 정리: 테스트 격리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

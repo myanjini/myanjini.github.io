@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P33-04 전송 구간 보호 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P33-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 보안기능과 에러처리</a><span class="sep">/</span><span>S10-P33 보안기능 2: 중요정보 보호와 암호화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p33-01.html" style="flex:10" data-type="주요 개념" title="중요정보와 암호화 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p33-02.html" style="flex:10" data-type="주요 개념" title="하드코딩된 비밀정보 찾기 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s10-p33-03.html" style="flex:20" data-type="실습" title="비밀정보 정리 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p33-04.html" style="flex:5" data-type="주요 개념" title="전송 구간 보호 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p33-05.html" style="flex:5" data-type="정리" title="정리: 중요정보 보호 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S10-P33-04</span></div>
+<h1>전송 구간 보호</h1>
+
+<p class="lead">저장을 아무리 잘 해도 오가는 길에서 새면 소용없습니다. 비밀번호와 토큰이 지나가는 길을 보호하는 방법을 정리합니다. 실제 적용은 8일차에 합니다.</p>
+
+<h2>HTTPS</h2>
+<p>HTTP는 내용을 그대로 보내므로 같은 와이파이, 회사 네트워크, 중간의 통신 장비에서 로그인 요청의 비밀번호와 응답의 토큰을 그대로 볼 수 있습니다. <strong>HTTPS</strong>는 TLS로 통신을 암호화하고, 접속한 서버가 진짜인지 인증서로 확인합니다. KISA 가이드의 중요정보 평문 전송 약점을 막는 기본 방법입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>구간</th><th>보호 방법</th><th>이 과정</th></tr></thead><tbody><tr><td>사용자와 서버 사이</td><td>HTTPS(TLS 인증서)</td><td>8일차 로드 밸런서에 ACM 인증서 적용(S15-P52-04)</td></tr><tr><td>서버와 데이터베이스 사이</td><td>데이터베이스 연결 암호화</td><td>7일차 RDS 전송 구간 SSL(S13-P46-04)</td></tr><tr><td>서버와 외부 서비스 사이</td><td>https 주소만 사용</td><td>S9-P31-04의 URL 검사</td></tr></tbody></table></div>
+
+<h2>HSTS</h2>
+<p>사용자가 주소창에 <code>http://</code>로 들어오면 첫 요청은 암호화되지 않은 채 갑니다. <code>Strict-Transport-Security: max-age=31536000; includeSubDomains</code> 헤더를 받은 브라우저는 그 뒤 1년 동안 이 사이트에 항상 HTTPS로만 접속합니다. 이 헤더는 HTTPS 응답에만 의미가 있으므로 HTTPS를 적용하는 곳에서 함께 설정합니다.</p>
+
+<h2>쿠키 보안 속성</h2>
+<p>도서 API는 토큰을 응답 본문으로 주지만, 웹 서비스에서는 리프레시 토큰을 쿠키에 담는 경우가 많습니다(S5-P18-04). 그때는 다음 속성을 반드시 붙입니다.</p>
+<div class="table-wrap"><table><thead><tr><th>속성</th><th>뜻</th><th>막는 것</th></tr></thead><tbody><tr><td><code>Secure</code></td><td>HTTPS 연결에서만 보냅니다.</td><td>평문 전송 중 탈취</td></tr><tr><td><code>HttpOnly</code></td><td>JavaScript가 읽을 수 없습니다.</td><td>XSS로 토큰 탈취(S9-P31)</td></tr><tr><td><code>SameSite=Strict</code> 또는 <code>Lax</code></td><td>다른 사이트에서 보낸 요청에는 쿠키를 붙이지 않습니다.</td><td>크로스사이트 요청 위조(CSRF)</td></tr></tbody></table></div>
+<div class="codeblock"><span class="file">FastAPI에서 쿠키를 설정하는 예</span><pre><code>response.set_cookie("refresh_token", token, httponly=True, secure=True, samesite="strict",
+                    max_age=14 * 24 * 3600, path="/auth")</code></pre></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s10/p33/s10-p33-03.html"><span class="dir">이전</span>S10-P33-03 비밀정보 정리</a>
+  <a class="next" href="../../s10/p33/s10-p33-05.html"><span class="dir">다음</span>S10-P33-05 정리: 중요정보 보호</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

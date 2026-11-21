@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P50-03 boto3로 S3 사용하기 | FastAPI로 배우는 REST API 백엔드 개발</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P50-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">FastAPI로 배우는 REST API 백엔드 개발</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. AWS 서비스 연동과 배포 자동화</a><span class="sep">/</span><span>S15-P50 S3로 업로드 파일 저장</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p50-01.html" style="flex:5" data-type="주요 개념" title="7일차 복습 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s15-p50-02.html" style="flex:10" data-type="주요 개념" title="S3 핵심 개념 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s15-p50-03.html" style="flex:10" data-type="주요 개념" title="boto3로 S3 사용하기 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s15-p50-04.html" style="flex:20" data-type="실습" title="업로드 API를 S3로 전환 (20분)"><span class="seg-num">04</span><span class="seg-min">20분</span></a><a href="s15-p50-05.html" style="flex:5" data-type="정리" title="정리: S3 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S15-P50-03</span></div>
+<h1>boto3로 S3 사용하기</h1>
+
+<p class="lead">boto3로 S3에 파일을 올리고 지우고, 미리 서명된 URL을 만드는 코드를 봅니다. 도서 API는 저장 위치만 S3로 바꾸고, 파일 검사(S6, S9)와 API 주소는 그대로 둡니다.</p>
+
+<h2>바꾸는 범위</h2>
+<div class="table-wrap"><table><thead><tr><th>부분</th><th>지금(S6~S14)</th><th>바꾼 뒤</th></tr></thead><tbody><tr><td>파일 검사</td><td>확장자, 크기, 매직 넘버 확인</td><td>그대로</td></tr><tr><td>저장 이름</td><td>서버가 만든 uuid 이름</td><td>그대로. S3 키는 <code>covers/</code> + 그 이름</td></tr><tr><td>저장 위치</td><td><code>uploads/covers</code> 폴더</td><td><code>COVER_BUCKET</code>이 있으면 S3, 없으면 폴더(내 PC, 테스트)</td></tr><tr><td>DB의 <code>cover_url</code></td><td><code>/covers/이름.png</code></td><td>그대로</td></tr><tr><td><code>/covers/이름.png</code> 요청</td><td>StaticFiles가 폴더의 파일을 돌려줌</td><td>S3면 307 리디렉션으로 미리 서명된 URL, 폴더면 파일</td></tr></tbody></table></div>
+
+<p>API의 주소와 응답 모양을 바꾸지 않았으므로, 앱을 쓰는 쪽(화면)은 고칠 것이 없습니다. 설정 한 줄로 저장 위치만 바뀝니다.</p>
+
+<h2>저장, 삭제, URL 만들기</h2>
+<div class="codeblock"><span class="file">app/services/covers.py(save_cover, remove_cover를 바꾸고 함수 하나를 더함)</span><pre><code># S3에 저장할 때 쓰는 값
+COVER_KEY_PREFIX = "covers/"  # 버킷 안의 폴더처럼 쓰는 이름 앞부분
+CONTENT_TYPES = {".png": "image/png", ".jpg": "image/jpeg"}
+COVER_NAME = re.compile(r"[0-9a-f]{32}\.(png|jpg)")  # save_cover가 만드는 이름 모양
+DOWNLOAD_URL_EXPIRES = 300  # 미리 서명된 URL의 유효 시간(초)
+
+
+def _s3():
+    """S3 클라이언트. 액세스 키 없이 EC2 역할의 임시 자격 증명을 씁니다."""
+    import boto3
+
+    return boto3.client("s3")
+
+
+def save_cover(data: bytes, ext: str) -&gt; str:
+    """겹치지 않는 새 이름으로 저장하고, 브라우저에서 열 주소를 돌려줍니다."""
+    filename = f"{uuid.uuid4().hex}{ext}"
+    if settings.cover_bucket:
+        _s3().put_object(Bucket=settings.cover_bucket, Key=COVER_KEY_PREFIX + filename,
+                         Body=data, ContentType=CONTENT_TYPES[ext])
+    else:
+        COVER_DIR.mkdir(parents=True, exist_ok=True)
+        (COVER_DIR / filename).write_bytes(data)
+    return COVER_URL_PREFIX + filename
+
+
+def remove_cover(cover_url: str | None) -&gt; None:
+    """저장해 둔 표지 파일을 지웁니다. 없으면 아무것도 하지 않습니다."""
+    if not cover_url:
+        return
+    filename = Path(cover_url).name
+    if settings.cover_bucket:
+        _s3().delete_object(Bucket=settings.cover_bucket, Key=COVER_KEY_PREFIX + filename)
+    else:
+        (COVER_DIR / filename).unlink(missing_ok=True)
+
+
+def cover_download_url(filename: str) -&gt; str:
+    """S3 객체를 잠깐 동안만 내려받을 수 있는 미리 서명된 URL을 만듭니다."""
+    return _s3().generate_presigned_url(
+        "get_object",
+        Params={"Bucket": settings.cover_bucket, "Key": COVER_KEY_PREFIX + filename},
+        ExpiresIn=DOWNLOAD_URL_EXPIRES,
+    )</code></pre></div>
+<div class="table-wrap"><table><thead><tr><th>코드</th><th>뜻</th></tr></thead><tbody><tr><td><code>boto3.client("s3")</code></td><td>S3 클라이언트를 만듭니다. 자격 증명을 적지 않았으므로 boto3가 환경 변수, 설정 파일, EC2 역할 순서로 찾아 씁니다. 서버에서는 역할을 씁니다.</td></tr><tr><td><code>put_object(..., ContentType=...)</code></td><td>객체를 올립니다. Content-Type을 정해 두어야 브라우저가 이미지로 보여 줍니다.</td></tr><tr><td><code>delete_object</code></td><td>이전 표지를 지웁니다. 지울 객체가 없어도 오류가 나지 않습니다.</td></tr><tr><td><code>generate_presigned_url("get_object", ...)</code></td><td>서명이 붙은 URL을 만듭니다. AWS에 요청을 보내지 않고 내 자격 증명으로 계산만 하므로 빠릅니다.</td></tr><tr><td><code>COVER_NAME</code></td><td>서버가 만든 이름 모양(32자리 16진수 + 확장자)입니다. 이 모양이 아닌 요청은 S3 키를 만들기 전에 404로 막습니다. 사용자 입력이 키에 섞여 다른 객체를 가리키는 것을 막는 허용 목록입니다.</td></tr></tbody></table></div>
+
+<h2>표지 주소 경로</h2>
+<p>StaticFiles 마운트를 지우고, 두 저장 방식을 모두 처리하는 경로 하나로 바꿉니다. 응답 헤더 보안(<code>nosniff</code>)은 S9에서 만든 미들웨어가 그대로 붙입니다.</p>
+<div class="codeblock"><span class="file">app/main.py(StaticFiles 마운트 자리)</span><pre><code># 표지 이미지 주소(/covers/파일이름). S3를 쓰면 미리 서명된 URL로 보내고, 아니면 uploads 폴더의 파일을 돌려줍니다.
+@app.get("/covers/{filename}", include_in_schema=False)
+def get_cover(filename: str):
+    if not covers.COVER_NAME.fullmatch(filename):  # 서버가 만든 이름 모양이 아니면 찾지 않습니다.
+        raise AppError(404, "COVER_NOT_FOUND", "표지 이미지를 찾을 수 없습니다.")
+    if settings.cover_bucket:
+        return RedirectResponse(covers.cover_download_url(filename), status_code=307)
+    path = covers.COVER_DIR / filename
+    if not path.is_file():
+        raise AppError(404, "COVER_NOT_FOUND", "표지 이미지를 찾을 수 없습니다.")
+    return FileResponse(path)</code></pre></div>
+
+<p><code>app/config.py</code>의 설정에는 한 줄을 더합니다. 운영용 Compose에서 <code>COVER_BUCKET</code> 환경 변수로 넣습니다.</p>
+<div class="codeblock"><span class="file">app/config.py(Settings 안)</span><pre><code>    cover_bucket: str | None = None  # 값이 있으면 표지를 이 S3 버킷에 저장합니다(없으면 uploads 폴더).</code></pre></div>
+
+<h2>IAM 역할에 더할 권한</h2>
+<p>EC2 역할이 이 버킷의 <code>covers/</code> 아래에서만 올리고, 읽고, 지울 수 있게 합니다. 미리 서명된 URL은 "URL을 만든 쪽의 권한"으로 동작하므로 <code>s3:GetObject</code>도 필요합니다. 버킷 목록을 보는 권한(<code>s3:ListBucket</code>)은 주지 않습니다.</p>
+<div class="codeblock"><span class="file">인라인 정책 book-api-s3-covers</span><pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "BookApiCovers",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+      "Resource": "arn:aws:s3:::book-api-covers-student07-7f3k/covers/*"
+    }
+  ]
+}</code></pre></div>
+
+<h2>테스트</h2>
+<p>S14처럼 Stubber로 S3 응답을 흉내 냅니다. 올리기가 정확히 한 번 불리는지, 표지 주소가 서명된 URL로 리디렉션되는지, 이상한 이름은 404인지 확인합니다.</p>
+<div class="codeblock"><span class="file">tests/test_covers_s3.py</span><pre><code>"""표지를 S3에 저장하는 경우의 테스트: botocore Stubber로 S3 응답을 흉내 냅니다."""
+import boto3
+import pytest
+from botocore.stub import ANY, Stubber
+
+from app.config import settings
+from app.services import covers
+from tests.helpers import create_book
+
+PNG = b"\x89PNG\r\n\x1a\n" + b"0" * 100
+BUCKET = "book-api-covers-test"
+
+
+@pytest.fixture
+def s3(monkeypatch):
+    client = boto3.client("s3", region_name="ap-northeast-2",
+                          aws_access_key_id="test", aws_secret_access_key="test")
+    monkeypatch.setattr(covers, "_s3", lambda: client)
+    monkeypatch.setattr(settings, "cover_bucket", BUCKET)
+    with Stubber(client) as stubber:
+        yield stubber
+
+
+def test_upload_saves_to_s3(client, auth_headers, author_id, s3):
+    book = create_book(client, auth_headers, author_id)
+    s3.add_response("put_object", {}, {"Bucket": BUCKET, "Key": ANY, "Body": PNG, "ContentType": "image/png"})
+
+    response = client.post(f"/books/{book['id']}/cover", headers=auth_headers,
+                           files={"file": ("cover.png", PNG, "image/png")})
+
+    assert response.status_code == 200
+    assert response.json()["cover_url"].startswith("/covers/")
+    s3.assert_no_pending_responses()  # put_object가 정확히 한 번 불렸는지 확인합니다.
+
+
+def test_cover_redirects_to_presigned_url(client, s3):
+    name = "a" * 32 + ".png"
+    response = client.get(f"/covers/{name}", follow_redirects=False)
+
+    assert response.status_code == 307
+    location = response.headers["location"]
+    assert f"{BUCKET}" in location and f"covers/{name}" in location
+    assert "X-Amz-Signature=" in location and "X-Amz-Expires=300" in location
+
+
+@pytest.mark.parametrize("name", ["..%2Fsecret.txt", "evil.html", "A" * 32 + ".png"])
+def test_cover_rejects_unexpected_names(client, s3, name):
+    assert client.get(f"/covers/{name}", follow_redirects=False).status_code == 404</code></pre></div>
+
+<p>폴더에 저장하는 경우도 StaticFiles를 지웠으므로, 올린 파일을 실제로 받아 보는 테스트를 기존 <code>tests/test_covers.py</code>에 더합니다.</p>
+<div class="codeblock"><span class="file">tests/test_covers.py(맨 아래에 추가)</span><pre><code>def test_uploaded_cover_can_be_downloaded(client, auth_headers, author_id, tmp_path, monkeypatch):
+    monkeypatch.setattr(covers, "COVER_DIR", tmp_path)
+    book = create_book(client, auth_headers, author_id)
+    url = client.post(f"/books/{book['id']}/cover", headers=auth_headers,
+                      files={"file": ("cover.png", PNG, "image/png")}).json()["cover_url"]
+    response = client.get(url)
+    assert response.status_code == 200
+    assert response.content == PNG</code></pre></div>
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s15/p50/s15-p50-02.html"><span class="dir">이전</span>S15-P50-02 S3 핵심 개념</a>
+  <a class="next" href="../../s15/p50/s15-p50-04.html"><span class="dir">다음</span>S15-P50-04 업로드 API를 S3로 전환</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>
