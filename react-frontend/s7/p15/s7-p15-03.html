@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P15-03 인증 API: src/api/auth.js | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P15-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 인증 연동</a><span class="sep">/</span><span>S7-P15 토큰과 인터셉터</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p15-01.html" style="flex:10" data-type="주요 개념" title="SPA의 인증 흐름 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s7-p15-02.html" style="flex:10" data-type="실습" title="토큰 보관소: src/auth/tokenStore.js (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s7-p15-03.html" style="flex:10" data-type="실습" title="인증 API: src/api/auth.js (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s7-p15-04.html" style="flex:15" data-type="실습" title="토큰 부착과 자동 재발급: src/api/client.js (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S7-P15-03</span></div>
+<h1>인증 API: <code>src/api/auth.js</code></h1>
+
+<div class="codeblock"><span class="file">src/api/auth.js</span><pre><code>import { api } from &#x27;./client&#x27;;
+
+export async function signup(email, password) {
+  const { data } = await api.post(&#x27;/auth/signup&#x27;, { email, password });
+  return data;
+}
+
+// OAuth2 Password Flow: JSON이 아니라 폼 형식으로 보내야 합니다.
+export async function login(email, password) {
+  const form = new URLSearchParams();
+  form.append(&#x27;username&#x27;, email); // 이 백엔드는 username 칸에 이메일을 받습니다.
+  form.append(&#x27;password&#x27;, password);
+  const { data } = await api.post(&#x27;/auth/token&#x27;, form);
+  return data; // { access_token, refresh_token, token_type }
+}
+
+export async function fetchMe() {
+  const { data } = await api.get(&#x27;/auth/me&#x27;);
+  return data; // { id, email, role }
+}
+
+export async function logout(refreshToken) {
+  await api.post(&#x27;/auth/logout&#x27;, { refresh_token: refreshToken });
+}</code></pre></div>
+<p>로그인은 <a href="../../s5/index.html">S5</a>에서 배운 대로 <code>URLSearchParams</code>로 폼 형식을 만들고, <code>username</code> 칸에 이메일을 넣습니다. axios는 <code>URLSearchParams</code>를 받으면 <code>Content-Type: application/x-www-form-urlencoded</code>를 자동으로 지정합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s7-p15-02.html"><span class="dir">이전</span>S7-P15-02 토큰 보관소: <code>src/auth/tokenStore.js</code></a>
+  <a class="next" href="s7-p15-04.html"><span class="dir">다음</span>S7-P15-04 토큰 부착과 자동 재발급: <code>src/api/client.js</code></a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

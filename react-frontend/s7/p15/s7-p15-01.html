@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P15-01 SPA의 인증 흐름 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P15-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 인증 연동</a><span class="sep">/</span><span>S7-P15 토큰과 인터셉터</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p15-01.html" style="flex:10" data-type="주요 개념" title="SPA의 인증 흐름 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s7-p15-02.html" style="flex:10" data-type="실습" title="토큰 보관소: src/auth/tokenStore.js (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s7-p15-03.html" style="flex:10" data-type="실습" title="인증 API: src/api/auth.js (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s7-p15-04.html" style="flex:15" data-type="실습" title="토큰 부착과 자동 재발급: src/api/client.js (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S7-P15-01</span></div>
+<h1>SPA의 인증 흐름</h1>
+
+<p class="lead">백엔드 과정 S5에서 만든 인증은 두 가지 토큰을 사용합니다. 액세스 토큰은 API를 호출할 때 <code>Authorization: Bearer &lt;토큰&gt;</code> 헤더로 보내는 짧은 수명의 JWT이고, 리프레시 토큰은 액세스 토큰이 만료되었을 때 새 토큰을 받는 데만 쓰는 긴 수명의 토큰입니다. 재발급할 때 리프레시 토큰도 새로 발급되며(응답에 <code>refresh_token</code> 포함), 로그아웃하면 서버에서 리프레시 토큰이 무효화됩니다.</p>
+<p>프론트엔드가 맡아야 할 흐름은 다음과 같습니다.</p>
+<div class="codeblock"><pre><code>[로그인]
+ 사용자 입력 ─&gt; POST /auth/token (폼) ─&gt; { access_token, refresh_token }
+             ─&gt; 토큰 보관 ─&gt; GET /auth/me ─&gt; { id, email, role } 를 화면 상태로 보관
+
+[일반 API 호출]
+ 요청 ─&gt; 인터셉터가 Authorization 헤더 부착 ─&gt; 응답
+
+[액세스 토큰 만료]
+ 요청 ─&gt; 401 ─&gt; 인터셉터가 POST /auth/refresh ─&gt; 새 토큰 보관 ─&gt; 원래 요청 다시 전송
+                       └─ 재발급도 실패 ─&gt; 토큰 삭제, 로그아웃 상태로 전환
+
+[새로고침]
+ 메모리의 액세스 토큰은 사라짐 ─&gt; 리프레시 토큰이 있으면 GET /auth/me 시도
+ ─&gt; 401 ─&gt; 재발급 ─&gt; 다시 GET /auth/me ─&gt; 로그인 상태 복원
+
+[로그아웃]
+ POST /auth/logout { refresh_token } ─&gt; 성공 여부와 관계없이 브라우저의 토큰 삭제</code></pre></div>
+<p>이 흐름에서 화면 컴포넌트는 토큰을 전혀 다루지 않습니다. 토큰 보관은 <code>tokenStore</code>, 헤더 부착과 재발급은 axios 인터셉터, 로그인 상태는 <code>AuthProvider</code>가 맡습니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s6/p14/s6-p14-04.html"><span class="dir">이전</span>S6-P14-04 정리: 라우팅과 조회 화면</a>
+  <a class="next" href="s7-p15-02.html"><span class="dir">다음</span>S7-P15-02 토큰 보관소: <code>src/auth/tokenStore.js</code></a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

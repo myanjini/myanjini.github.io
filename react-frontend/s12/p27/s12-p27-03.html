@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P27-03 문제 해결 가이드 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P27-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. 종합 점검과 확장 과제</a><span class="sep">/</span><span>S12-P27 종합 점검과 확장</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p27-01.html" style="flex:10" data-type="주요 개념" title="종합 시나리오 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p27-02.html" style="flex:20" data-type="주요 개념" title="점검표 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s12-p27-03.html" style="flex:10" data-type="주요 개념" title="문제 해결 가이드 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s12-p27-04.html" style="flex:5" data-type="주요 개념" title="확장 과제 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p27-05.html" style="flex:5" data-type="주요 개념" title="과정을 마치며 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S12-P27-03</span></div>
+<h1>문제 해결 가이드</h1>
+
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>증상</th>
+<th>가능한 원인</th>
+<th>확인 방법과 해결</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Console에 &quot;blocked by CORS policy&quot;</td>
+<td>백엔드 <code>CORS_ORIGINS</code>에 현재 출처가 없음</td>
+<td>주소창의 출처(<code>localhost</code>인지 <code>127.0.0.1</code>인지, 포트)를 확인하고 백엔드에 등록 (<a href="../../s4/index.html">S4</a>)</td>
+</tr>
+<tr>
+<td>화면에 &quot;서버에 연결할 수 없습니다.&quot;</td>
+<td>백엔드 중지, 주소 오류, CORS 차단</td>
+<td><code>curl http://127.0.0.1:8000/health</code>, <code>.env.development</code>의 주소, Console의 CORS 메시지 (<a href="../../s5/index.html">S5</a>)</td>
+</tr>
+<tr>
+<td>환경 변수를 바꿨는데 반영되지 않음</td>
+<td>개발 서버가 시작할 때만 읽음</td>
+<td>개발 서버 재시작, 운영은 이미지 재빌드 (<a href="../../s5/index.html">S5</a>, <a href="../../s11/index.html">S11</a>)</td>
+</tr>
+<tr>
+<td>로그인 요청이 422</td>
+<td>JSON으로 보냄</td>
+<td><code>URLSearchParams</code>로 폼 형식 전송 (<a href="../../s5/index.html">S5</a>, <a href="../../s7/index.html">S7</a>)</td>
+</tr>
+<tr>
+<td>표지 업로드가 422</td>
+<td><code>Content-Type</code>을 직접 지정, 필드 이름이 <code>file</code>이 아님</td>
+<td><code>FormData</code>를 그대로 넘기고 필드 이름 확인 (<a href="../../s5/index.html">S5</a>, <a href="../../s8/index.html">S8</a>)</td>
+</tr>
+<tr>
+<td>새로고침하면 로그아웃됨</td>
+<td>리프레시 토큰 미저장, 재발급 실패</td>
+<td>Session Storage 값과 <code>refresh</code> 요청 결과 확인 (<a href="../../s7/index.html">S7</a>)</td>
+</tr>
+<tr>
+<td>재발급 요청이 계속 반복됨</td>
+<td>재발급 요청이 인터셉터를 거침, 재시도 표시 누락</td>
+<td>기본 <code>axios</code>로 재발급, <code>_retried</code> 확인 (<a href="../../s7/index.html">S7</a>)</td>
+</tr>
+<tr>
+<td>개발 중 같은 요청이 두 번 보임</td>
+<td><code>StrictMode</code>의 의도된 동작</td>
+<td>첫 요청이 취소되는지 확인 (<a href="../../s3/index.html">S3</a>, <a href="../../s5/index.html">S5</a>)</td>
+</tr>
+<tr>
+<td>목록에 이전 검색 결과가 잠깐 덮어씀</td>
+<td>이전 요청 미취소</td>
+<td>이펙트 정리 함수에서 <code>abort()</code> (<a href="../../s5/index.html">S5</a>)</td>
+</tr>
+<tr>
+<td>대여 시각이 9시간 어긋남</td>
+<td>시간대 없는 UTC 문자열</td>
+<td><code>Z</code>를 붙여 해석 (<a href="../../s8/index.html">S8</a>)</td>
+</tr>
+<tr>
+<td>차트가 그려지지 않거나 높이가 0</td>
+<td><code>ResponsiveContainer</code>의 부모 크기 없음</td>
+<td><code>height</code> 지정, 부모 요소의 너비 확인 (<a href="../../s10/index.html">S10</a>)</td>
+</tr>
+<tr>
+<td>운영에서 새로고침하면 404</td>
+<td>SPA 대체 응답 누락</td>
+<td><code>try_files ... /index.html</code> (<a href="../../s11/index.html">S11</a>)</td>
+</tr>
+</tbody>
+</table></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s12-p27-02.html"><span class="dir">이전</span>S12-P27-02 점검표</a>
+  <a class="next" href="s12-p27-04.html"><span class="dir">다음</span>S12-P27-04 확장 과제</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

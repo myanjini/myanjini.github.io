@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P9-02 백엔드 CORS 설정 고치기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P9-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 백엔드 연결 준비: Origin, SOP, CORS</a><span class="sep">/</span><span>S4-P9 CORS와 해결 방법</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p9-01.html" style="flex:20" data-type="주요 개념" title="CORS (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s4-p9-02.html" style="flex:20" data-type="주요 개념" title="백엔드 CORS 설정 고치기 (20분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s4-p9-03.html" style="flex:10" data-type="주요 개념" title="다른 해결 방법: 프록시 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s4-p9-04.html" style="flex:5" data-type="주요 개념" title="CORS에 대한 흔한 오해 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s4-p9-05.html" style="flex:10" data-type="실습" title="출처를 바꿔 가며 관찰하기 (10분)"><span class="seg-num">05</span><span class="seg-min">10분</span></a><a href="s4-p9-06.html" style="flex:5" data-type="정리" title="정리: 백엔드 연결 준비: Origin, SOP, CORS (5분)"><span class="seg-num">06</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>20분</span><span>S4-P9-02</span></div>
+<h1>백엔드 CORS 설정 고치기</h1>
+
+<p class="lead">백엔드 과정 <a href="../../../fastapi-rest-api/s3/p9/s3-p9-01.html">S3-P9</a>-04에서 <code>app/main.py</code>에 다음 설정을 넣었습니다. 허용 출처는 설정값 <code>cors_origins</code>, 즉 환경 변수 <code>CORS_ORIGINS</code>에서 읽습니다.</p>
+<div class="codeblock"><pre><code>app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_methods=[&quot;*&quot;],
+    allow_headers=[&quot;*&quot;],
+)</code></pre></div>
+<p><strong>1) 허용 출처 등록</strong></p>
+<p>백엔드 프로젝트의 <code>.env</code>에 프론트엔드 개발 서버의 출처를 넣습니다. 값의 형식은 <a href="../../../fastapi-rest-api/s3/p9/s3-p9-01.html">S3-P9</a>-02에서 정의한 <code>Settings</code>를 따르며, <code>list[str]</code> 타입이라면 다음처럼 JSON 배열로 적습니다.</p>
+<div class="codeblock"><pre><code>CORS_ORIGINS=[&quot;http://localhost:5173&quot;]</code></pre></div>
+<p>컨테이너가 이 값을 받을 수 있도록 <code>compose.yaml</code>의 <code>api</code> 서비스 <code>environment</code>에도 한 줄을 추가합니다. Compose는 같은 폴더의 <code>.env</code>에서 <code>${CORS_ORIGINS}</code> 값을 읽어 넣어 줍니다.</p>
+<div class="codeblock"><pre><code>  api:
+    environment:
+      DATABASE_URL: postgresql+psycopg://bookapi:${POSTGRES_PASSWORD}@db:5432/bookapi
+      SECRET_KEY: ${SECRET_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS}</code></pre></div>
+<p><strong>2) 노출할 응답 헤더 추가 (권장)</strong></p>
+<p>로그인 화면에서 잠금 시간을 안내하고 관제 화면에서 요청 ID를 활용할 수 있도록 <code>expose_headers</code>를 추가합니다. 이 설정이 없어도 이 교안의 화면은 동작하지만, <a href="../../s7/index.html">S7</a>의 로그인 잠금 안내가 기본값(15분)으로 표시됩니다.</p>
+<div class="codeblock"><pre><code>app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_origins,
+    allow_methods=[&quot;*&quot;],
+    allow_headers=[&quot;*&quot;],
+    expose_headers=[&quot;Retry-After&quot;, &quot;X-Request-ID&quot;, &quot;X-Process-Time&quot;],
+)</code></pre></div>
+<p><strong>3) 적용과 확인</strong></p>
+<div class="codeblock term"><pre><code>cd book-api
+docker compose up -d --build api</code></pre></div>
+<p><code>curl</code>로 사전 요청을 흉내 내어 서버의 응답 헤더를 직접 확인합니다.</p>
+<div class="codeblock term"><pre><code>curl -i -X OPTIONS http://127.0.0.1:8000/books \
+  -H &quot;Origin: http://localhost:5173&quot; \
+  -H &quot;Access-Control-Request-Method: POST&quot; \
+  -H &quot;Access-Control-Request-Headers: authorization,content-type&quot;</code></pre></div>
+<p>응답이 <code>200 OK</code>이고 <code>access-control-allow-origin: http://localhost:5173</code>이 있으면 성공입니다. <code>Origin</code>을 <code>http://evil.example</code>로 바꿔 다시 보내면 <code>400 Bad Request</code>와 함께 <code>access-control-allow-origin</code> 헤더가 빠진 응답이 옵니다. 브라우저의 화면을 새로고침하면 이제 &quot;도서 N권을 받았습니다.&quot;가 표시됩니다.</p>
+<p><code>allow_origins=[&quot;*&quot;]</code>로 모든 출처를 허용하면 빠르게 오류를 없앨 수 있지만, 백엔드 과정 <a href="../../../fastapi-rest-api/s3/p9/s3-p9-01.html">S3-P9</a>-03에서 강조했듯이 피해야 합니다. 허용 출처는 실제로 사용하는 주소만 명시적으로 적습니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s4-p9-01.html"><span class="dir">이전</span>S4-P9-01 CORS</a>
+  <a class="next" href="s4-p9-03.html"><span class="dir">다음</span>S4-P9-03 다른 해결 방법: 프록시</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

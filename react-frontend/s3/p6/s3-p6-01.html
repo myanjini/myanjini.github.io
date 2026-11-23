@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P6-01 컴포넌트와 props | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P6-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. Vite와 React 기초</a><span class="sep">/</span><span>S3-P6 컴포넌트와 상태</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p6-01.html" style="flex:10" data-type="주요 개념" title="컴포넌트와 props (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p6-02.html" style="flex:10" data-type="주요 개념" title="state와 이벤트 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s3-p6-03.html" style="flex:10" data-type="주요 개념" title="조건부 렌더링과 리스트 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p6-04.html" style="flex:10" data-type="주요 개념" title="폼과 제어 컴포넌트 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S3-P6-01</span></div>
+<h1>컴포넌트와 props</h1>
+
+<p class="lead">컴포넌트는 화면의 한 조각을 반환하는 함수입니다. 이름은 대문자로 시작합니다. 부모 컴포넌트는 props(속성)로 자식에게 값을 전달하며, 자식은 props를 읽기만 하고 바꾸지 않습니다.</p>
+<div class="codeblock"><pre><code>function BookRow({ book }) {
+  return (
+    &lt;tr&gt;
+      &lt;td&gt;{book.title}&lt;/td&gt;
+      &lt;td&gt;{book.author.name}&lt;/td&gt;
+      &lt;td&gt;{book.price.toLocaleString(&#x27;ko-KR&#x27;)}원&lt;/td&gt;
+    &lt;/tr&gt;
+  );
+}</code></pre></div>
+<p><code>function BookRow({ book })</code>는 props 객체에서 <code>book</code>만 구조 분해로 꺼낸 것입니다. 부모는 <code>&lt;BookRow book={someBook} /&gt;</code>처럼 사용합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p5/s3-p5-04.html"><span class="dir">이전</span>S3-P5-04 JSX</a>
+  <a class="next" href="s3-p6-02.html"><span class="dir">다음</span>S3-P6-02 state와 이벤트</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

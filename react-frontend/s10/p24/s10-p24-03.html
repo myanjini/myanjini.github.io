@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P24-03 대시보드 화면 조립 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P24-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 관제 대시보드와 데이터 시각화</a><span class="sep">/</span><span>S10-P24 대시보드 구현 2: 화면 완성</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p24-01.html" style="flex:20" data-type="실습" title="헬스 체크 패널과 상태 코드 분포 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s10-p24-02.html" style="flex:25" data-type="실습" title="백엔드 로그 분석 (25분)"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s10-p24-03.html" style="flex:20" data-type="실습" title="대시보드 화면 조립 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p24-04.html" style="flex:10" data-type="실습" title="라우트 등록과 코드 분할 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s10-p24-05.html" style="flex:10" data-type="실습" title="관제 대시보드 운영해 보기 (10분)"><span class="seg-num">05</span><span class="seg-min">10분</span></a><a href="s10-p24-06.html" style="flex:5" data-type="정리" title="정리: 관제 대시보드와 데이터 시각화 (5분)"><span class="seg-num">06</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S10-P24-03</span></div>
+<h1>대시보드 화면 조립</h1>
+
+<div class="codeblock"><span class="file">src/dashboard/DashboardPage.jsx</span><pre><code>import { useCallback, useState } from &#x27;react&#x27;;
+import { listBooks } from &#x27;../api/books&#x27;;
+import { checkHealth } from &#x27;../api/health&#x27;;
+import { usePolling } from &#x27;../hooks/usePolling&#x27;;
+import HealthPanel from &#x27;./HealthPanel&#x27;;
+import KpiCard from &#x27;./KpiCard&#x27;;
+import LogAnalyzer from &#x27;./LogAnalyzer&#x27;;
+import StatusBadge from &#x27;./StatusBadge&#x27;;
+import StatusDistribution from &#x27;./StatusDistribution&#x27;;
+import { average, errorRate, healthLevel, percentile } from &#x27;./metrics&#x27;;
+import { useTelemetry } from &#x27;./useTelemetry&#x27;;
+
+const HEALTH_INTERVAL_MS = 10_000;
+const KPI_INTERVAL_MS = 60_000;
+const HISTORY_SIZE = 30;
+
+const clock = new Intl.DateTimeFormat(&#x27;ko-KR&#x27;, { hour: &#x27;2-digit&#x27;, minute: &#x27;2-digit&#x27;, second: &#x27;2-digit&#x27; });
+
+export default function DashboardPage() {
+  const [history, setHistory] = useState([]);
+  const [bookTotal, setBookTotal] = useState(null);
+  const records = useTelemetry();
+
+  const pollHealth = useCallback(async (signal) =&gt; {
+    const result = await checkHealth(signal);
+    setHistory((prev) =&gt; [...prev, result].slice(-HISTORY_SIZE));
+  }, []);
+
+  // limit=1로 요청하면 목록 대신 total 값만 가볍게 얻을 수 있습니다.
+  const pollKpi = useCallback(async (signal) =&gt; {
+    const page = await listBooks({ limit: 1 }, signal);
+    setBookTotal(page.total);
+  }, []);
+
+  usePolling(pollHealth, HEALTH_INTERVAL_MS);
+  usePolling(pollKpi, KPI_INTERVAL_MS);
+
+  const latest = history.at(-1);
+  const level = healthLevel(latest);
+  const durations = records.map((r) =&gt; r.durationMs);
+  const rate = errorRate(records);
+
+  return (
+    &lt;div className=&quot;dashboard&quot;&gt;
+      &lt;header className=&quot;dashboard-header&quot;&gt;
+        &lt;h1&gt;도서 서비스 관제 대시보드&lt;/h1&gt;
+        &lt;p className=&quot;muted&quot;&gt;
+          헬스 체크 {HEALTH_INTERVAL_MS / 1000}초 간격, 마지막 갱신{&#x27; &#x27;}
+          {latest ? clock.format(latest.checkedAt) : &#x27;-&#x27;}
+        &lt;/p&gt;
+      &lt;/header&gt;
+
+      &lt;div className=&quot;kpi-row&quot;&gt;
+        &lt;KpiCard title=&quot;API 상태&quot; hint={latest ? `HTTP ${latest.httpStatus || &#x27;응답 없음&#x27;}` : null}&gt;
+          &lt;StatusBadge level={level} /&gt;
+        &lt;/KpiCard&gt;
+        &lt;KpiCard title=&quot;데이터베이스&quot; hint={latest?.database}&gt;
+          &lt;StatusBadge level={latest ? (latest.database === &#x27;ok&#x27; ? &#x27;good&#x27; : &#x27;critical&#x27;) : &#x27;unknown&#x27;} /&gt;
+        &lt;/KpiCard&gt;
+        &lt;KpiCard title=&quot;등록 도서&quot; value={bookTotal === null ? null : bookTotal.toLocaleString(&#x27;ko-KR&#x27;)} unit=&quot;권&quot; /&gt;
+        &lt;KpiCard
+          title=&quot;브라우저 측정 응답 시간&quot;
+          value={average(durations)}
+          unit=&quot;ms&quot;
+          hint={`p95 ${percentile(durations, 95) ?? &#x27;-&#x27;} ms, 최근 ${records.length}건`}
+        /&gt;
+        &lt;KpiCard
+          title=&quot;오류율 (5xx, 연결 실패)&quot;
+          value={rate === null ? null : rate.toFixed(1)}
+          unit=&quot;%&quot;
+          hint=&quot;이 브라우저에서 보낸 요청 기준&quot;
+        /&gt;
+      &lt;/div&gt;
+
+      &lt;div className=&quot;grid-2&quot;&gt;
+        &lt;HealthPanel history={history} /&gt;
+        &lt;StatusDistribution records={records} title=&quot;브라우저 요청 상태 코드 분포&quot; /&gt;
+      &lt;/div&gt;
+
+      &lt;LogAnalyzer /&gt;
+    &lt;/div&gt;
+  );
+}</code></pre></div>
+<p>화면 구성은 <a href="../p22/s10-p22-02.html">S10-P22-02</a>의 위계를 따릅니다. 맨 위에 제목과 갱신 정보, 그 아래에 다섯 개의 KPI 카드, 그 아래에 헬스 체크 이력과 상태 코드 분포, 맨 아래에 로그 분석을 둡니다. 헬스 체크는 10초, 도서 수는 60초 간격으로 갱신합니다. 도서 수는 <code>limit=1</code>로 요청해 목록 대신 <code>total</code>만 가볍게 얻습니다. 헬스 체크 이력은 함수형 업데이트로 새 결과를 붙이고 최근 30개만 남깁니다. <code>history.at(-1)</code>은 배열의 마지막 요소를 꺼내는 문법입니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s10-p24-02.html"><span class="dir">이전</span>S10-P24-02 백엔드 로그 분석</a>
+  <a class="next" href="s10-p24-04.html"><span class="dir">다음</span>S10-P24-04 라우트 등록과 코드 분할</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

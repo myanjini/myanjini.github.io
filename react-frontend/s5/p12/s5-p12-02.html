@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P12-02 axios 인스턴스: src/api/client.js | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P12-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. Fetch API와 axios로 API 계층 만들기</a><span class="sep">/</span><span>S5-P12 API 계층 만들기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p12-01.html" style="flex:15" data-type="실습" title="오류 모양 통일: src/api/errors.js (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s5-p12-02.html" style="flex:10" data-type="실습" title="axios 인스턴스: src/api/client.js (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p12-03.html" style="flex:10" data-type="실습" title="도서와 저자 API: src/api/books.js, src/api/authors.js (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p12-04.html" style="flex:10" data-type="실습" title="헬스 체크: src/api/health.js (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s5-p12-05.html" style="flex:10" data-type="주요 개념" title="컴포넌트에서 API 함수를 쓰는 기본 패턴 (10분)"><span class="seg-num">05</span><span class="seg-min">10분</span></a><a href="s5-p12-06.html" style="flex:10" data-type="실습" title="API 계층 만들고 확인하기 (10분)"><span class="seg-num">06</span><span class="seg-min">10분</span></a><a href="s5-p12-07.html" style="flex:5" data-type="정리" title="정리: Fetch API와 axios로 API 계층 만들기 (5분)"><span class="seg-num">07</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S5-P12-02</span></div>
+<h1>axios 인스턴스: <code>src/api/client.js</code></h1>
+
+<p class="lead">이번 섹션에서는 기본 주소, 시간 제한, 오류 통일만 담은 첫 버전을 만듭니다. <a href="../../s7/index.html">S7</a>에서 인증 처리를, <a href="../../s10/index.html">S10</a>에서 요청 기록을 이 파일에 추가합니다.</p>
+<div class="codeblock"><span class="file">src/api/client.js</span><pre><code>import axios from &#x27;axios&#x27;;
+import { toApiError, ApiError, NETWORK_ERROR_MESSAGE } from &#x27;./errors&#x27;;
+
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+});
+
+// 응답 인터셉터: 모든 실패를 ApiError 하나로 통일합니다.
+api.interceptors.response.use(
+  (response) =&gt; response,
+  (error) =&gt; {
+    // 화면을 떠나 취소한 요청은 오류가 아니므로 그대로 넘깁니다.
+    if (axios.isCancel(error)) throw error;
+
+    const { response } = error;
+    if (!response) {
+      throw new ApiError({ status: 0, code: &#x27;NETWORK_ERROR&#x27;, message: NETWORK_ERROR_MESSAGE });
+    }
+    throw toApiError(response.status, response.data, response.headers);
+  },
+);
+
+// 백엔드가 돌려준 /covers/... 같은 경로를 화면에서 열 수 있는 주소로 바꿉니다.
+export function toAssetUrl(path) {
+  if (!path) return null;
+  return `${API_BASE_URL}${path}`;
+}</code></pre></div>
+<p><code>toAssetUrl</code>은 백엔드가 돌려준 표지 경로(<code>/covers/...</code>)를 화면의 <code>&lt;img&gt;</code>가 열 수 있는 전체 주소로 바꿉니다. 개발 환경에서는 <code>http://127.0.0.1:8000/covers/...</code>, <a href="../../s11/index.html">S11</a>의 운영 환경에서는 <code>/api/covers/...</code>가 됩니다. <code>&lt;img&gt;</code>로 다른 출처의 이미지를 표시하는 것은 <a href="../../s4/index.html">S4</a>에서 본 것처럼 동일 출처 정책의 제한을 받지 않습니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s5-p12-01.html"><span class="dir">이전</span>S5-P12-01 오류 모양 통일: <code>src/api/errors.js</code></a>
+  <a class="next" href="s5-p12-03.html"><span class="dir">다음</span>S5-P12-03 도서와 저자 API: <code>src/api/books.js</code>, <code>src/api/authors.js</code></a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

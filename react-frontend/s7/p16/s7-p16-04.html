@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P16-04 인증 흐름 확인하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P16-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 인증 연동</a><span class="sep">/</span><span>S7-P16 로그인 상태와 화면</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p16-01.html" style="flex:20" data-type="실습" title="로그인 상태 공유: Context (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s7-p16-02.html" style="flex:30" data-type="실습" title="로그인과 회원가입 화면 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s7-p16-03.html" style="flex:20" data-type="실습" title="접근 제어와 역할에 따른 화면 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s7-p16-04.html" style="flex:10" data-type="실습" title="인증 흐름 확인하기 (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s7-p16-05.html" style="flex:5" data-type="정리" title="정리: 인증 연동 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S7-P16-04</span></div>
+<h1>인증 흐름 확인하기</h1>
+
+<ol>
+<li><a href="../p15/s7-p15-02.html">S7-P15-02</a>~<a href="s7-p16-03.html">S7-P16-03</a>의 파일을 작성하고 개발 서버를 확인합니다.</li>
+<li>다음 시나리오를 Network 탭과 Application 탭(Session Storage)을 함께 보며 확인합니다.</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>번호</th>
+<th>동작</th>
+<th>기대 결과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>회원가입 후 로그인</td>
+<td>상단에 이메일과 <code>(user)</code> 표시, Session Storage에 <code>book-admin.refresh</code> 저장</td>
+</tr>
+<tr>
+<td>2</td>
+<td>로그인 요청 확인</td>
+<td><code>token</code> 요청의 Content-Type이 <code>application/x-www-form-urlencoded</code>, 사전 요청(OPTIONS) 없음</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>me</code> 요청 확인</td>
+<td>요청 헤더에 <code>Authorization: Bearer ...</code>, 사전 요청 있음 (같은 요청의 사전 요청 결과는 <code>Access-Control-Max-Age</code> 동안 재사용되어 이후에는 생략될 수 있음)</td>
+</tr>
+<tr>
+<td>4</td>
+<td>새로고침</td>
+<td><code>me</code>(401), <code>refresh</code>(200), <code>me</code>(200) 순서로 요청 후 로그인 상태 유지</td>
+</tr>
+<tr>
+<td>5</td>
+<td>틀린 비밀번호</td>
+<td>&quot;이메일 또는 비밀번호가 올바르지 않습니다.&quot;</td>
+</tr>
+<tr>
+<td>6</td>
+<td>같은 이메일로 6번 이상 틀림</td>
+<td>로그인 잠금 안내(429)</td>
+</tr>
+<tr>
+<td>7</td>
+<td>관리자 계정으로 로그인</td>
+<td>&quot;관제 대시보드&quot; 메뉴 표시, 이메일 옆에 <code>(admin)</code></td>
+</tr>
+<tr>
+<td>8</td>
+<td>로그아웃</td>
+<td><code>logout</code> 요청(204), Session Storage의 값 삭제</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Session Storage의 값을 아무 문자열로 바꾸고 새로고침</td>
+<td>재발급 실패 후 로그아웃 상태</td>
+</tr>
+<tr>
+<td>10</td>
+<td>새 탭에서 같은 주소 열기</td>
+<td>로그인되지 않은 상태 (sessionStorage는 탭마다 분리)</td>
+</tr>
+</tbody>
+</table></div>
+<ol start="3">
+<li>토큰 만료를 직접 확인하려면 백엔드의 액세스 토큰 유효 시간 설정(S5-P16에서 정의한 설정값)을 1분으로 줄여 API를 다시 실행합니다. 로그인 후 1분 넘게 기다린 뒤 도서 상세 화면을 열면, Network 탭에서 401과 재발급, 재요청이 순서대로 일어나고 화면은 아무 일 없다는 듯이 정상적으로 표시됩니다. 확인 후 설정을 원래대로 돌립니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s7-p16-03.html"><span class="dir">이전</span>S7-P16-03 접근 제어와 역할에 따른 화면</a>
+  <a class="next" href="s7-p16-05.html"><span class="dir">다음</span>S7-P16-05 정리: 인증 연동</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

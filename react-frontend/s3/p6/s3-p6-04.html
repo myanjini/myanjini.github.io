@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P6-04 폼과 제어 컴포넌트 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P6-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. Vite와 React 기초</a><span class="sep">/</span><span>S3-P6 컴포넌트와 상태</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p6-01.html" style="flex:10" data-type="주요 개념" title="컴포넌트와 props (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p6-02.html" style="flex:10" data-type="주요 개념" title="state와 이벤트 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s3-p6-03.html" style="flex:10" data-type="주요 개념" title="조건부 렌더링과 리스트 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s3-p6-04.html" style="flex:10" data-type="주요 개념" title="폼과 제어 컴포넌트 (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S3-P6-04</span></div>
+<h1>폼과 제어 컴포넌트</h1>
+
+<p class="lead">입력 칸의 값을 state와 연결해 React가 항상 값을 쥐고 있게 만든 것을 제어 컴포넌트라고 합니다. 입력값을 검증하거나, 서버에 보낼 값으로 변환하거나, 오류 메시지를 칸마다 보여 줄 때 이 방식이 편리합니다.</p>
+<div class="codeblock"><pre><code>function SearchBox({ onSearch }) {
+  const [keyword, setKeyword] = useState(&#x27;&#x27;);
+
+  function handleSubmit(event) {
+    event.preventDefault(); // 폼 제출로 페이지가 새로고침되는 기본 동작을 막습니다.
+    onSearch(keyword.trim());
+  }
+
+  return (
+    &lt;form onSubmit={handleSubmit}&gt;
+      &lt;input value={keyword} onChange={(e) =&gt; setKeyword(e.target.value)} /&gt;
+      &lt;button type=&quot;submit&quot;&gt;검색&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</code></pre></div>
+<p>입력 칸의 값은 항상 문자열이라는 점을 기억합니다. <code>type=&quot;number&quot;</code>인 칸도 <code>e.target.value</code>는 <code>&quot;18000&quot;</code> 같은 문자열입니다. API로 보낼 때 <code>Number()</code>로 바꿔야 백엔드가 정수로 받습니다. <a href="../../s8/index.html">S8</a>의 도서 등록 폼에서 이 변환을 함수로 분리합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s3-p6-03.html"><span class="dir">이전</span>S3-P6-03 조건부 렌더링과 리스트</a>
+  <a class="next" href="../p7/s3-p7-01.html"><span class="dir">다음</span>S3-P7-01 useEffect</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

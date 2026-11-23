@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P14-04 정리: 라우팅과 조회 화면 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P14-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 라우팅과 조회 화면</a><span class="sep">/</span><span>S6-P14 조회 화면 만들기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p14-01.html" style="flex:30" data-type="실습" title="도서 목록 화면 (30분)"><span class="seg-num">01</span><span class="seg-min">30분</span></a><a href="s6-p14-02.html" style="flex:10" data-type="실습" title="도서 상세 화면 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p14-03.html" style="flex:10" data-type="실습" title="조회 화면 완성하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s6-p14-04.html" style="flex:5" data-type="정리" title="정리: 라우팅과 조회 화면 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S6-P14-04</span></div>
+<h1>정리: 라우팅과 조회 화면</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>React Router의 선언형 모드로 주소와 화면을 연결하고, 레이아웃 라우트와 <code>&lt;Outlet&gt;</code>으로 공통 틀을 만듭니다.</li>
+<li>앱 안의 이동은 <code>&lt;Link&gt;</code>로 해야 메모리의 상태가 유지됩니다.</li>
+<li>검색, 정렬, 페이지 조건은 URL 쿼리 문자열에 두어 새로고침과 공유에도 유지되게 합니다.</li>
+<li>백엔드의 <code>skip</code>, <code>limit</code>, <code>total</code>로 화면의 페이지 번호를 계산합니다.</li>
+<li>조회 화면은 로딩, 오류, 빈 결과, 정상 결과를 모두 표현해야 합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">검색 조건을 URL 쿼리 문자열에 두는 이유로 알맞지 않은 것은 무엇인가요?</p><label><input type="radio" name="s6-p14-04-q1" value="1"> <span>1. 새로고침해도 조건이 유지된다.</span></label><label><input type="radio" name="s6-p14-04-q1" value="2"> <span>2. 주소를 공유할 수 있다.</span></label><label><input type="radio" name="s6-p14-04-q1" value="3"> <span>3. 뒤로 가기에도 결과가 유지된다.</span></label><label><input type="radio" name="s6-p14-04-q1" value="4"> <span>4. 백엔드 검증이 필요 없어진다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>URL에 두는 것은 화면 상태 관리 방법일 뿐이며 백엔드 검증은 여전히 필요합니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q"><code>total</code>이 23, <code>limit</code>이 10일 때 3쪽의 <code>skip</code> 값은 무엇인가요?</p><label><input type="radio" name="s6-p14-04-q2" value="1"> <span>1. 3</span></label><label><input type="radio" name="s6-p14-04-q2" value="2"> <span>2. 10</span></label><label><input type="radio" name="s6-p14-04-q2" value="3"> <span>3. 20</span></label><label><input type="radio" name="s6-p14-04-q2" value="4"> <span>4. 30</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>skip은 (페이지 - 1) x limit이므로 3쪽은 20입니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s7/index.html">S7. 인증 연동</a>로 이어집니다. JWT 토큰으로 로그인, 자동 재발급, 로그아웃, 접근 제어를 구현합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s6-p14-03.html"><span class="dir">이전</span>S6-P14-03 조회 화면 완성하기</a>
+  <a class="next" href="../../s7/p15/s7-p15-01.html"><span class="dir">다음</span>S7-P15-01 SPA의 인증 흐름</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

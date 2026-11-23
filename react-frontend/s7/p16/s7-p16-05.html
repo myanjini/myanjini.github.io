@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P16-05 정리: 인증 연동 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P16-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 인증 연동</a><span class="sep">/</span><span>S7-P16 로그인 상태와 화면</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p16-01.html" style="flex:20" data-type="실습" title="로그인 상태 공유: Context (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s7-p16-02.html" style="flex:30" data-type="실습" title="로그인과 회원가입 화면 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s7-p16-03.html" style="flex:20" data-type="실습" title="접근 제어와 역할에 따른 화면 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s7-p16-04.html" style="flex:10" data-type="실습" title="인증 흐름 확인하기 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s7-p16-05.html" style="flex:5" data-type="정리" title="정리: 인증 연동 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S7-P16-05</span></div>
+<h1>정리: 인증 연동</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>액세스 토큰은 메모리, 리프레시 토큰은 sessionStorage에 두고 <code>tokenStore</code>로만 접근합니다.</li>
+<li>요청 인터셉터는 토큰을 붙이고, 응답 인터셉터는 401에서 한 번만 재발급하며, 동시 재발급은 하나의 Promise로 묶습니다.</li>
+<li><code>AuthProvider</code>가 로그인 상태를 Context로 공유하고, 새로고침 후에는 재발급 흐름으로 상태를 복원합니다.</li>
+<li>로그인 오류 메시지는 하나로 통일하고, 429 잠금은 <code>Retry-After</code>로 안내합니다.</li>
+<li>화면의 접근 제어는 사용자 경험을 위한 것이며, 실제 권한 검사는 백엔드가 합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">여러 요청이 동시에 401을 받았을 때 재발급을 한 번만 하는 이유는 무엇인가요?</p><label><input type="radio" name="s7-p16-05-q1" value="1"> <span>1. 서버 부하를 줄이기 위해서만</span></label><label><input type="radio" name="s7-p16-05-q1" value="2"> <span>2. 재발급 때마다 리프레시 토큰이 바뀌어 나머지 재발급이 실패하므로</span></label><label><input type="radio" name="s7-p16-05-q1" value="3"> <span>3. 브라우저가 동시 요청을 막아서</span></label><label><input type="radio" name="s7-p16-05-q1" value="4"> <span>4. 액세스 토큰이 공유되지 않아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>백엔드는 재발급 때 리프레시 토큰을 새로 바꾸므로 진행 중인 재발급 Promise를 공유해야 합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">프론트엔드에서 관리자 메뉴를 숨기는 것에 대한 설명으로 옳은 것은 무엇인가요?</p><label><input type="radio" name="s7-p16-05-q2" value="1"> <span>1. 이것만으로 관리자 기능이 보호된다.</span></label><label><input type="radio" name="s7-p16-05-q2" value="2"> <span>2. 사용자 경험을 위한 장치이며 실제 권한 검사는 백엔드가 한다.</span></label><label><input type="radio" name="s7-p16-05-q2" value="3"> <span>3. 토큰을 숨기는 기능이다.</span></label><label><input type="radio" name="s7-p16-05-q2" value="4"> <span>4. CORS 설정을 대신한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>프론트엔드 코드는 조작될 수 있으므로 권한 판단은 항상 백엔드가 합니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s8/index.html">S8. 쓰기 기능: 등록, 수정, 삭제, 표지 업로드, 대여와 반납</a>로 이어집니다. 도서 등록과 수정, 삭제, 표지 업로드, 대여와 반납 기능을 완성합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s7-p16-04.html"><span class="dir">이전</span>S7-P16-04 인증 흐름 확인하기</a>
+  <a class="next" href="../../s8/p17/s8-p17-01.html"><span class="dir">다음</span>S8-P17-01 쓰기 화면의 공통 원칙</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P14-02 도서 상세 화면 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P14-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. 라우팅과 조회 화면</a><span class="sep">/</span><span>S6-P14 조회 화면 만들기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p14-01.html" style="flex:30" data-type="실습" title="도서 목록 화면 (30분)"><span class="seg-num">01</span><span class="seg-min">30분</span></a><a href="s6-p14-02.html" style="flex:10" data-type="실습" title="도서 상세 화면 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p14-03.html" style="flex:10" data-type="실습" title="조회 화면 완성하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s6-p14-04.html" style="flex:5" data-type="정리" title="정리: 라우팅과 조회 화면 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S6-P14-02</span></div>
+<h1>도서 상세 화면</h1>
+
+<p class="lead">상세 화면은 주소의 <code>:bookId</code>로 도서를 조회해 보여 줍니다. <a href="../../s8/index.html">S8</a>에서 대여, 수정, 삭제, 표지 업로드 버튼을 추가하므로 지금은 조회만 구현합니다.</p>
+<div class="codeblock"><span class="file">src/pages/BookDetailPage.jsx</span><pre><code>import { useEffect, useState } from &#x27;react&#x27;;
+import { useParams } from &#x27;react-router&#x27;;
+import { getBook } from &#x27;../api/books&#x27;;
+import { toAssetUrl } from &#x27;../api/client&#x27;;
+import ErrorMessage from &#x27;../components/ErrorMessage&#x27;;
+
+export default function BookDetailPage() {
+  const { bookId } = useParams(); // 주소의 :bookId 값 (문자열)
+  const [book, setBook] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() =&gt; {
+    const controller = new AbortController();
+    getBook(bookId, controller.signal)
+      .then(setBook)
+      .catch((err) =&gt; {
+        if (err.name !== &#x27;CanceledError&#x27;) setError(err);
+      });
+    return () =&gt; controller.abort();
+  }, [bookId]);
+
+  if (error) return &lt;ErrorMessage error={error} /&gt;;
+  if (!book) return &lt;p className=&quot;muted&quot;&gt;불러오는 중입니다.&lt;/p&gt;;
+
+  return (
+    &lt;section className=&quot;detail&quot;&gt;
+      &lt;div className=&quot;cover&quot;&gt;
+        {book.cover_url ? (
+          &lt;img src={toAssetUrl(book.cover_url)} alt={`${book.title} 표지`} /&gt;
+        ) : (
+          &lt;div className=&quot;cover-empty&quot;&gt;표지 없음&lt;/div&gt;
+        )}
+      &lt;/div&gt;
+      &lt;div&gt;
+        &lt;h1&gt;{book.title}&lt;/h1&gt;
+        &lt;dl className=&quot;meta&quot;&gt;
+          &lt;dt&gt;저자&lt;/dt&gt;
+          &lt;dd&gt;{book.author?.name}&lt;/dd&gt;
+          &lt;dt&gt;가격&lt;/dt&gt;
+          &lt;dd&gt;{book.price.toLocaleString(&#x27;ko-KR&#x27;)}원&lt;/dd&gt;
+          &lt;dt&gt;ISBN&lt;/dt&gt;
+          &lt;dd&gt;{book.isbn ?? &#x27;-&#x27;}&lt;/dd&gt;
+        &lt;/dl&gt;
+      &lt;/div&gt;
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p><code>bookId</code>가 바뀌면(예: 다른 도서의 링크를 누르면) 이펙트가 다시 실행되도록 의존성 배열에 넣었습니다. 없는 번호로 접근하면 백엔드의 404 응답이 <code>ErrorMessage</code>로 표시됩니다. 표지가 있으면 <a href="../../s5/index.html">S5</a>에서 만든 <code>toAssetUrl</code>로 전체 주소를 만들어 표시하고, <code>alt</code> 속성으로 이미지의 의미를 글로 남깁니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s6-p14-01.html"><span class="dir">이전</span>S6-P14-01 도서 목록 화면</a>
+  <a class="next" href="s6-p14-03.html"><span class="dir">다음</span>S6-P14-03 조회 화면 완성하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>
