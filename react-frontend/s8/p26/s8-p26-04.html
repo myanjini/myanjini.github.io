@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P26-04 정리: SPA 인증 흐름과 토큰 보관 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P26-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 인증 연동</a><span class="sep">/</span><span>S8-P26 SPA 인증 흐름과 토큰 보관</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p26-01.html" style="flex:20" data-type="주요 개념" title="SPA의 인증 흐름 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s8-p26-02.html" style="flex:15" data-type="실습" title="토큰 보관소와 인증 API (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s8-p26-03.html" style="flex:10" data-type="실습" title="Console로 로그인 API 확인하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s8-p26-04.html" style="flex:5" data-type="정리" title="정리: SPA 인증 흐름과 토큰 보관 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S8-P26-04</span></div>
+<h1>정리: SPA 인증 흐름과 토큰 보관</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>액세스 토큰은 API 호출에, 리프레시 토큰은 재발급에만 쓰며, 재발급 때 리프레시 토큰도 새로 받습니다.</li>
+<li>화면 코드는 토큰을 직접 다루지 않고 <code>tokenStore</code>를 통해서만 접근합니다.</li>
+<li>토큰을 보관하는 것만으로는 부족하며, 요청마다 <code>Authorization</code> 헤더로 보내야 합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">리프레시 토큰의 용도로 옳은 것은 무엇인가요?</p><label><input type="radio" name="s8-p26-04-q1" value="1"> <span>1. 비밀번호 대신 로그인 화면에 입력한다.</span></label><label><input type="radio" name="s8-p26-04-q1" value="2"> <span>2. 화면에 사용자 이름을 표시하는 데 쓴다.</span></label><label><input type="radio" name="s8-p26-04-q1" value="3"> <span>3. 모든 API 요청의 Authorization 헤더에 붙인다.</span></label><label><input type="radio" name="s8-p26-04-q1" value="4"> <span>4. 액세스 토큰이 만료되었을 때 새 토큰을 받는 데만 쓴다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>리프레시 토큰은 /auth/refresh에만 보내며, 노출 범위를 줄이기 위해 다른 요청에는 쓰지 않습니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">토큰을 tokenStore로만 다루게 한 이유는 무엇인가요?</p><label><input type="radio" name="s8-p26-04-q2" value="1"> <span>1. 저장 위치를 바꿔도 한 파일만 고치면 되어서</span></label><label><input type="radio" name="s8-p26-04-q2" value="2"> <span>2. 토큰이 자동으로 암호화되어서</span></label><label><input type="radio" name="s8-p26-04-q2" value="3"> <span>3. CORS 오류를 피하려고</span></label><label><input type="radio" name="s8-p26-04-q2" value="4"> <span>4. 브라우저가 강제해서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>보관 방식을 한곳에 모으면 변경과 점검이 쉬워집니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s8-p26-03.html"><span class="dir">이전</span>S8-P26-03 Console로 로그인 API 확인하기</a>
+  <a class="next" href="../p27/s8-p27-01.html"><span class="dir">다음</span>S8-P27-01 토큰 부착과 자동 재발급</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

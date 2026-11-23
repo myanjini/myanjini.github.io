@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P58-02 API 함수와 조회 화면 구현 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P58-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P58 구현 1: API 계층과 조회</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p58-01.html" style="flex:5" data-type="주요 개념" title="구현 순서 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s17-p58-02.html" style="flex:40" data-type="실습" title="API 함수와 조회 화면 구현 (40분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">40분</span></a><a href="s17-p58-03.html" style="flex:5" data-type="정리" title="정리: 구현 1: API 계층과 조회 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>40분</span><span>S17-P58-02</span></div>
+<h1>API 함수와 조회 화면 구현</h1>
+
+<p class="lead">설계 문서에 따라 조회 기능을 구현합니다. 주제 1을 고른 경우의 시작 코드는 다음과 같습니다. 다른 주제도 같은 순서로 진행합니다.</p>
+<div class="codeblock"><pre><code>// src/api/authors.js에 추가
+export async function listAuthorBooks(authorId, { signal } = {}) {
+  const { data } = await api.get(`/authors/${authorId}/books`, { signal });
+  return data;
+}</code></pre></div>
+<div class="codeblock"><pre><code>// src/pages/AuthorBooksPage.jsx
+import { useQuery } from &#x27;@tanstack/react-query&#x27;;
+import { Link, useParams } from &#x27;react-router&#x27;;
+import { listAuthorBooks } from &#x27;../api/authors&#x27;;
+import ErrorMessage from &#x27;../components/ErrorMessage&#x27;;
+
+export default function AuthorBooksPage() {
+  const { authorId } = useParams();
+  const { data: books, isPending, error } = useQuery({
+    queryKey: [&#x27;authors&#x27;, &#x27;books&#x27;, authorId],
+    queryFn: ({ signal }) =&gt; listAuthorBooks(authorId, { signal }),
+  });
+
+  if (isPending) return &lt;p&gt;불러오는 중...&lt;/p&gt;;
+  if (error) return &lt;ErrorMessage error={error} /&gt;;
+  if (books.length === 0) return &lt;p&gt;이 저자의 도서가 없습니다.&lt;/p&gt;;
+
+  return (
+    &lt;ul&gt;
+      {books.map((book) =&gt; (
+        &lt;li key={book.id}&gt;&lt;Link to={`/books/${book.id}`}&gt;{book.title}&lt;/Link&gt;&lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}</code></pre></div>
+<p>구현하면서 다음을 확인합니다.</p>
+<ol>
+<li>Network 탭에서 요청 주소와 응답이 설계 문서의 API 표와 같은지 확인합니다.</li>
+<li>없는 ID로 접속해 404 안내가 나오는지, 백엔드를 멈춰 연결 실패 안내가 나오는지 확인합니다.</li>
+<li>다른 화면에 다녀오면 캐시된 결과가 바로 보이고 뒤에서 다시 확인하는지 React Query Devtools 또는 Network 탭으로 확인합니다.</li>
+<li>한 단계가 끝날 때마다 커밋합니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s17-p58-01.html"><span class="dir">이전</span>S17-P58-01 구현 순서</a>
+  <a class="next" href="s17-p58-03.html"><span class="dir">다음</span>S17-P58-03 정리: 구현 1: API 계층과 조회</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

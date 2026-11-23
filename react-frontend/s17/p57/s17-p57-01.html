@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P57-01 미니 프로젝트 안내 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P57-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P57 주제 선정과 화면 설계</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p57-01.html" style="flex:10" data-type="주요 개념" title="미니 프로젝트 안내 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s17-p57-02.html" style="flex:35" data-type="실습" title="주제 고르고 설계 문서 쓰기 (35분)"><span class="seg-num">02</span><span class="seg-min">35분</span></a><a href="s17-p57-03.html" style="flex:5" data-type="정리" title="정리: 주제 선정과 화면 설계 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S17-P57-01</span></div>
+<h1>미니 프로젝트 안내</h1>
+<div class="goal"><p><strong>파트 목표</strong>미니 프로젝트의 주제를 고르고, 사용할 API, 화면, 상태, 권한을 설계 문서로 정리할 수 있습니다.</p></div>
+
+<p class="lead">미니 프로젝트는 8일 동안 배운 내용을 한 기능 안에서 처음부터 끝까지 다시 밟아 보는 시간입니다. 새 앱을 만드는 대신 지금까지 만든 <code>react-frontend</code>에 기능을 더하므로, 이미 만든 API 계층, 인증, Query 캐시, 테스트 도구, 배포 파이프라인을 그대로 활용합니다. 혼자 또는 2~3명이 한 팀으로 진행합니다.</p>
+<p>하루의 흐름은 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>파트</th>
+<th>할 일</th>
+<th>결과물</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="s17-p57-01.html">S17-P57</a></td>
+<td>주제 선정, 설계</td>
+<td>설계 문서 (<code>docs/mini-project.md</code>)</td>
+</tr>
+<tr>
+<td><a href="../p58/s17-p58-01.html">S17-P58</a></td>
+<td>API 함수와 조회 화면</td>
+<td>조회 화면</td>
+</tr>
+<tr>
+<td><a href="../p59/s17-p59-01.html">S17-P59</a></td>
+<td>인증, 권한, 쓰기 기능</td>
+<td>등록, 수정, 삭제 동작</td>
+</tr>
+<tr>
+<td><a href="../p60/s17-p60-01.html">S17-P60</a></td>
+<td>테스트</td>
+<td>단위, 컴포넌트 테스트와 E2E 1개 이상</td>
+</tr>
+<tr>
+<td><a href="../../s18/p61/s18-p61-01.html">S18-P61</a></td>
+<td>보안 점검, S3 배포</td>
+<td>점검표, 배포 주소</td>
+</tr>
+<tr>
+<td><a href="../../s18/p62/s18-p62-01.html">S18-P62</a></td>
+<td>발표</td>
+<td>시연과 질의응답</td>
+</tr>
+<tr>
+<td><a href="../../s18/p63/s18-p63-01.html">S18-P63</a></td>
+<td>평가, 회고, 자원 정리</td>
+<td>회고 기록, 정리된 AWS 자원</td>
+</tr>
+</tbody>
+</table></div>
+<p>작업은 <code>mini-project</code> 같은 기능 브랜치에서 하고, <a href="../../s18/p61/s18-p61-01.html">S18-P61</a>에서 풀 리퀘스트로 main에 병합해 <a href="../../s16/index.html">S16</a>의 파이프라인으로 배포합니다. 다음 세 가지를 지키면 됩니다.</p>
+<ol>
+<li>백엔드 API를 하나 이상 새로 연결합니다(지금까지 화면에서 쓰지 않은 API 또는 쓰지 않은 기능).</li>
+<li>로딩, 오류, 빈 결과, 정상 결과를 모두 구분해 보여 줍니다.</li>
+<li>테스트가 CI에서 통과한 상태로 배포합니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s16/p56/s16-p56-04.html"><span class="dir">이전</span>S16-P56-04 정리: CD: OIDC, 자동 배포, 롤백</a>
+  <a class="next" href="s17-p57-02.html"><span class="dir">다음</span>S17-P57-02 주제 고르고 설계 문서 쓰기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

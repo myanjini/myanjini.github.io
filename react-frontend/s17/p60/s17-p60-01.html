@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P60-01 기능 테스트 작성 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P60-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P60 구현 3: 테스트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p60-01.html" style="flex:45" data-type="실습" title="기능 테스트 작성 (45분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">45분</span></a><a href="s17-p60-02.html" style="flex:5" data-type="정리" title="정리: 구현 3: 테스트 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>45분</span><span>S17-P60-01</span></div>
+<h1>기능 테스트 작성</h1>
+<div class="goal"><p><strong>파트 목표</strong>미니 프로젝트 기능에 단위, 컴포넌트, E2E 테스트를 작성하고 CI에서 통과시킬 수 있습니다.</p></div>
+
+<p class="lead">설계 문서의 테스트 계획에 따라 테스트를 작성합니다. 다음을 최소 기준으로 합니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>종류</th>
+<th>최소 개수</th>
+<th>예 (주제 2)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>단위</td>
+<td>1</td>
+<td>저자 이름 검증 함수</td>
+</tr>
+<tr>
+<td>컴포넌트(MSW)</td>
+<td>2</td>
+<td>목록 표시, 409 안내</td>
+</tr>
+<tr>
+<td>E2E</td>
+<td>1</td>
+<td>관리자 로그인 후 저자 등록</td>
+</tr>
+</tbody>
+</table></div>
+<ol>
+<li>MSW 가짜 서버(<code>src/test/server.js</code>)에 새 API의 응답을 추가합니다. 응답 형식은 설계 문서의 API 표와 같게 만듭니다.</li>
+</ol>
+<div class="codeblock"><pre><code>http.post(`${API}/authors`, async ({ request }) =&gt; {
+  const { name } = await request.json();
+  if (name === &#x27;한강&#x27;) {
+    return HttpResponse.json(
+      { detail: { code: &#x27;DUPLICATE_AUTHOR&#x27;, message: &#x27;Author already exists&#x27; } },
+      { status: 409 },
+    );
+  }
+  return HttpResponse.json({ id: 99, name }, { status: 201 });
+}),</code></pre></div>
+<ol start="2">
+<li>컴포넌트 테스트는 <code>renderWithProviders</code>로 화면을 그리고, 사용자가 하는 순서대로 조작합니다. 관리자 화면은 <code>AuthContext.Provider</code>로 관리자 사용자를 넣어 그립니다(<a href="../../s11/p37/s11-p37-02.html">S11-P37-02</a>).</li>
+<li>E2E는 <code>e2e/mockApi.js</code>에 새 경로를 추가하고, 핵심 흐름 하나만 테스트합니다.</li>
+<li>모두 통과하면 다음 명령을 한 번에 실행해 CI와 같은 검사를 로컬에서 통과하는지 확인합니다.</li>
+</ol>
+<div class="codeblock term"><pre><code>npm run lint &amp;&amp; npm run test:run &amp;&amp; npm run build &amp;&amp; npm run test:e2e</code></pre></div>
+<ol start="5">
+<li>기능 브랜치를 push하고 풀 리퀘스트를 열어 CI가 통과하는지 확인합니다. 아직 병합하지 않습니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p59/s17-p59-02.html"><span class="dir">이전</span>S17-P59-02 정리: 구현 2: 인증과 쓰기</a>
+  <a class="next" href="s17-p60-02.html"><span class="dir">다음</span>S17-P60-02 정리: 구현 3: 테스트</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

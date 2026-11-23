@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P4-03 JSON 변환과 백엔드 응답 읽기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P4-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. 웹 프론트엔드와 개발 환경</a><span class="sep">/</span><span>S1-P4 프론트엔드 관점의 HTTP와 JSON</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p4-01.html" style="flex:15" data-type="주요 개념" title="프론트엔드 관점에서 본 HTTP (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s1-p4-02.html" style="flex:10" data-type="주요 개념" title="JSON (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s1-p4-03.html" style="flex:20" data-type="실습" title="JSON 변환과 백엔드 응답 읽기 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s1-p4-04.html" style="flex:5" data-type="정리" title="정리: 프론트엔드 관점의 HTTP와 JSON (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S1-P4-03</span></div>
+<h1>JSON 변환과 백엔드 응답 읽기</h1>
+
+<p class="lead">JavaScript는 두 함수로 JSON을 다룹니다. <code>JSON.stringify</code>는 값을 JSON 텍스트로 바꾸고(직렬화), <code>JSON.parse</code>는 JSON 텍스트를 값으로 바꿉니다(역직렬화).</p>
+<div class="codeblock"><pre><code>const book = { title: &#x27;파이썬 입문&#x27;, price: 18000, isbn: undefined, author: { id: 1, name: &#x27;홍길동&#x27; } };
+
+const text = JSON.stringify(book);
+console.log(text);
+// {&quot;title&quot;:&quot;파이썬 입문&quot;,&quot;price&quot;:18000,&quot;author&quot;:{&quot;id&quot;:1,&quot;name&quot;:&quot;홍길동&quot;}}
+// isbn은 undefined이므로 결과에서 빠졌습니다.
+
+const parsed = JSON.parse(text);
+console.log(parsed.author.name); // 홍길동
+
+console.log(JSON.stringify(book, null, 2)); // 두 칸 들여쓰기로 보기 좋게 출력</code></pre></div>
+<p>나중에 사용할 axios와 Fetch API의 <code>response.json()</code>은 내부에서 이 변환을 대신 해 줍니다. 그래도 원리를 알아 두면 &quot;응답이 왜 문자열로 왔는지&quot;, &quot;보낸 필드가 왜 빠졌는지&quot; 같은 문제를 쉽게 진단할 수 있습니다.</p>
+<p>이제 실제 백엔드 응답을 다뤄 봅니다.</p>
+<ol>
+<li>브라우저 주소창에 <code>http://127.0.0.1:8000/books?limit=3</code>을 입력합니다. 화면에 JSON 텍스트가 그대로 보입니다. 이것이 백엔드가 보내는 실제 응답입니다.</li>
+<li>같은 탭에서 개발자 도구의 Console 탭을 열고 다음 코드를 입력합니다. 지금은 페이지와 API의 주소가 같아서 문제없이 동작합니다. 주소가 다른 페이지에서 같은 코드를 실행하면 어떻게 되는지는 <a href="../../s5/index.html">S5</a>에서 확인합니다.</li>
+</ol>
+<div class="codeblock"><pre><code>const response = await fetch(&#x27;/books?limit=3&#x27;);
+const page = await response.json();
+console.log(page.total, page.items.length);
+console.table(page.items.map((b) =&gt; ({ id: b.id, title: b.title, author: b.author.name, price: b.price })));</code></pre></div>
+<ol start="3">
+<li>다음 질문에 스스로 답해 봅니다.
+<ul>
+<li><code>page.total</code>과 <code>page.items.length</code>가 다른 이유는 무엇입니까?</li>
+<li>전체 도서의 평균 가격을 구하려면 어떤 배열 메서드를 써야 합니까? 이 응답만으로 전체 평균을 구할 수 있습니까?</li>
+<li><code>JSON.stringify(page.items[0], null, 2)</code>의 결과에서 <code>author</code>는 어떤 모양입니까?</li>
+</ul>
+</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s1-p4-02.html"><span class="dir">이전</span>S1-P4-02 JSON</a>
+  <a class="next" href="s1-p4-04.html"><span class="dir">다음</span>S1-P4-04 정리: 프론트엔드 관점의 HTTP와 JSON</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

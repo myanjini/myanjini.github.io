@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P25-03 정리: 조회 화면 통합 실습 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P25-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 라우팅과 조회 화면</a><span class="sep">/</span><span>S7-P25 조회 화면 통합 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p25-01.html" style="flex:30" data-type="실습" title="저자별 보기 추가하기 (30분)"><span class="seg-num">01</span><span class="seg-min">30분</span></a><a href="s7-p25-02.html" style="flex:15" data-type="실습" title="조회 화면 종합 점검 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s7-p25-03.html" style="flex:5" data-type="정리" title="정리: 조회 화면 통합 실습 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S7-P25-03</span></div>
+<h1>정리: 조회 화면 통합 실습</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>새 조건을 추가할 때도 &quot;URL에 두고, 바뀌면 첫 페이지로, 바뀌면 다시 불러오기&quot; 규칙을 그대로 따릅니다.</li>
+<li>조건과 무관한 데이터는 별도의 이펙트로 한 번만 불러옵니다.</li>
+<li>보조 기능의 실패가 핵심 기능을 막지 않도록 실패를 나눠 처리합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">저자 목록과 도서 목록을 하나의 이펙트에서 불러오면 생기는 문제는 무엇인가요?</p><label><input type="radio" name="s7-p25-03-q1" value="1"> <span>1. 페이지나 검색어가 바뀔 때마다 저자 목록까지 다시 요청한다.</span></label><label><input type="radio" name="s7-p25-03-q1" value="2"> <span>2. 도서 목록이 정렬되지 않는다.</span></label><label><input type="radio" name="s7-p25-03-q1" value="3"> <span>3. CORS 오류가 난다.</span></label><label><input type="radio" name="s7-p25-03-q1" value="4"> <span>4. 저자 목록을 불러올 수 없다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>이펙트는 의존성 단위로 나누어, 필요한 조건이 바뀔 때만 다시 실행되게 합니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">저자 선택 상자의 값으로 저자 이름을 쓴 이유는 무엇인가요?</p><label><input type="radio" name="s7-p25-03-q2" value="1"> <span>1. id는 화면에 보여 줄 수 없어서</span></label><label><input type="radio" name="s7-p25-03-q2" value="2"> <span>2. URL에 숫자를 쓸 수 없어서</span></label><label><input type="radio" name="s7-p25-03-q2" value="3"> <span>3. 이름이 id보다 짧아서</span></label><label><input type="radio" name="s7-p25-03-q2" value="4"> <span>4. 백엔드의 author 쿼리가 저자 이름으로 거르기 때문에</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>화면의 값은 API 명세에 맞춥니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s8/index.html">S8. 인증 연동</a>(4일차 오후, 3시간)로 이어집니다. JWT 토큰으로 로그인, 자동 재발급, 로그아웃, 역할에 따른 접근 제어를 구현합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s7-p25-02.html"><span class="dir">이전</span>S7-P25-02 조회 화면 종합 점검</a>
+  <a class="next" href="../../s8/p26/s8-p26-01.html"><span class="dir">다음</span>S8-P26-01 SPA의 인증 흐름</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P48-02 코드 분할과 메모이제이션 적용 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P48-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 대시보드 고도화</a><span class="sep">/</span><span>S14-P48 성능: 코드 분할과 렌더링 최적화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p48-01.html" style="flex:15" data-type="주요 개념" title="렌더링 성능 기초 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s14-p48-02.html" style="flex:30" data-type="실습" title="코드 분할과 메모이제이션 적용 (30분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s14-p48-03.html" style="flex:5" data-type="정리" title="정리: 성능: 코드 분할과 렌더링 최적화 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>30분</span><span>S14-P48-02</span></div>
+<h1>코드 분할과 메모이제이션 적용</h1>
+
+<p class="lead"><strong>1) 측정</strong></p>
+<p>먼저 현재 상태를 기록합니다. <code>npm run build</code>의 출력에서 JavaScript 파일 크기를 적어 둡니다. 모든 화면이 파일 하나에 들어 있고, 500KB를 넘는다는 경고가 나옵니다. React Developer Tools의 Profiler로 대시보드를 30초 녹화해 <code>LogAnalyzer</code>가 몇 번 그려지는지도 적어 둡니다.</p>
+<p><strong>2) 코드 분할</strong></p>
+<p><code>lazy</code>와 동적 <code>import()</code>로 대시보드를 분리합니다. 내려받는 동안에는 <code>Suspense</code>의 <code>fallback</code>이 표시됩니다.</p>
+<div class="codeblock"><span class="file">src/App.jsx</span><pre><code>import { lazy, Suspense } from &#x27;react&#x27;;
+import { Route, Routes } from &#x27;react-router&#x27;;
+import RequireAuth from &#x27;./auth/RequireAuth&#x27;;
+import Layout from &#x27;./components/Layout&#x27;;
+import BookDetailPage from &#x27;./pages/BookDetailPage&#x27;;
+import BookFormPage from &#x27;./pages/BookFormPage&#x27;;
+import BookListPage from &#x27;./pages/BookListPage&#x27;;
+import LoginPage from &#x27;./pages/LoginPage&#x27;;
+import MyLoansPage from &#x27;./pages/MyLoansPage&#x27;;
+import NotFoundPage from &#x27;./pages/NotFoundPage&#x27;;
+import SignupPage from &#x27;./pages/SignupPage&#x27;;
+
+// 차트 라이브러리가 큰 대시보드는 처음 열 때만 따로 내려받습니다.
+const DashboardPage = lazy(() =&gt; import(&#x27;./dashboard/DashboardPage&#x27;));
+
+export default function App() {
+  return (
+    &lt;Routes&gt;
+      &lt;Route element={&lt;Layout /&gt;}&gt;
+        &lt;Route index element={&lt;BookListPage /&gt;} /&gt;
+        &lt;Route path=&quot;books/:bookId&quot; element={&lt;BookDetailPage /&gt;} /&gt;
+        &lt;Route path=&quot;books/new&quot; element={&lt;RequireAuth&gt;&lt;BookFormPage /&gt;&lt;/RequireAuth&gt;} /&gt;
+        &lt;Route path=&quot;books/:bookId/edit&quot; element={&lt;RequireAuth&gt;&lt;BookFormPage /&gt;&lt;/RequireAuth&gt;} /&gt;
+        &lt;Route path=&quot;loans&quot; element={&lt;RequireAuth&gt;&lt;MyLoansPage /&gt;&lt;/RequireAuth&gt;} /&gt;
+        &lt;Route
+          path=&quot;dashboard&quot;
+          element={
+            &lt;RequireAuth adminOnly&gt;
+              &lt;Suspense fallback={&lt;p className=&quot;muted&quot;&gt;대시보드를 불러오는 중입니다.&lt;/p&gt;}&gt;
+                &lt;DashboardPage /&gt;
+              &lt;/Suspense&gt;
+            &lt;/RequireAuth&gt;
+          }
+        /&gt;
+        &lt;Route path=&quot;login&quot; element={&lt;LoginPage /&gt;} /&gt;
+        &lt;Route path=&quot;signup&quot; element={&lt;SignupPage /&gt;} /&gt;
+        &lt;Route path=&quot;*&quot; element={&lt;NotFoundPage /&gt;} /&gt;
+      &lt;/Route&gt;
+    &lt;/Routes&gt;
+  );
+}</code></pre></div>
+<p><strong>3) 메모이제이션</strong></p>
+<p><code>LogAnalyzer</code>는 props가 없어 부모가 다시 그려져도 결과가 같습니다. <code>memo</code>로 감싸 다시 그리기를 건너뜁니다.</p>
+<div class="codeblock"><pre><code>import { memo, useMemo, useState } from &#x27;react&#x27;;
+// ...
+function LogAnalyzer() { /* 그대로 */ }
+
+export default memo(LogAnalyzer);</code></pre></div>
+<p>KPI 계산은 요청 기록이 바뀔 때만 다시 하도록 <code>useMemo</code>로 묶습니다.</p>
+<div class="codeblock"><span class="file">src/dashboard/DashboardPage.jsx</span><pre><code>import { useEffect, useMemo, useState } from &#x27;react&#x27;;
+import { useQuery } from &#x27;@tanstack/react-query&#x27;;
+import { listBooks } from &#x27;../api/books&#x27;;
+import { checkHealth } from &#x27;../api/health&#x27;;
+import HealthPanel from &#x27;./HealthPanel&#x27;;
+import KpiCard from &#x27;./KpiCard&#x27;;
+import LogAnalyzer from &#x27;./LogAnalyzer&#x27;;
+import StatusBadge from &#x27;./StatusBadge&#x27;;
+import StatusDistribution from &#x27;./StatusDistribution&#x27;;
+import { average, errorRate, healthLevel, percentile } from &#x27;./metrics&#x27;;
+import { useTelemetry } from &#x27;./useTelemetry&#x27;;
+
+const HEALTH_INTERVAL_MS = 10_000;
+const KPI_INTERVAL_MS = 60_000;
+const HISTORY_SIZE = 30;
+
+const clock = new Intl.DateTimeFormat(&#x27;ko-KR&#x27;, { hour: &#x27;2-digit&#x27;, minute: &#x27;2-digit&#x27;, second: &#x27;2-digit&#x27; });
+
+export default function DashboardPage() {
+  const records = useTelemetry();
+
+  // 폴링: refetchInterval마다 다시 요청합니다. TanStack Query는 앞 요청이 끝나기 전에
+  // 다음 요청을 겹쳐 보내지 않고, 탭이 보이지 않으면 쉬며, 화면을 떠나면 멈춥니다.
+  const { data: latest } = useQuery({
+    queryKey: [&#x27;health&#x27;],
+    queryFn: ({ signal }) =&gt; checkHealth(signal),
+    refetchInterval: HEALTH_INTERVAL_MS,
+    staleTime: 0,
+  });
+
+  // limit=1로 요청하면 목록 대신 total 값만 가볍게 얻을 수 있습니다.
+  const { data: bookTotal = null } = useQuery({
+    queryKey: [&#x27;books&#x27;, &#x27;total&#x27;],
+    queryFn: ({ signal }) =&gt; listBooks({ limit: 1 }, signal).then((page) =&gt; page.total),
+    refetchInterval: KPI_INTERVAL_MS,
+  });
+
+  // 새 점검 결과가 도착할 때마다 이력에 붙이고 최근 30개만 남깁니다.
+  const [history, setHistory] = useState([]);
+  useEffect(() =&gt; {
+    if (!latest) return;
+    setHistory((prev) =&gt;
+      prev.at(-1)?.checkedAt === latest.checkedAt ? prev : [...prev, latest].slice(-HISTORY_SIZE),
+    );
+  }, [latest]);
+
+  const level = healthLevel(latest);
+  // records가 바뀔 때만 다시 계산합니다. 다른 상태가 바뀌어 다시 그려질 때는 이전 결과를 씁니다.
+  const stats = useMemo(() =&gt; {
+    const durations = records.map((r) =&gt; r.durationMs);
+    return { avg: average(durations), p95: percentile(durations, 95), rate: errorRate(records) };
+  }, [records]);
+
+  return (
+    &lt;div className=&quot;dashboard&quot;&gt;
+      &lt;header className=&quot;dashboard-header&quot;&gt;
+        &lt;h1&gt;도서 서비스 관제 대시보드&lt;/h1&gt;
+        &lt;p className=&quot;muted&quot;&gt;
+          헬스 체크 {HEALTH_INTERVAL_MS / 1000}초 간격, 마지막 갱신{&#x27; &#x27;}
+          {latest ? clock.format(latest.checkedAt) : &#x27;-&#x27;}
+        &lt;/p&gt;
+      &lt;/header&gt;
+
+      &lt;div className=&quot;kpi-row&quot;&gt;
+        &lt;KpiCard title=&quot;API 상태&quot; hint={latest ? `HTTP ${latest.httpStatus || &#x27;응답 없음&#x27;}` : null}&gt;
+          &lt;StatusBadge level={level} /&gt;
+        &lt;/KpiCard&gt;
+        &lt;KpiCard title=&quot;데이터베이스&quot; hint={latest?.database}&gt;
+          &lt;StatusBadge level={latest ? (latest.database === &#x27;ok&#x27; ? &#x27;good&#x27; : &#x27;critical&#x27;) : &#x27;unknown&#x27;} /&gt;
+        &lt;/KpiCard&gt;
+        &lt;KpiCard title=&quot;등록 도서&quot; value={bookTotal === null ? null : bookTotal.toLocaleString(&#x27;ko-KR&#x27;)} unit=&quot;권&quot; /&gt;
+        &lt;KpiCard
+          title=&quot;브라우저 측정 응답 시간&quot;
+          value={stats.avg}
+          unit=&quot;ms&quot;
+          hint={`p95 ${stats.p95 ?? &#x27;-&#x27;} ms, 최근 ${records.length}건`}
+        /&gt;
+        &lt;KpiCard
+          title=&quot;오류율 (5xx, 연결 실패)&quot;
+          value={stats.rate === null ? null : stats.rate.toFixed(1)}
+          unit=&quot;%&quot;
+          hint=&quot;이 브라우저에서 보낸 요청 기준&quot;
+        /&gt;
+      &lt;/div&gt;
+
+      &lt;div className=&quot;grid-2&quot;&gt;
+        &lt;HealthPanel history={history} /&gt;
+        &lt;StatusDistribution records={records} title=&quot;브라우저 요청 상태 코드 분포&quot; /&gt;
+      &lt;/div&gt;
+
+      &lt;LogAnalyzer /&gt;
+    &lt;/div&gt;
+  );
+}</code></pre></div>
+<p><strong>4) 다시 측정</strong></p>
+<p>다시 <code>npm run build</code>를 실행해 결과를 비교합니다. 이 과정의 코드로 확인했을 때 첫 화면용 파일은 약 370KB(gzip 약 120KB), 대시보드 파일은 약 450KB(gzip 약 127KB)로 나뉘었습니다. 개발자 도구의 Network 탭에서 <code>DashboardPage-...js</code>가 대시보드를 처음 열 때만 내려받아지는지 확인합니다. Profiler로 다시 녹화해 <code>LogAnalyzer</code>가 처음 한 번만 그려지고 이후에는 건너뛰는지(회색으로 표시) 확인합니다.</p>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p48-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s14-p48-01.html"><span class="dir">이전</span>S14-P48-01 렌더링 성능 기초</a>
+  <a class="next" href="s14-p48-03.html"><span class="dir">다음</span>S14-P48-03 정리: 성능: 코드 분할과 렌더링 최적화</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

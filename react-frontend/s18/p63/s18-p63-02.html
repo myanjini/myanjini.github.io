@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S18-P63-02 AWS 자원 정리 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S18-P63-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S18. 배포와 발표</a><span class="sep">/</span><span>S18-P63 평가, 회고와 자원 정리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s18-p63-01.html" style="flex:15" data-type="실습" title="회고 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s18-p63-02.html" style="flex:15" data-type="실습" title="AWS 자원 정리 (15분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s18-p63-03.html" style="flex:15" data-type="주요 개념" title="과정을 마치며 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s18-p63-04.html" style="flex:5" data-type="정리" title="정리: 평가, 회고와 자원 정리 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S18-P63-02</span></div>
+<h1>AWS 자원 정리</h1>
+
+<p class="lead">실습이 끝나면 비용과 보안 위험을 줄이기 위해 만든 자원을 지웁니다. 계속 운영할 계획이라면 이 단계를 건너뛰되, 공개 버킷은 CloudFront와 OAC 구성으로 바꾸는 것을 권합니다.</p>
+<div class="codeblock term"><pre><code>export BUCKET=react-frontend-hong-1234
+
+# 1) 버킷의 파일과 버킷 삭제 (되돌릴 수 없습니다)
+aws s3 rm &quot;s3://$BUCKET&quot; --recursive
+aws s3 rb &quot;s3://$BUCKET&quot;
+
+# 2) 배포 역할 삭제
+aws iam delete-role-policy --role-name react-frontend-deploy --policy-name s3-deploy
+aws iam delete-role --role-name react-frontend-deploy</code></pre></div>
+<p>OIDC 공급자는 다른 저장소에서도 쓸 수 있으므로, 더 이상 GitHub Actions로 AWS를 쓰지 않을 때만 지웁니다.</p>
+<div class="codeblock term"><pre><code>aws iam list-open-id-connect-providers
+aws iam delete-open-id-connect-provider --open-id-connect-provider-arn &lt;위에서 확인한 ARN&gt;</code></pre></div>
+<p>마지막으로 다음을 정리합니다.</p>
+<ol>
+<li>백엔드 <code>CORS_ORIGINS</code>에서 S3 웹사이트 주소를 지웁니다. 지운 주소는 다른 사람이 같은 이름의 버킷을 만들어 쓸 수 있으므로, 남겨 두면 그 사이트가 내 API를 교차 출처로 부를 수 있게 됩니다.</li>
+<li>GitHub 저장소의 <code>production</code> 환경 변수를 지우거나 Deploy 워크플로를 비활성화합니다(Actions &gt; Deploy &gt; &quot;Disable workflow&quot;).</li>
+<li>로컬의 Compose 환경은 <code>docker compose down</code>으로 정리합니다. 데이터까지 지우려면 <code>-v</code>를 붙입니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s18-p63-01.html"><span class="dir">이전</span>S18-P63-01 회고</a>
+  <a class="next" href="s18-p63-03.html"><span class="dir">다음</span>S18-P63-03 과정을 마치며</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

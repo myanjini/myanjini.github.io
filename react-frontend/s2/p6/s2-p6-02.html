@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P6-02 모듈 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P6-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 모던 JavaScript</a><span class="sep">/</span><span>S2-P6 배열 메서드와 모듈</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p6-01.html" style="flex:15" data-type="주요 개념" title="배열 메서드 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s2-p6-02.html" style="flex:10" data-type="주요 개념" title="모듈 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s2-p6-03.html" style="flex:20" data-type="실습" title="백엔드 목록 데이터 가공하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s2-p6-04.html" style="flex:5" data-type="정리" title="정리: 배열 메서드와 모듈 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S2-P6-02</span></div>
+<h1>모듈</h1>
+
+<p class="lead">프로그램을 파일 단위로 나누고, 필요한 것을 내보내고(<code>export</code>) 가져와(<code>import</code>) 씁니다. React 프로젝트는 컴포넌트, API 함수, 도우미 함수를 모두 모듈로 나눕니다.</p>
+<div class="codeblock"><pre><code>// api/books.js : 이름 붙여 내보내기 (여러 개 가능)
+export async function listBooks() { /* ... */ }
+export async function getBook(bookId) { /* ... */ }
+
+// pages/BookListPage.jsx : 기본 내보내기 (파일당 하나)
+export default function BookListPage() { /* ... */ }
+
+// App.jsx : 가져오기
+import BookListPage from &#x27;./pages/BookListPage&#x27;;      // 기본 내보내기는 원하는 이름으로
+import { listBooks, getBook } from &#x27;./api/books&#x27;;     // 이름 내보내기는 같은 이름으로, 중괄호 안에
+import * as booksApi from &#x27;./api/books&#x27;;              // 모두 묶어서 가져오기: booksApi.listBooks()</code></pre></div>
+<p>이 과정의 관례는 다음과 같습니다. 컴포넌트 파일은 컴포넌트 하나를 기본 내보내기로, API 함수와 도우미 함수는 이름 내보내기로 씁니다. 가져오는 경로의 <code>./</code>는 &quot;현재 파일 기준&quot;이고, <code>react</code>처럼 <code>./</code>가 없는 이름은 <code>node_modules</code>에 설치한 패키지입니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s2-p6-01.html"><span class="dir">이전</span>S2-P6-01 배열 메서드</a>
+  <a class="next" href="s2-p6-03.html"><span class="dir">다음</span>S2-P6-03 백엔드 목록 데이터 가공하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

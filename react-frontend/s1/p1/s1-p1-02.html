@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P1-02 학습 목표와 사전 지식 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P1-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. 웹 프론트엔드와 개발 환경</a><span class="sep">/</span><span>S1-P1 과정 소개와 결과물</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p1-01.html" style="flex:10" data-type="주요 개념" title="과정 소개와 로드맵 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p1-02.html" style="flex:10" data-type="주요 개념" title="학습 목표와 사전 지식 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s1-p1-03.html" style="flex:15" data-type="주요 개념" title="최종 결과물 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s1-p1-04.html" style="flex:10" data-type="주요 개념" title="예제 저장소와 단계별 브랜치 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s1-p1-05.html" style="flex:5" data-type="정리" title="정리: 과정 소개와 결과물 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S1-P1-02</span></div>
+<h1>학습 목표와 사전 지식</h1>
+
+<p class="lead">과정을 마치면 다음을 할 수 있습니다.</p>
+<ol>
+<li>Vite로 React 프로젝트를 만들고 컴포넌트, 상태, 이펙트, 라우팅으로 화면을 구성합니다.</li>
+<li>JSON 요청과 응답을 이해하고 Fetch API와 axios로 백엔드 API를 호출합니다.</li>
+<li>출처(Origin), 동일 출처 정책(SOP), CORS의 동작 원리를 설명하고 CORS 오류를 스스로 진단하고 해결합니다.</li>
+<li>JWT 액세스 토큰과 리프레시 토큰으로 로그인, 자동 재발급, 로그아웃을 구현합니다.</li>
+<li>TanStack Query로 서버 상태를 캐시하고, 변경 후 화면을 일관되게 갱신합니다.</li>
+<li>Vitest, React Testing Library, MSW, Playwright로 단위부터 E2E까지 테스트합니다.</li>
+<li>XSS, 토큰 저장, 보안 헤더, 의존성 점검 등 프론트엔드 개발 보안 요소를 적용합니다.</li>
+<li>관제 환경에 맞는 대시보드를 설계하고 차트 라이브러리로 상태와 추세를 시각화합니다.</li>
+<li>Docker와 Nginx로 프론트엔드를 컨테이너화하고, GitHub Actions로 테스트와 S3 배포를 자동화합니다.</li>
+</ol>
+<p>이 과정은 백엔드 과정을 마쳤거나, 최소한 백엔드 과정의 결과물(도서 관리 API)을 실행할 수 있는 학습자를 대상으로 합니다. 다음 지식이 있으면 학습이 수월합니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>구분</th>
+<th>필요한 수준</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>HTML, CSS</td>
+<td>태그와 속성, 선택자의 기본 의미를 압니다.</td>
+</tr>
+<tr>
+<td>JavaScript</td>
+<td>변수, 함수, 배열, 객체를 다뤄 본 경험이 있습니다. 모던 문법은 <a href="../../s2/index.html">S2</a>에서 정리합니다.</td>
+</tr>
+<tr>
+<td>HTTP, REST</td>
+<td>메서드, 상태 코드, 헤더의 의미를 압니다. 백엔드 과정 <a href="../../../fastapi-rest-api/s1/index.html">S1</a>에서 다룬 수준이면 충분합니다.</td>
+</tr>
+<tr>
+<td>Docker</td>
+<td>이미지, 컨테이너, Compose의 개념을 압니다. 백엔드 과정 <a href="../../../fastapi-rest-api/s8/index.html">S8</a>에서 다룬 수준이면 충분합니다.</td>
+</tr>
+</tbody>
+</table></div>
+<p>React를 처음 접하는 학습자도 따라올 수 있도록 S3에서 React의 핵심 개념을 처음부터 설명합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s1-p1-01.html"><span class="dir">이전</span>S1-P1-01 과정 소개와 로드맵</a>
+  <a class="next" href="s1-p1-03.html"><span class="dir">다음</span>S1-P1-03 최종 결과물</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

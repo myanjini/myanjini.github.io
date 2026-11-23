@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P32-01 관리자 저자 추가 기능 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P32-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 쓰기 기능</a><span class="sep">/</span><span>S9-P32 5일차 통합 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p32-01.html" style="flex:25" data-type="실습" title="관리자 저자 추가 기능 (25분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">25분</span></a><a href="s9-p32-02.html" style="flex:20" data-type="실습" title="쓰기 기능 종합 점검 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s9-p32-03.html" style="flex:5" data-type="정리" title="정리: 5일차 통합 실습 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S9-P32-01</span></div>
+<h1>관리자 저자 추가 기능</h1>
+<div class="goal"><p><strong>파트 목표</strong>역할에 따라 다른 기능을 제공하는 폼을 직접 구현하고, 쓰기 기능 전체를 시나리오로 점검할 수 있습니다.</p></div>
+
+<p class="lead">도서를 등록하려는데 저자가 목록에 없으면 관리자가 그 자리에서 저자를 추가할 수 있게 합니다. 먼저 아래 요구 사항만 보고 직접 구현해 본 뒤 예시 코드와 비교합니다.</p>
+<ul>
+<li>관리자(<code>isAdmin</code>)에게만 &quot;목록에 없는 저자 이름&quot; 입력 칸과 &quot;저자 추가&quot; 버튼을 보여 줍니다.</li>
+<li>추가에 성공하면 저자 선택 상자에 새 저자가 나타나고 바로 선택됩니다.</li>
+<li>이미 있는 저자(409 <code>DUPLICATE_AUTHOR</code>)는 &quot;이미 등록된 저자입니다.&quot;로 안내합니다.</li>
+<li>저자 추가 버튼을 눌러도 도서 폼이 제출되면 안 됩니다.</li>
+</ul>
+<div class="codeblock"><span class="file">src/pages/BookFormPage.jsx</span><pre><code>import { useEffect, useState } from &#x27;react&#x27;;
+import { useNavigate, useParams } from &#x27;react-router&#x27;;
+import { createAuthor, listAuthors } from &#x27;../api/authors&#x27;;
+import { useAuth } from &#x27;../auth/useAuth&#x27;;
+import { createBook, getBook, updateBook } from &#x27;../api/books&#x27;;
+import ErrorMessage from &#x27;../components/ErrorMessage&#x27;;
+
+const EMPTY_FORM = { title: &#x27;&#x27;, author_id: &#x27;&#x27;, price: &#x27;&#x27;, isbn: &#x27;&#x27; };
+
+// 화면 입력값(문자열)을 API 본문(JSON)으로 바꿉니다.
+function toPayload(form) {
+  return {
+    title: form.title.trim(),
+    author_id: Number(form.author_id),
+    price: Number(form.price),
+    isbn: form.isbn.trim() === &#x27;&#x27; ? null : form.isbn.trim(),
+  };
+}
+
+// 수정할 때는 바뀐 필드만 보냅니다 (PATCH).
+function diff(original, payload) {
+  const changes = {};
+  if (payload.title !== original.title) changes.title = payload.title;
+  if (payload.author_id !== original.author?.id) changes.author_id = payload.author_id;
+  if (payload.price !== original.price) changes.price = payload.price;
+  if (payload.isbn !== (original.isbn ?? null)) changes.isbn = payload.isbn;
+  return changes;
+}
+
+// 백엔드 규칙과 같은 기준으로 먼저 확인해 사용자에게 빠르게 알려 줍니다.
+function validate(form) {
+  const errors = {};
+  const title = form.title.trim();
+  if (title.length &lt; 1 || title.length &gt; 100) errors.title = &#x27;제목은 1~100자로 입력합니다.&#x27;;
+  if (!form.author_id) errors.author_id = &#x27;저자를 고릅니다.&#x27;;
+  const price = Number(form.price);
+  if (form.price === &#x27;&#x27; || !Number.isInteger(price) || price &lt; 0 || price &gt; 1_000_000)
+    errors.price = &#x27;가격은 0~1,000,000 사이의 정수입니다.&#x27;;
+  if (form.isbn.trim() &amp;&amp; !/^\d{13}$/.test(form.isbn.trim())) errors.isbn = &#x27;ISBN은 숫자 13자리입니다.&#x27;;
+  return errors;
+}
+
+export default function BookFormPage() {
+  const { bookId } = useParams(); // 있으면 수정, 없으면 등록
+  const isEdit = Boolean(bookId);
+  const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+  const [newAuthor, setNewAuthor] = useState(&#x27;&#x27;);
+  const [authorError, setAuthorError] = useState(null);
+
+  const [authors, setAuthors] = useState([]);
+  const [original, setOriginal] = useState(null);
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() =&gt; {
+    const controller = new AbortController();
+    const tasks = [listAuthors({}, controller.signal).then(setAuthors)];
+    if (isEdit) {
+      tasks.push(
+        getBook(bookId, controller.signal).then((book) =&gt; {
+          setOriginal(book);
+          setForm({
+            title: book.title,
+            author_id: String(book.author?.id ?? &#x27;&#x27;),
+            price: String(book.price),
+            isbn: book.isbn ?? &#x27;&#x27;,
+          });
+        }),
+      );
+    }
+    Promise.all(tasks).catch((err) =&gt; {
+      if (err.name !== &#x27;CanceledError&#x27;) setError(err);
+    });
+    return () =&gt; controller.abort();
+  }, [bookId, isEdit]);
+
+  // 관리자만 저자를 등록할 수 있습니다(일반 사용자는 백엔드가 403으로 거절).
+  async function handleAddAuthor() {
+    const name = newAuthor.trim();
+    if (!name) return;
+    setAuthorError(null);
+    try {
+      const author = await createAuthor(name);
+      setAuthors((prev) =&gt; [...prev, author]);
+      setForm((prev) =&gt; ({ ...prev, author_id: String(author.id) })); // 새 저자를 바로 선택
+      setNewAuthor(&#x27;&#x27;);
+    } catch (err) {
+      setAuthorError(err.status === 409 ? { message: &#x27;이미 등록된 저자입니다.&#x27; } : err);
+    }
+  }
+
+  function handleChange(event) {
+    const { name, value } = event.target;
+    setForm((prev) =&gt; ({ ...prev, [name]: value }));
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    const errors = validate(form);
+    setFieldErrors(errors);
+    if (Object.keys(errors).length &gt; 0) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      const payload = toPayload(form);
+      const saved = isEdit ? await updateBook(bookId, diff(original, payload)) : await createBook(payload);
+      navigate(`/books/${saved.id}`);
+    } catch (err) {
+      setError(err);
+      setFieldErrors(err.fields ?? {}); // 422 응답의 칸별 메시지
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    &lt;section&gt;
+      &lt;h1&gt;{isEdit ? &#x27;도서 수정&#x27; : &#x27;도서 등록&#x27;}&lt;/h1&gt;
+      &lt;form className=&quot;form&quot; onSubmit={handleSubmit} noValidate&gt;
+        &lt;label&gt;
+          제목
+          &lt;input name=&quot;title&quot; value={form.title} onChange={handleChange} maxLength={100} /&gt;
+          {fieldErrors.title &amp;&amp; &lt;small className=&quot;error&quot;&gt;{fieldErrors.title}&lt;/small&gt;}
+        &lt;/label&gt;
+        &lt;label&gt;
+          저자
+          &lt;select name=&quot;author_id&quot; value={form.author_id} onChange={handleChange}&gt;
+            &lt;option value=&quot;&quot;&gt;저자를 고르세요&lt;/option&gt;
+            {authors.map((author) =&gt; (
+              &lt;option key={author.id} value={author.id}&gt;
+                {author.name}
+              &lt;/option&gt;
+            ))}
+          &lt;/select&gt;
+          {fieldErrors.author_id &amp;&amp; &lt;small className=&quot;error&quot;&gt;{fieldErrors.author_id}&lt;/small&gt;}
+        &lt;/label&gt;
+        {isAdmin &amp;&amp; (
+          &lt;div className=&quot;toolbar&quot;&gt;
+            &lt;input placeholder=&quot;목록에 없는 저자 이름&quot; value={newAuthor} onChange={(e) =&gt; setNewAuthor(e.target.value)} /&gt;
+            &lt;button type=&quot;button&quot; onClick={handleAddAuthor}&gt;
+              저자 추가
+            &lt;/button&gt;
+            &lt;ErrorMessage error={authorError} /&gt;
+          &lt;/div&gt;
+        )}
+        &lt;label&gt;
+          가격(원)
+          &lt;input name=&quot;price&quot; type=&quot;number&quot; min=&quot;0&quot; max=&quot;1000000&quot; value={form.price} onChange={handleChange} /&gt;
+          {fieldErrors.price &amp;&amp; &lt;small className=&quot;error&quot;&gt;{fieldErrors.price}&lt;/small&gt;}
+        &lt;/label&gt;
+        &lt;label&gt;
+          ISBN (선택)
+          &lt;input name=&quot;isbn&quot; inputMode=&quot;numeric&quot; value={form.isbn} onChange={handleChange} maxLength={13} /&gt;
+          {fieldErrors.isbn &amp;&amp; &lt;small className=&quot;error&quot;&gt;{fieldErrors.isbn}&lt;/small&gt;}
+        &lt;/label&gt;
+        &lt;ErrorMessage error={error} /&gt;
+        &lt;button type=&quot;submit&quot; disabled={saving}&gt;
+          {saving ? &#x27;저장 중&#x27; : &#x27;저장&#x27;}
+        &lt;/button&gt;
+      &lt;/form&gt;
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p>구현에서 볼 부분은 다음과 같습니다.</p>
+<ul>
+<li>저자 추가 버튼은 폼 안에 있으므로 <code>type=&quot;button&quot;</code>을 지정했습니다. 지정하지 않으면 기본값 <code>submit</code>으로 동작해 도서 폼 전체가 제출됩니다.</li>
+<li>저자 추가 오류는 도서 저장 오류와 따로 <code>authorError</code>로 관리합니다. 한 화면에 두 가지 동작이 있으면 오류 메시지도 동작 옆에 따로 보여야 사용자가 무엇이 실패했는지 압니다.</li>
+<li>일반 사용자가 개발자 도구로 이 입력 칸을 드러내 요청을 보내도 백엔드가 403으로 거절합니다. 화면의 역할 구분은 편의 기능이라는 원칙이 여기서도 그대로입니다.</li>
+</ul>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p31/s9-p31-04.html"><span class="dir">이전</span>S9-P31-04 정리: 대여, 반납과 시간대 처리</a>
+  <a class="next" href="s9-p32-02.html"><span class="dir">다음</span>S9-P32-02 쓰기 기능 종합 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

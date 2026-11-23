@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P46-04 정리: 상태 패널과 차트 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P46-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. 관제 대시보드</a><span class="sep">/</span><span>S13-P46 상태 패널과 차트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p46-01.html" style="flex:15" data-type="실습" title="Recharts 설치와 공통 표시 컴포넌트 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s13-p46-02.html" style="flex:15" data-type="실습" title="헬스 체크 패널과 상태 코드 분포 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s13-p46-03.html" style="flex:15" data-type="실습" title="대시보드 화면 조립 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s13-p46-04.html" style="flex:5" data-type="정리" title="정리: 상태 패널과 차트 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S13-P46-04</span></div>
+<h1>정리: 상태 패널과 차트</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>Recharts는 <code>ResponsiveContainer</code>, 차트, 축, 격자, 툴팁, 계열을 컴포넌트로 조립하며 색은 CSS 변수로 관리합니다.</li>
+<li>주기적으로 바뀌는 차트는 애니메이션을 꺼서 시선을 빼앗지 않게 합니다.</li>
+<li>서버에 없는 정보(헬스 체크 이력)는 화면에서 쌓되, 개발 모드의 중복 실행에도 안전하게 만듭니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">대시보드 차트에서 <code>isAnimationActive={false}</code>로 애니메이션을 끄는 이유는 무엇인가요?</p><label><input type="radio" name="s13-p46-04-q1" value="1"> <span>1. 접근성 검사를 통과하려고</span></label><label><input type="radio" name="s13-p46-04-q1" value="2"> <span>2. 메모리를 아끼려고</span></label><label><input type="radio" name="s13-p46-04-q1" value="3"> <span>3. 애니메이션이 지원되지 않아서</span></label><label><input type="radio" name="s13-p46-04-q1" value="4"> <span>4. 데이터가 주기적으로 바뀔 때마다 움직여 운영자의 시선을 빼앗지 않게 하려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>관제 화면에서는 의미 있는 변화만 눈에 띄어야 합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">등록 도서 수를 <code>limit=1</code>로 요청하는 이유는 무엇인가요?</p><label><input type="radio" name="s13-p46-04-q2" value="1"> <span>1. 백엔드가 1권만 허용해서</span></label><label><input type="radio" name="s13-p46-04-q2" value="2"> <span>2. 목록은 필요 없고 응답의 total만 쓰므로 가볍게 받으려고</span></label><label><input type="radio" name="s13-p46-04-q2" value="3"> <span>3. 첫 번째 도서를 표시하려고</span></label><label><input type="radio" name="s13-p46-04-q2" value="4"> <span>4. 캐시를 끄려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>필요한 정보만 최소한으로 요청합니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s14/index.html">S14. 대시보드 고도화</a>(7일차 오후, 3시간)로 이어집니다. 로그 분석 화면을 더하고, 대시보드의 성능과 접근성을 개선한 뒤 장애 상황에서 화면이 어떻게 반응하는지 관찰합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s13-p46-03.html"><span class="dir">이전</span>S13-P46-03 대시보드 화면 조립</a>
+  <a class="next" href="../../s14/p47/s14-p47-01.html"><span class="dir">다음</span>S14-P47-01 백엔드 로그 분석 화면</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

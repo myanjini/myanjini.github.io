@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P44-03 대시보드 화면 설계하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P44-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. 관제 대시보드</a><span class="sep">/</span><span>S13-P44 차트 형태와 시각화 도구</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p44-01.html" style="flex:10" data-type="주요 개념" title="차트 형태 고르기 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p44-02.html" style="flex:15" data-type="주요 개념" title="시각화 도구 비교 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s13-p44-03.html" style="flex:20" data-type="실습" title="대시보드 화면 설계하기 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p44-04.html" style="flex:5" data-type="정리" title="정리: 차트 형태와 시각화 도구 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S13-P44-03</span></div>
+<h1>대시보드 화면 설계하기</h1>
+
+<p class="lead">코드를 쓰기 전에 화면을 먼저 설계합니다. 종이나 화이트보드에 그려도 좋습니다.</p>
+<ol>
+<li>다음 질문에 답을 적습니다.
+<ul>
+<li>운영자가 이 화면을 보고 가장 먼저 알아야 할 것은 무엇입니까?</li>
+<li>지금 백엔드에서 얻을 수 있는 데이터 소스(<a href="../p43/s13-p43-03.html">S13-P43-03</a>의 표)로 어떤 지표를 만들 수 있습니까?</li>
+<li>각 지표는 <a href="s13-p44-01.html">S13-P44-01</a>의 표에서 어떤 형태가 알맞습니까?</li>
+<li>몇 초 간격으로 갱신해야 합니까? 지표마다 다를 이유가 있습니까?</li>
+</ul>
+</li>
+<li><a href="../p43/s13-p43-02.html">S13-P43-02</a>의 정보 위계(상태 → KPI → 추세 → 상세)에 따라 화면 배치를 그립니다.</li>
+<li>아래 예시 설계와 비교합니다. 이 과정에서 구현할 화면입니다.</li>
+</ol>
+<div class="codeblock"><pre><code>┌──────────────────────────────────────────────────────────────────┐
+│ 도서 서비스 관제 대시보드            헬스 체크 10초 간격, 마지막 갱신 │
+├──────────┬──────────┬──────────┬──────────────┬─────────────────┤
+│ API 상태  │ 데이터베이스│ 등록 도서 │ 브라우저 측정   │ 오류율           │  ← 상태와 KPI
+│ ● 정상    │ ● 정상     │ 25권      │ 응답 시간 50ms │ 0.0%            │
+├──────────┴──────────┴──────────┼──────────────┴─────────────────┤
+│ 헬스 체크 이력 (상태 띠)            │ 브라우저 요청 상태 코드 분포       │  ← 추세
+│ 헬스 체크 응답 시간 (선 차트)       │ (막대 차트)                       │
+├────────────────────────────────┴────────────────────────────────┤
+│ 백엔드 요청 로그 분석: 분당 요청 수 / 로그 상태 코드 분포 / 느린 API 표 │  ← 상세
+└──────────────────────────────────────────────────────────────────┘</code></pre></div>
+<ol start="4">
+<li>내 설계와 다른 점이 있다면 어느 쪽이 운영자에게 더 빨리 답을 주는지 비교해 봅니다. 예를 들어 오류율을 원형 게이지로 그렸다면, 숫자 타일과 비교해 무엇이 나은지 생각해 봅니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s13-p44-02.html"><span class="dir">이전</span>S13-P44-02 시각화 도구 비교</a>
+  <a class="next" href="s13-p44-04.html"><span class="dir">다음</span>S13-P44-04 정리: 차트 형태와 시각화 도구</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

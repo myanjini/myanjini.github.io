@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P25-02 조회 화면 종합 점검 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P25-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 라우팅과 조회 화면</a><span class="sep">/</span><span>S7-P25 조회 화면 통합 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p25-01.html" style="flex:30" data-type="실습" title="저자별 보기 추가하기 (30분)"><span class="seg-num">01</span><span class="seg-min">30분</span></a><a href="s7-p25-02.html" style="flex:15" data-type="실습" title="조회 화면 종합 점검 (15분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s7-p25-03.html" style="flex:5" data-type="정리" title="정리: 조회 화면 통합 실습 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S7-P25-02</span></div>
+<h1>조회 화면 종합 점검</h1>
+
+<ol>
+<li>목록, 상세, 404 화면이 모두 동작하는 상태인지 확인합니다.</li>
+<li>개발 서버와 백엔드를 켠 상태에서 아래 시나리오를 차례로 확인합니다.</li>
+</ol>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>번호</th>
+<th>동작</th>
+<th>기대 결과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>첫 화면 접속</td>
+<td>10권과 &quot;1 / N 페이지 (전체 M권)&quot; 표시</td>
+</tr>
+<tr>
+<td>2</td>
+<td>&quot;다음&quot; 클릭</td>
+<td>주소에 <code>?skip=10</code>이 붙고 다음 10권 표시</td>
+</tr>
+<tr>
+<td>3</td>
+<td>정렬을 &quot;가격 높은 순&quot;으로 변경</td>
+<td>주소에 <code>sort=-price</code>, <code>skip</code> 제거, 첫 페이지부터 표시</td>
+</tr>
+<tr>
+<td>4</td>
+<td>검색어 입력 후 Enter</td>
+<td>주소에 <code>q=...</code>가 붙고 결과 표시</td>
+</tr>
+<tr>
+<td>5</td>
+<td>결과가 없는 검색어</td>
+<td>&quot;조건에 맞는 도서가 없습니다.&quot; 표시</td>
+</tr>
+<tr>
+<td>6</td>
+<td>도서 제목 클릭 후 브라우저 뒤로 가기</td>
+<td>검색 조건과 페이지가 그대로 유지</td>
+</tr>
+<tr>
+<td>7</td>
+<td>주소창에 <code>/books/999999</code> 입력</td>
+<td>404 오류 메시지와 <code>BOOK_NOT_FOUND</code> 같은 오류 코드 표시</td>
+</tr>
+<tr>
+<td>8</td>
+<td>주소창에 <code>/abc</code> 입력</td>
+<td>404 화면 표시</td>
+</tr>
+<tr>
+<td>9</td>
+<td>주소창에 <code>/?sort=title</code> 입력</td>
+<td>422 검증 오류 메시지 표시</td>
+</tr>
+</tbody>
+</table></div>
+<p>추가로 다음을 확인합니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>번호</th>
+<th>동작</th>
+<th>기대 결과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>저자 선택</td>
+<td>주소에 <code>author=...</code>가 붙고 그 저자의 도서만 표시, 전체 권수도 바뀜</td>
+</tr>
+<tr>
+<td>11</td>
+<td>저자 선택 후 검색</td>
+<td>두 조건이 함께 적용됨</td>
+</tr>
+<tr>
+<td>12</td>
+<td>백엔드에서 저자 목록만 실패하도록 <code>GET /authors</code>를 잘못된 주소로 바꿔 본다</td>
+<td>선택 상자에 &quot;모든 저자&quot;만 있고 목록은 정상</td>
+</tr>
+</tbody>
+</table></div>
+<ol start="3">
+<li>Network 탭에서 검색어를 입력하는 동안에는 요청이 나가지 않고, 검색 버튼(Enter)을 누를 때만 나가는지 확인합니다.</li>
+<li>모두 확인했으면 <code>P25: 조회 화면 통합 실습</code>으로 커밋합니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p25-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s7-p25-01.html"><span class="dir">이전</span>S7-P25-01 저자별 보기 추가하기</a>
+  <a class="next" href="s7-p25-03.html"><span class="dir">다음</span>S7-P25-03 정리: 조회 화면 통합 실습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

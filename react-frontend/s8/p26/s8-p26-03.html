@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P26-03 Console로 로그인 API 확인하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P26-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 인증 연동</a><span class="sep">/</span><span>S8-P26 SPA 인증 흐름과 토큰 보관</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p26-01.html" style="flex:20" data-type="주요 개념" title="SPA의 인증 흐름 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s8-p26-02.html" style="flex:15" data-type="실습" title="토큰 보관소와 인증 API (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s8-p26-03.html" style="flex:10" data-type="실습" title="Console로 로그인 API 확인하기 (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s8-p26-04.html" style="flex:5" data-type="정리" title="정리: SPA 인증 흐름과 토큰 보관 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S8-P26-03</span></div>
+<h1>Console로 로그인 API 확인하기</h1>
+
+<p class="lead">개발 서버에서는 Console에서 소스 모듈을 직접 가져와 시험할 수 있습니다. 백엔드에 만들어 둔 계정으로 로그인해 봅니다.</p>
+<div class="codeblock"><pre><code>const auth = await import(&#x27;/src/api/auth.js&#x27;);
+const { tokenStore } = await import(&#x27;/src/auth/tokenStore.js&#x27;);
+
+const tokens = await auth.login(&#x27;reader@example.com&#x27;, &#x27;비밀번호&#x27;);
+console.log(Object.keys(tokens)); // [&#x27;access_token&#x27;, &#x27;refresh_token&#x27;, &#x27;token_type&#x27;]
+tokenStore.save(tokens);
+
+await auth.fetchMe().catch((e) =&gt; console.log(e.status, e.code)); // 401 ...</code></pre></div>
+<p>토큰을 보관했는데도 <code>fetchMe()</code>가 401로 실패합니다. 아직 요청에 <code>Authorization</code> 헤더를 붙이는 코드가 없기 때문입니다. Network 탭에서 <code>me</code> 요청의 헤더를 확인합니다. 다음 파트에서 axios 인터셉터로 이 문제를 해결합니다.</p>
+<p>Application 탭의 Session Storage에서 <code>book-admin.refresh</code> 값도 확인합니다. 확인이 끝나면 <code>tokenStore.clear()</code>로 지웁니다.</p>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p26-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s8-p26-02.html"><span class="dir">이전</span>S8-P26-02 토큰 보관소와 인증 API</a>
+  <a class="next" href="s8-p26-04.html"><span class="dir">다음</span>S8-P26-04 정리: SPA 인증 흐름과 토큰 보관</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

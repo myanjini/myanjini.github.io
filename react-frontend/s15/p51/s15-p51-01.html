@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P51-01 리버스 프록시와 SPA 대체 응답 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P51-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. 도커라이징과 운영 빌드</a><span class="sep">/</span><span>S15-P51 Nginx와 리버스 프록시</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p51-01.html" style="flex:10" data-type="주요 개념" title="리버스 프록시와 SPA 대체 응답 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p51-02.html" style="flex:35" data-type="실습" title="Nginx 설정 작성 (35분)"><span class="seg-num">02</span><span class="seg-min">35분</span></a><a href="s15-p51-03.html" style="flex:5" data-type="정리" title="정리: Nginx와 리버스 프록시 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S15-P51-01</span></div>
+<h1>리버스 프록시와 SPA 대체 응답</h1>
+<div class="goal"><p><strong>파트 목표</strong>Nginx로 정적 파일 제공, SPA 대체 응답, API 리버스 프록시, 보안 헤더를 설정할 수 있습니다.</p></div>
+
+<p class="lead">리버스 프록시는 클라이언트의 요청을 대신 받아 뒤에 있는 서버로 전달하고, 받은 응답을 다시 클라이언트에 돌려주는 서버입니다. 브라우저 입장에서는 프록시가 곧 서버이므로, 뒤에 백엔드가 몇 개 있든 출처는 하나로 보입니다. <a href="../../s5/index.html">S5</a>에서 개발 서버의 프록시로 CORS 없이 API를 부르는 방법을 비교했는데, 운영 환경에서는 Nginx가 이 역할을 맡습니다.</p>
+<p>SPA에는 웹 서버가 꼭 해 줘야 할 일이 하나 더 있습니다. React Router가 만드는 <code>/books/7</code> 같은 주소는 브라우저 안에서만 의미가 있고, 서버에는 그런 파일이 없습니다. 목록에서 링크를 눌러 이동할 때는 서버에 요청하지 않으므로 문제가 없지만, 그 주소에서 새로고침하거나 주소를 직접 입력하면 브라우저가 서버에 <code>/books/7</code>을 요청합니다. 이때 서버가 404를 돌려주면 화면이 깨집니다. 그래서 웹 서버는 없는 경로에 <code>index.html</code>을 돌려주고, 화면을 그리는 일은 React Router에 맡겨야 합니다. 이것을 SPA 대체 응답(fallback)이라고 합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p50/s15-p50-03.html"><span class="dir">이전</span>S15-P50-03 정리: 운영 빌드와 환경 변수</a>
+  <a class="next" href="s15-p51-02.html"><span class="dir">다음</span>S15-P51-02 Nginx 설정 작성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

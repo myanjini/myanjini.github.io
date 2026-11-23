@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P55-03 S3 버킷 만들고 수동 배포하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P55-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. GitHub Actions와 S3 배포</a><span class="sep">/</span><span>S16-P55 S3 정적 웹 호스팅</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p55-01.html" style="flex:10" data-type="주요 개념" title="S3 정적 웹 호스팅 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p55-02.html" style="flex:10" data-type="주요 개념" title="CloudFront를 쓰는 이유 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s16-p55-03.html" style="flex:25" data-type="실습" title="S3 버킷 만들고 수동 배포하기 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s16-p55-04.html" style="flex:5" data-type="정리" title="정리: S3 정적 웹 호스팅 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S16-P55-03</span></div>
+<h1>S3 버킷 만들고 수동 배포하기</h1>
+
+<p class="lead">AWS CLI가 설치되어 있고 <code>aws configure</code>로 내 계정의 자격 증명이 설정되어 있다고 가정합니다. 리전은 <code>ap-northeast-2</code>(서울)를 씁니다. 버킷 이름은 전 세계에서 하나뿐이어야 하므로 <code>react-frontend-&lt;내 이름&gt;-&lt;숫자&gt;</code>처럼 정합니다.</p>
+<p><strong>1) 버킷 만들기와 웹 호스팅 켜기</strong></p>
+<div class="codeblock term"><pre><code>export BUCKET=react-frontend-hong-1234
+export AWS_REGION=ap-northeast-2
+
+aws s3 mb &quot;s3://$BUCKET&quot; --region &quot;$AWS_REGION&quot;
+aws s3 website &quot;s3://$BUCKET&quot; --index-document index.html --error-document index.html</code></pre></div>
+<p><strong>2) 공개 읽기 허용</strong></p>
+<p>새 버킷은 퍼블릭 액세스 차단이 켜져 있어 공개 정책을 붙일 수 없습니다. 차단을 끄고, 파일 읽기만 허용하는 정책을 붙입니다. 정책 파일의 <code>BUCKET_NAME</code>을 내 버킷 이름으로 바꿉니다.</p>
+<div class="codeblock"><span class="file">deploy/s3-bucket-policy.json</span><pre><code>{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+    {
+      &quot;Sid&quot;: &quot;PublicReadForStaticWebsite&quot;,
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Principal&quot;: &quot;*&quot;,
+      &quot;Action&quot;: &quot;s3:GetObject&quot;,
+      &quot;Resource&quot;: &quot;arn:aws:s3:::BUCKET_NAME/*&quot;
+    }
+  ]
+}</code></pre></div>
+<div class="codeblock term"><pre><code>aws s3api put-public-access-block --bucket &quot;$BUCKET&quot; \
+  --public-access-block-configuration BlockPublicAcls=false,IgnorePublicAcls=false,BlockPublicPolicy=false,RestrictPublicBuckets=false
+sed &quot;s/BUCKET_NAME/$BUCKET/&quot; deploy/s3-bucket-policy.json &gt; /tmp/policy.json
+aws s3api put-bucket-policy --bucket &quot;$BUCKET&quot; --policy file:///tmp/policy.json</code></pre></div>
+<p>정책은 <code>s3:GetObject</code>(파일 읽기)만 허용합니다. 목록 보기나 쓰기는 허용하지 않습니다.</p>
+<p><strong>3) 표지 주소 처리 보완</strong></p>
+<p><code>toAssetUrl</code>이 완전한 주소는 그대로 쓰도록 한 줄을 추가하고 테스트로 지킵니다.</p>
+<div class="codeblock"><pre><code>export function toAssetUrl(path) {
+  if (!path) return null;
+  if (/^https?:\/\//.test(path)) return path;
+  return `${API_BASE_URL}${path}`;
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/api/client.test.js</span><pre><code>import { describe, expect, it } from &#x27;vitest&#x27;;
+import { toAssetUrl } from &#x27;./client&#x27;;
+
+describe(&#x27;toAssetUrl&#x27;, () =&gt; {
+  it(&#x27;경로에는 API 주소를 붙인다&#x27;, () =&gt; {
+    expect(toAssetUrl(&#x27;/covers/a.png&#x27;)).toBe(&#x27;http://api.test/covers/a.png&#x27;);
+  });
+
+  it(&#x27;완전한 주소는 그대로 둔다&#x27;, () =&gt; {
+    const url = &#x27;https://bucket.s3.ap-northeast-2.amazonaws.com/covers/a.png&#x27;;
+    expect(toAssetUrl(url)).toBe(url);
+  });
+
+  it(&#x27;값이 없으면 null을 돌려준다&#x27;, () =&gt; {
+    expect(toAssetUrl(null)).toBeNull();
+  });
+});</code></pre></div>
+<p><strong>4) 빌드와 업로드</strong></p>
+<p>백엔드의 공개 주소로 빌드해 올립니다. 해시가 붙은 파일과 <code>index.html</code>의 캐시 설정을 나눠 두 번 올립니다. <a href="../../s15/p51/s15-p51-01.html">S15-P51</a>에서 Nginx에 적용한 캐시 규칙과 같습니다.</p>
+<div class="codeblock term"><pre><code>VITE_API_BASE_URL=https://&lt;백엔드 공개 주소&gt; npm run build
+
+aws s3 sync dist/assets &quot;s3://$BUCKET/assets&quot; --delete \
+  --cache-control &quot;public, max-age=31536000, immutable&quot;
+aws s3 sync dist &quot;s3://$BUCKET&quot; --delete --exclude &quot;assets/*&quot; --cache-control &quot;no-cache&quot;</code></pre></div>
+<p><strong>5) 백엔드 CORS 등록과 확인</strong></p>
+<p>백엔드 서버의 환경 변수 <code>CORS_ORIGINS</code>에 <code>http://&lt;버킷&gt;.s3-website.ap-northeast-2.amazonaws.com</code>을 추가하고 백엔드를 다시 시작합니다. 그리고 다음을 확인합니다.</p>
+<ol>
+<li>웹사이트 주소로 접속해 목록, 로그인, 상세가 동작합니다.</li>
+<li>Network 탭에서 API 요청이 백엔드 공개 주소로 나가고, 로그인 후 요청에 <code>OPTIONS</code> 사전 요청이 보입니다. <a href="../../s15/index.html">S15</a>의 같은 출처 구성과 다른 점입니다.</li>
+<li><code>/books/3</code>에서 새로고침하면 화면은 정상이지만, Network 탭의 문서 요청 상태가 404입니다. 오류 문서로 대체 응답을 흉내 냈기 때문입니다.</li>
+<li><code>curl -I</code>로 웹사이트 주소의 응답 헤더를 보면 <code>content-security-policy</code>가 없습니다. CloudFront가 필요한 이유 중 하나입니다.</li>
+<li>백엔드 <code>CORS_ORIGINS</code>에서 S3 주소를 잠시 빼면 Console에 CORS 오류가 나고 화면에 &quot;서버에 연결할 수 없습니다.&quot;가 표시되는지 확인하고 되돌립니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p55-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s16-p55-02.html"><span class="dir">이전</span>S16-P55-02 CloudFront를 쓰는 이유</a>
+  <a class="next" href="s16-p55-04.html"><span class="dir">다음</span>S16-P55-04 정리: S3 정적 웹 호스팅</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P12-03 정리: 폼과 제어 컴포넌트 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P12-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 폼, 이펙트, 컴포넌트 설계</a><span class="sep">/</span><span>S4-P12 폼과 제어 컴포넌트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p12-01.html" style="flex:15" data-type="주요 개념" title="폼과 제어 컴포넌트 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s4-p12-02.html" style="flex:30" data-type="실습" title="도서 추가 폼 만들기 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s4-p12-03.html" style="flex:5" data-type="정리" title="정리: 폼과 제어 컴포넌트 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S4-P12-03</span></div>
+<h1>정리: 폼과 제어 컴포넌트</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>제어 컴포넌트는 입력 칸의 값을 state와 연결해 React가 항상 값을 쥐고 있게 합니다.</li>
+<li>입력값은 항상 문자열이므로 API로 보낼 값은 숫자나 <code>null</code>로 변환합니다.</li>
+<li>폼은 결과를 콜백으로 부모에게 알리고, 상태를 가진 쪽에서만 상태를 바꿉니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q"><code>&lt;input type=&quot;number&quot;&gt;</code>에서 <code>event.target.value</code>의 자료형은 무엇인가요?</p><label><input type="radio" name="s4-p12-03-q1" value="1"> <span>1. string</span></label><label><input type="radio" name="s4-p12-03-q1" value="2"> <span>2. bigint</span></label><label><input type="radio" name="s4-p12-03-q1" value="3"> <span>3. 브라우저마다 다르다.</span></label><label><input type="radio" name="s4-p12-03-q1" value="4"> <span>4. number</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>입력 칸의 값은 type과 관계없이 항상 문자열입니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">폼 제출 시 페이지가 새로고침되는 것을 막는 코드는 무엇인가요?</p><label><input type="radio" name="s4-p12-03-q2" value="1"> <span>1. <code>return false</code></span></label><label><input type="radio" name="s4-p12-03-q2" value="2"> <span>2. <code>form.reset()</code></span></label><label><input type="radio" name="s4-p12-03-q2" value="3"> <span>3. <code>event.stopPropagation()</code></span></label><label><input type="radio" name="s4-p12-03-q2" value="4"> <span>4. <code>event.preventDefault()</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>preventDefault는 브라우저의 기본 동작(폼 제출로 인한 페이지 이동)을 막습니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s4-p12-02.html"><span class="dir">이전</span>S4-P12-02 도서 추가 폼 만들기</a>
+  <a class="next" href="../p13/s4-p13-01.html"><span class="dir">다음</span>S4-P13-01 useEffect</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

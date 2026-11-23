@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P50-03 정리: 운영 빌드와 환경 변수 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P50-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. 도커라이징과 운영 빌드</a><span class="sep">/</span><span>S15-P50 운영 빌드와 환경 변수</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p50-01.html" style="flex:15" data-type="주요 개념" title="운영 환경의 구조 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s15-p50-02.html" style="flex:30" data-type="실습" title="운영 빌드 만들고 확인하기 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s15-p50-03.html" style="flex:5" data-type="정리" title="정리: 운영 빌드와 환경 변수 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S15-P50-03</span></div>
+<h1>정리: 운영 빌드와 환경 변수</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>운영 환경에서는 Vite 개발 서버가 아니라 <code>npm run build</code>로 만든 정적 파일을 웹 서버가 제공합니다.</li>
+<li>Vite의 <code>VITE_</code> 환경 변수는 빌드할 때 코드에 새겨지므로 실행할 때 바꿀 수 없습니다.</li>
+<li>같은 출처 프록시를 쓰면 <code>/api</code>처럼 환경과 무관한 상대 경로로 빌드할 수 있습니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">컨테이너를 실행할 때 <code>VITE_API_BASE_URL</code> 환경 변수를 바꿔도 화면의 API 주소가 바뀌지 않는 이유는 무엇인가요?</p><label><input type="radio" name="s15-p50-03-q1" value="1"> <span>1. 브라우저가 환경 변수를 캐시해서</span></label><label><input type="radio" name="s15-p50-03-q1" value="2"> <span>2. .env.production이 우선해서</span></label><label><input type="radio" name="s15-p50-03-q1" value="3"> <span>3. Nginx가 환경 변수를 무시해서</span></label><label><input type="radio" name="s15-p50-03-q1" value="4"> <span>4. 값이 빌드할 때 JavaScript 파일에 새겨졌기 때문에</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>빌드 결과물은 정적 파일이므로 실행 환경의 변수를 읽지 않습니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q"><code>npm run preview</code>로 연 화면에서 API 요청이 실패하는 이유는 무엇인가요?</p><label><input type="radio" name="s15-p50-03-q2" value="1"> <span>1. 미리보기 서버에는 /api를 백엔드로 전달하는 프록시가 없어서</span></label><label><input type="radio" name="s15-p50-03-q2" value="2"> <span>2. CORS가 막아서</span></label><label><input type="radio" name="s15-p50-03-q2" value="3"> <span>3. 소스맵이 없어서</span></label><label><input type="radio" name="s15-p50-03-q2" value="4"> <span>4. 빌드가 잘못되어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>운영 빌드는 /api를 같은 출처로 부르며, 이를 백엔드로 넘기는 일은 Nginx가 맡습니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s15-p50-02.html"><span class="dir">이전</span>S15-P50-02 운영 빌드 만들고 확인하기</a>
+  <a class="next" href="../p51/s15-p51-01.html"><span class="dir">다음</span>S15-P51-01 리버스 프록시와 SPA 대체 응답</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

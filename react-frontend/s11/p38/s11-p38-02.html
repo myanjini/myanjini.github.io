@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P38-02 목록 화면을 가짜 API로 테스트하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P38-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 프론트엔드 테스트</a><span class="sep">/</span><span>S11-P38 MSW로 API 모킹</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p38-01.html" style="flex:10" data-type="주요 개념" title="어디를 가짜로 바꿀 것인가 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s11-p38-02.html" style="flex:35" data-type="실습" title="목록 화면을 가짜 API로 테스트하기 (35분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">35분</span></a><a href="s11-p38-03.html" style="flex:5" data-type="정리" title="정리: MSW로 API 모킹 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>35분</span><span>S11-P38-02</span></div>
+<h1>목록 화면을 가짜 API로 테스트하기</h1>
+
+<p class="lead">MSW를 설치합니다.</p>
+<div class="codeblock term"><pre><code>npm install -D msw</code></pre></div>
+<p>가짜 API 서버를 만듭니다. 도서 23권과 저자 2명을 준비하고, <code>GET /books</code>가 백엔드처럼 <code>q</code>, <code>skip</code>, <code>limit</code>을 처리하게 합니다.</p>
+<div class="codeblock"><span class="file">src/test/server.js</span><pre><code>import { http, HttpResponse } from &#x27;msw&#x27;;
+import { setupServer } from &#x27;msw/node&#x27;;
+
+export const API = &#x27;http://api.test&#x27;; // .env.test의 VITE_API_BASE_URL
+
+export const authors = [
+  { id: 1, name: &#x27;홍길동&#x27; },
+  { id: 2, name: &#x27;김철수&#x27; },
+];
+
+export const books = Array.from({ length: 23 }, (_, i) =&gt; ({
+  id: i + 1,
+  title: i % 2 ? `FastAPI 실전 ${i + 1}` : `파이썬 입문 ${i + 1}`,
+  price: 10000 + i * 1000,
+  isbn: null,
+  author: authors[i % 2],
+  cover_url: null,
+}));
+
+// 백엔드 대신 응답할 가짜 API입니다. 요청 형식은 실제 백엔드와 같게 맞춥니다.
+export const handlers = [
+  http.get(`${API}/authors`, () =&gt; HttpResponse.json(authors)),
+  http.get(`${API}/books`, ({ request }) =&gt; {
+    const url = new URL(request.url);
+    const q = url.searchParams.get(&#x27;q&#x27;) ?? &#x27;&#x27;;
+    const skip = Number(url.searchParams.get(&#x27;skip&#x27;) ?? 0);
+    const limit = Number(url.searchParams.get(&#x27;limit&#x27;) ?? 10);
+    const items = books.filter((b) =&gt; b.title.includes(q));
+    return HttpResponse.json({ items: items.slice(skip, skip + limit), total: items.length, skip, limit });
+  }),
+];
+
+export const server = setupServer(...handlers);</code></pre></div>
+<p>설정 파일에서 모든 테스트 전에 가짜 서버를 켜고, 테스트마다 바꾼 응답을 되돌립니다.</p>
+<div class="codeblock"><span class="file">src/test/setup.js</span><pre><code>import &#x27;@testing-library/jest-dom/vitest&#x27;; // toBeInTheDocument 같은 DOM 전용 검사 함수
+import { cleanup } from &#x27;@testing-library/react&#x27;;
+import axios from &#x27;axios&#x27;;
+import { afterAll, afterEach, beforeAll } from &#x27;vitest&#x27;;
+import { api } from &#x27;../api/client&#x27;;
+import { server } from &#x27;./server&#x27;;
+
+// 날짜 표시 테스트가 컴퓨터마다 달라지지 않도록 시간대를 고정합니다.
+process.env.TZ = &#x27;Asia/Seoul&#x27;;
+
+// jsdom의 XMLHttpRequest는 CORS 검사를 흉내 내서 가짜 응답을 막습니다.
+// 테스트에서는 axios가 fetch로 요청하게 바꿔 MSW가 응답을 그대로 넘겨주게 합니다.
+api.defaults.adapter = &#x27;fetch&#x27;;
+axios.defaults.adapter = &#x27;fetch&#x27;;
+
+// 가짜 API 서버를 켜고, 처리하지 않은 요청이 있으면 테스트를 실패시킵니다.
+beforeAll(() =&gt; server.listen({ onUnhandledRequest: &#x27;error&#x27; }));
+afterEach(() =&gt; {
+  cleanup();
+  server.resetHandlers(); // 테스트 안에서 바꾼 응답을 원래대로 되돌립니다.
+});
+afterAll(() =&gt; server.close());</code></pre></div>
+<p>여기에는 한 가지 사정이 있습니다. jsdom의 <code>XMLHttpRequest</code>는 브라우저처럼 CORS 검사를 흉내 내는데, 가짜 응답에는 CORS 헤더가 없어 요청이 실패로 처리됩니다. axios는 기본적으로 <code>XMLHttpRequest</code>를 쓰므로, 테스트에서만 <code>fetch</code> 방식으로 바꿔 이 문제를 피합니다. 실제 앱의 동작은 바뀌지 않습니다.</p>
+<p>화면은 Query 캐시와 라우터가 있어야 그려지므로, 테스트용 감싸기 함수를 만듭니다. 테스트마다 새 캐시를 만들어 서로 영향을 주지 않게 하고, 재시도를 꺼서 실패 테스트가 빨리 끝나게 합니다.</p>
+<div class="codeblock"><span class="file">src/test/renderWithProviders.jsx</span><pre><code>import { QueryClient, QueryClientProvider } from &#x27;@tanstack/react-query&#x27;;
+import { render } from &#x27;@testing-library/react&#x27;;
+import { MemoryRouter, Route, Routes } from &#x27;react-router&#x27;;
+
+// 화면 컴포넌트가 필요로 하는 Query 캐시와 라우터를 갖춰 그립니다.
+// 테스트마다 새 캐시를 만들어 서로 영향을 주지 않게 하고, 재시도는 끕니다.
+export function renderWithProviders(ui, { route = &#x27;/&#x27;, path = &#x27;/&#x27; } = {}) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    &lt;QueryClientProvider client={queryClient}&gt;
+      &lt;MemoryRouter initialEntries={[route]}&gt;
+        &lt;Routes&gt;
+          &lt;Route path={path} element={ui} /&gt;
+        &lt;/Routes&gt;
+      &lt;/MemoryRouter&gt;
+    &lt;/QueryClientProvider&gt;,
+  );
+}</code></pre></div>
+<p>목록 화면 테스트입니다. 마지막 테스트는 <code>server.use</code>로 이 테스트에서만 <code>/books</code>가 500을 돌려주게 바꿉니다.</p>
+<div class="codeblock"><span class="file">src/pages/BookListPage.test.jsx</span><pre><code>import { screen, within } from &#x27;@testing-library/react&#x27;;
+import userEvent from &#x27;@testing-library/user-event&#x27;;
+import { http, HttpResponse } from &#x27;msw&#x27;;
+import { describe, expect, it } from &#x27;vitest&#x27;;
+import { API, server } from &#x27;../test/server&#x27;;
+import { renderWithProviders } from &#x27;../test/renderWithProviders&#x27;;
+import BookListPage from &#x27;./BookListPage&#x27;;
+
+describe(&#x27;BookListPage&#x27;, () =&gt; {
+  it(&#x27;첫 페이지 10권과 전체 권수를 보여 준다&#x27;, async () =&gt; {
+    renderWithProviders(&lt;BookListPage /&gt;);
+    expect(await screen.findByText(&#x27;파이썬 입문 1&#x27;)).toBeInTheDocument();
+    const rows = within(screen.getByRole(&#x27;table&#x27;)).getAllByRole(&#x27;row&#x27;);
+    expect(rows).toHaveLength(11); // 머리글 1행 + 도서 10행
+    expect(screen.getByText(&#x27;1 / 3 페이지 (전체 23권)&#x27;)).toBeInTheDocument();
+  });
+
+  it(&#x27;검색하면 조건에 맞는 도서만 보여 준다&#x27;, async () =&gt; {
+    renderWithProviders(&lt;BookListPage /&gt;);
+    await screen.findByText(&#x27;파이썬 입문 1&#x27;);
+    await userEvent.type(screen.getByPlaceholderText(&#x27;제목으로 검색&#x27;), &#x27;FastAPI&#x27;);
+    await userEvent.click(screen.getByRole(&#x27;button&#x27;, { name: &#x27;검색&#x27; }));
+    expect(await screen.findByText(&#x27;1 / 2 페이지 (전체 11권)&#x27;)).toBeInTheDocument();
+    expect(screen.queryByText(&#x27;파이썬 입문 1&#x27;)).not.toBeInTheDocument();
+  });
+
+  it(&#x27;URL의 조건으로 시작한다&#x27;, async () =&gt; {
+    renderWithProviders(&lt;BookListPage /&gt;, { route: &#x27;/?skip=20&#x27; });
+    expect(await screen.findByText(&#x27;3 / 3 페이지 (전체 23권)&#x27;)).toBeInTheDocument();
+  });
+
+  it(&#x27;서버 오류를 사용자에게 알린다&#x27;, async () =&gt; {
+    // 이 테스트에서만 /books가 500을 돌려주게 바꿉니다.
+    server.use(http.get(`${API}/books`, () =&gt; HttpResponse.json({ code: &#x27;INTERNAL&#x27;, message: &#x27;서버 오류&#x27; }, { status: 500 })));
+    renderWithProviders(&lt;BookListPage /&gt;);
+    expect(await screen.findByRole(&#x27;alert&#x27;)).toHaveTextContent(&#x27;서버 오류&#x27;);
+  });
+});</code></pre></div>
+<p>확인할 내용은 다음과 같습니다.</p>
+<ol>
+<li><code>npm test</code>로 실행해 목록 화면 테스트 4개가 통과합니다. 백엔드를 꺼도 통과해야 합니다.</li>
+<li><code>server.js</code>의 <code>/books</code> 응답에서 <code>total</code>을 빼면 어느 테스트가 실패하는지 확인합니다. 백엔드 응답 형식이 바뀌었을 때 화면이 어떻게 되는지 미리 알 수 있습니다.</li>
+<li>&quot;저자를 고르면 그 저자의 도서만 보여 준다&quot;는 테스트를 직접 추가해 봅니다. 가짜 <code>/books</code>가 <code>author</code> 쿼리도 처리하도록 고쳐야 합니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p38-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s11-p38-01.html"><span class="dir">이전</span>S11-P38-01 어디를 가짜로 바꿀 것인가</a>
+  <a class="next" href="s11-p38-03.html"><span class="dir">다음</span>S11-P38-03 정리: MSW로 API 모킹</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

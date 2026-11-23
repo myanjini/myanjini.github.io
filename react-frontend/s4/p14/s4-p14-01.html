@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P14-01 컴포넌트를 나누는 기준 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P14-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 폼, 이펙트, 컴포넌트 설계</a><span class="sep">/</span><span>S4-P14 2일차 통합 실습: 정적 도서 목록</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p14-01.html" style="flex:15" data-type="주요 개념" title="컴포넌트를 나누는 기준 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s4-p14-02.html" style="flex:30" data-type="실습" title="화면 컴포넌트로 정리하고 삭제 기능 추가하기 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s4-p14-03.html" style="flex:5" data-type="정리" title="정리: 2일차 통합 실습 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S4-P14-01</span></div>
+<h1>컴포넌트를 나누는 기준</h1>
+<div class="goal"><p><strong>파트 목표</strong>컴포넌트를 나누는 기준에 따라 화면을 정리하고, 자식에서 일어난 동작을 부모가 처리하게 만들 수 있습니다.</p></div>
+
+<p class="lead">지금 <code>App.jsx</code>에는 데이터 불러오기, 검색, 정렬, 추가, 탭 제목 동기화가 모두 들어 있습니다. 동작은 하지만 기능이 늘어날수록 읽기 어려워집니다. 컴포넌트를 나눌 때는 다음 기준을 씁니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>기준</th>
+<th>질문</th>
+<th>이 화면에서의 예</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>하나의 역할</td>
+<td>이 컴포넌트를 한 문장으로 설명할 수 있는가?</td>
+<td>&quot;검색과 정렬 입력을 모은다&quot; → <code>BookToolbar</code></td>
+</tr>
+<tr>
+<td>상태의 위치</td>
+<td>이 값을 누가 함께 쓰는가? 공통 부모는 누구인가?</td>
+<td><code>books</code>, <code>keyword</code>, <code>sort</code>는 목록 화면 전체가 쓰므로 화면 컴포넌트에</td>
+</tr>
+<tr>
+<td>데이터 흐름</td>
+<td>값은 위에서 아래로, 변경 요청은 아래에서 위로 흐르는가?</td>
+<td><code>BookRow</code>의 삭제 버튼은 <code>onDelete</code>로 알리기만</td>
+</tr>
+<tr>
+<td>재사용</td>
+<td>다른 화면에서도 같은 모양이 필요한가?</td>
+<td>표와 행은 다른 목록에서도 쓸 수 있다</td>
+</tr>
+</tbody>
+</table></div>
+<p>나누는 것 자체가 목적은 아닙니다. 한 파일이 한 화면에 들어오고, 이름만 보고 역할을 알 수 있으면 충분합니다. 이 과정의 화면은 <code>pages</code>(주소 하나에 대응하는 화면, 상태와 데이터 불러오기 담당)와 <code>components</code>(여러 화면이 함께 쓰는 표시 담당)로 나눕니다. <a href="../../s7/index.html">S7</a>에서 이 구조를 그대로 씁니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p13/s4-p13-03.html"><span class="dir">이전</span>S4-P13-03 정리: useEffect와 정리 함수</a>
+  <a class="next" href="s4-p14-02.html"><span class="dir">다음</span>S4-P14-02 화면 컴포넌트로 정리하고 삭제 기능 추가하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

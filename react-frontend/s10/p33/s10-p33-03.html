@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P33-03 정리: 커스텀 훅으로 반복 줄이기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P33-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 서버 상태 관리</a><span class="sep">/</span><span>S10-P33 커스텀 훅으로 반복 줄이기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p33-01.html" style="flex:15" data-type="주요 개념" title="반복 코드와 커스텀 훅 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s10-p33-02.html" style="flex:30" data-type="실습" title="useAsync 훅 만들고 적용하기 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s10-p33-03.html" style="flex:5" data-type="정리" title="정리: 커스텀 훅으로 반복 줄이기 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S10-P33-03</span></div>
+<h1>정리: 커스텀 훅으로 반복 줄이기</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>이름이 <code>use</code>로 시작하고 다른 훅을 부르는 함수로 반복되는 상태 로직을 추출할 수 있습니다.</li>
+<li>커스텀 훅은 상태를 다루는 방법을 공유할 뿐, 상태 자체를 화면 사이에 공유하지 않습니다.</li>
+<li>화면마다 서버 데이터를 따로 들고 있으면 중복 요청과 화면 사이의 불일치가 생깁니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">커스텀 훅에 대한 설명으로 옳은 것은 무엇인가요?</p><label><input type="radio" name="s10-p33-03-q1" value="1"> <span>1. 조건문 안에서 호출해도 된다.</span></label><label><input type="radio" name="s10-p33-03-q1" value="2"> <span>2. 같은 훅을 쓰는 화면은 state를 함께 쓴다.</span></label><label><input type="radio" name="s10-p33-03-q1" value="3"> <span>3. 상태를 다루는 로직을 재사용하며, 화면마다 state는 따로 생긴다.</span></label><label><input type="radio" name="s10-p33-03-q1" value="4"> <span>4. 이름은 자유롭게 지어도 된다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>커스텀 훅을 부르는 컴포넌트마다 독립된 state가 생깁니다. 이름은 use로 시작해야 훅 규칙 검사가 적용됩니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">useAsync의 의존성 배열에서 fn을 뺀 이유는 무엇인가요?</p><label><input type="radio" name="s10-p33-03-q2" value="1"> <span>1. fn은 항상 같은 함수라서</span></label><label><input type="radio" name="s10-p33-03-q2" value="2"> <span>2. 화면이 그릴 때마다 새 함수를 넘기므로 넣으면 매번 다시 요청하게 되어서</span></label><label><input type="radio" name="s10-p33-03-q2" value="3"> <span>3. 의존성 배열에는 함수를 넣을 수 없어서</span></label><label><input type="radio" name="s10-p33-03-q2" value="4"> <span>4. fn은 비동기 함수라서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>다시 실행할 조건은 호출하는 쪽이 deps로 명시합니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s10-p33-02.html"><span class="dir">이전</span>S10-P33-02 useAsync 훅 만들고 적용하기</a>
+  <a class="next" href="../p34/s10-p34-01.html"><span class="dir">다음</span>S10-P34-01 서버 상태와 TanStack Query</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P47-01 백엔드 로그 분석 화면 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P47-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 대시보드 고도화</a><span class="sep">/</span><span>S14-P47 로그 분석 화면</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p47-01.html" style="flex:25" data-type="실습" title="백엔드 로그 분석 화면 (25분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">25분</span></a><a href="s14-p47-02.html" style="flex:20" data-type="실습" title="장애 상황 관찰과 로그 분석 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s14-p47-03.html" style="flex:5" data-type="정리" title="정리: 로그 분석 화면 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S14-P47-01</span></div>
+<h1>백엔드 로그 분석 화면</h1>
+<div class="goal"><p><strong>파트 목표</strong>백엔드 JSON 로그를 브라우저에서 분석하는 화면을 만들고, 장애 상황을 만들어 대시보드의 반응을 관찰할 수 있습니다.</p></div>
+
+<p class="lead">백엔드 과정 <a href="../../../fastapi-rest-api/s8/p28/s8-p28-01.html">S8-P28</a>에서 요청 로그를 한 줄에 JSON 하나씩 남기도록 만들었습니다. 이런 형식을 JSON Lines라고 합니다. 로그 파일을 브라우저에서 바로 분석하는 화면을 만듭니다.</p>
+<div class="codeblock"><span class="file">src/dashboard/LogAnalyzer.jsx</span><pre><code>import { useMemo, useState } from &#x27;react&#x27;;
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from &#x27;recharts&#x27;;
+import ChartTooltip from &#x27;./ChartTooltip&#x27;;
+import StatusDistribution from &#x27;./StatusDistribution&#x27;;
+import { countPerMinute, parseRequestLogs, summarizeByPath } from &#x27;./metrics&#x27;;
+
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
+
+export default function LogAnalyzer() {
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(&#x27;&#x27;);
+
+  async function handleFile(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (file.size &gt; MAX_FILE_BYTES) {
+      setError(&#x27;20MB 이하의 로그 파일만 분석합니다.&#x27;);
+      return;
+    }
+    setError(&#x27;&#x27;);
+    // 파일은 서버로 보내지 않고 브라우저 안에서만 읽습니다.
+    const text = await file.text();
+    setResult({ fileName: file.name, ...parseRequestLogs(text) });
+  }
+
+  const summary = useMemo(() =&gt; {
+    if (!result) return null;
+    return {
+      perMinute: countPerMinute(result.entries),
+      byPath: summarizeByPath(result.entries).slice(0, 10),
+      records: result.entries.map((e) =&gt; ({ status: e.status })),
+    };
+  }, [result]);
+
+  return (
+    &lt;section className=&quot;log-analyzer&quot;&gt;
+      &lt;h2&gt;백엔드 요청 로그 분석&lt;/h2&gt;
+      &lt;p className=&quot;muted&quot;&gt;
+        docker compose logs api --no-log-prefix 명령으로 저장한 JSON Lines 로그 파일을 고릅니다.
+      &lt;/p&gt;
+      &lt;input type=&quot;file&quot; accept=&quot;.log,.jsonl,.txt&quot; onChange={handleFile} /&gt;
+      {error &amp;&amp; &lt;p className=&quot;error&quot;&gt;{error}&lt;/p&gt;}
+
+      {result &amp;&amp; summary &amp;&amp; (
+        &lt;&gt;
+          &lt;p className=&quot;muted&quot;&gt;
+            {result.fileName}: 요청 로그 {result.entries.length}건, 건너뛴 줄 {result.invalid}건
+          &lt;/p&gt;
+          &lt;div className=&quot;grid-2&quot;&gt;
+            &lt;article className=&quot;panel&quot;&gt;
+              &lt;h2&gt;분당 요청 수&lt;/h2&gt;
+              &lt;div className=&quot;chart&quot;&gt;
+                &lt;ResponsiveContainer width=&quot;100%&quot; height={220}&gt;
+                  &lt;LineChart data={summary.perMinute} margin={{ top: 8, right: 16, bottom: 0, left: 0 }}&gt;
+                    &lt;CartesianGrid stroke=&quot;var(--grid)&quot; vertical={false} /&gt;
+                    &lt;XAxis dataKey=&quot;minute&quot; stroke=&quot;var(--text-muted)&quot; tick={{ fontSize: 12 }} minTickGap={30} /&gt;
+                    &lt;YAxis allowDecimals={false} stroke=&quot;var(--text-muted)&quot; tick={{ fontSize: 12 }} width={40} /&gt;
+                    &lt;Tooltip content={&lt;ChartTooltip unit=&quot;건&quot; /&gt;} cursor={{ stroke: &#x27;var(--text-muted)&#x27; }} /&gt;
+                    &lt;Line
+                      type=&quot;monotone&quot;
+                      dataKey=&quot;count&quot;
+                      stroke=&quot;var(--series-1)&quot;
+                      strokeWidth={2}
+                      dot={false}
+                      isAnimationActive={false}
+                    /&gt;
+                  &lt;/LineChart&gt;
+                &lt;/ResponsiveContainer&gt;
+              &lt;/div&gt;
+            &lt;/article&gt;
+            &lt;StatusDistribution records={summary.records} title=&quot;로그 상태 코드 분포&quot; /&gt;
+          &lt;/div&gt;
+
+          &lt;article className=&quot;panel&quot;&gt;
+            &lt;h2&gt;느린 API 상위 10개 (p95 기준)&lt;/h2&gt;
+            &lt;table className=&quot;table&quot;&gt;
+              &lt;thead&gt;
+                &lt;tr&gt;
+                  &lt;th&gt;API&lt;/th&gt;
+                  &lt;th className=&quot;num&quot;&gt;요청 수&lt;/th&gt;
+                  &lt;th className=&quot;num&quot;&gt;5xx&lt;/th&gt;
+                  &lt;th className=&quot;num&quot;&gt;평균(ms)&lt;/th&gt;
+                  &lt;th className=&quot;num&quot;&gt;p95(ms)&lt;/th&gt;
+                &lt;/tr&gt;
+              &lt;/thead&gt;
+              &lt;tbody&gt;
+                {summary.byPath.map((row) =&gt; (
+                  &lt;tr key={row.api}&gt;
+                    &lt;td&gt;
+                      &lt;code&gt;{row.api}&lt;/code&gt;
+                    &lt;/td&gt;
+                    &lt;td className=&quot;num&quot;&gt;{row.count}&lt;/td&gt;
+                    &lt;td className=&quot;num&quot;&gt;{row.errors}&lt;/td&gt;
+                    &lt;td className=&quot;num&quot;&gt;{row.avgMs}&lt;/td&gt;
+                    &lt;td className=&quot;num&quot;&gt;{row.p95Ms}&lt;/td&gt;
+                  &lt;/tr&gt;
+                ))}
+              &lt;/tbody&gt;
+            &lt;/table&gt;
+          &lt;/article&gt;
+        &lt;/&gt;
+      )}
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p><code>file.text()</code>는 고른 파일을 문자열로 읽는 브라우저 API입니다. 파일은 서버로 전송되지 않고 브라우저 안에서만 처리되므로 로그에 담긴 정보가 외부로 나가지 않습니다. 너무 큰 파일은 브라우저가 멈출 수 있어 20MB로 제한했습니다. 분석 결과는 <code>useMemo</code>로 계산해, 다른 상태가 바뀌어 다시 그려질 때마다 같은 계산을 반복하지 않게 했습니다.</p>
+<p>대시보드 화면의 맨 아래에 로그 분석을 붙입니다. <code>DashboardPage.jsx</code>에서 <code>LogAnalyzer</code>를 가져와 상태 코드 분포 아래에 <code>&lt;LogAnalyzer /&gt;</code>를 추가합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s13/p46/s13-p46-04.html"><span class="dir">이전</span>S13-P46-04 정리: 상태 패널과 차트</a>
+  <a class="next" href="s14-p47-02.html"><span class="dir">다음</span>S14-P47-02 장애 상황 관찰과 로그 분석</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

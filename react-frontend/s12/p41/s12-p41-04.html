@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P41-04 XSS 동작 확인 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P41-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. 프론트엔드 개발 보안</a><span class="sep">/</span><span>S12-P41 보안 헤더, CSP, 비밀정보</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p41-01.html" style="flex:15" data-type="주요 개념" title="보안 헤더와 CSP (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s12-p41-02.html" style="flex:10" data-type="주요 개념" title="비밀정보와 빌드 결과물 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p41-03.html" style="flex:10" data-type="주요 개념" title="정보 노출과 열린 리디렉션 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s12-p41-04.html" style="flex:10" data-type="실습" title="XSS 동작 확인 (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s12-p41-05.html" style="flex:5" data-type="정리" title="정리: 보안 헤더, CSP, 비밀정보 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S12-P41-04</span></div>
+<h1>XSS 동작 확인</h1>
+
+<p class="lead"><strong>1) XSS 동작 확인</strong></p>
+<p>임시 컴포넌트를 만들어 이스케이프와 <code>dangerouslySetInnerHTML</code>의 차이를 확인합니다. 확인이 끝나면 반드시 지웁니다. 아래 문자열은 이미지 로딩 오류 시 같은 출처의 <code>sessionStorage</code>를 읽어 출력하는 코드로, XSS가 토큰을 읽을 수 있음을 보여 줍니다.</p>
+<div class="codeblock"><pre><code>// src/pages/XssLab.jsx (실습 후 삭제)
+const payload = `&lt;img src=&quot;x&quot; onerror=&quot;console.log(&#x27;읽힘:&#x27;, sessionStorage.getItem(&#x27;book-admin.refresh&#x27;))&quot;&gt;`;
+
+export default function XssLab() {
+  return (
+    &lt;section&gt;
+      &lt;h2&gt;1. JSX 출력 (안전)&lt;/h2&gt;
+      &lt;p&gt;{payload}&lt;/p&gt;
+      &lt;h2&gt;2. dangerouslySetInnerHTML (위험)&lt;/h2&gt;
+      &lt;div dangerouslySetInnerHTML={{ __html: payload }} /&gt;
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p><code>App.jsx</code>에 <code>&lt;Route path=&quot;xss&quot; element={&lt;XssLab /&gt;} /&gt;</code>를 잠시 추가하고 로그인한 상태로 <code>/xss</code>를 엽니다. 1번은 글자 그대로 보이고, 2번은 Console에 리프레시 토큰이 출력됩니다. 확인 후 파일과 라우트를 지웁니다. 같은 종류의 인라인 코드가 CSP로 차단되는 모습은 <a href="../../s15/index.html">S15</a>에서 Nginx로 보안 헤더를 적용한 뒤 확인합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s12-p41-03.html"><span class="dir">이전</span>S12-P41-03 정보 노출과 열린 리디렉션</a>
+  <a class="next" href="s12-p41-05.html"><span class="dir">다음</span>S12-P41-05 정리: 보안 헤더, CSP, 비밀정보</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

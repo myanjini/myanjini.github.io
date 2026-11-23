@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P30-03 정리: 삭제와 표지 업로드 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P30-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 쓰기 기능</a><span class="sep">/</span><span>S9-P30 삭제와 표지 업로드</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p30-01.html" style="flex:30" data-type="실습" title="상세 화면에 삭제와 표지 업로드 추가 (30분)"><span class="seg-num">01</span><span class="seg-min">30분</span></a><a href="s9-p30-02.html" style="flex:15" data-type="실습" title="삭제와 업로드 확인 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s9-p30-03.html" style="flex:5" data-type="정리" title="정리: 삭제와 표지 업로드 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S9-P30-03</span></div>
+<h1>정리: 삭제와 표지 업로드</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>되돌릴 수 없는 동작은 한 번 더 확인하고, 삭제 후에는 <code>replace</code>로 이동해 없는 화면이 방문 기록에 남지 않게 합니다.</li>
+<li>파일 업로드는 <code>FormData</code>로 보내고, 크기와 확장자는 미리 검사하되 최종 판단은 백엔드에 맡깁니다.</li>
+<li>처리 중에는 버튼을 막아 같은 요청이 두 번 전송되지 않게 합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">삭제 후 <code>navigate('/', { replace: true })</code>를 쓰는 이유는 무엇인가요?</p><label><input type="radio" name="s9-p30-03-q1" value="1"> <span>1. 목록을 새로고침하려고</span></label><label><input type="radio" name="s9-p30-03-q1" value="2"> <span>2. 방문 기록에서 삭제된 도서의 상세 화면을 지워 뒤로 가기로 돌아가지 않게 하려고</span></label><label><input type="radio" name="s9-p30-03-q1" value="3"> <span>3. 백엔드에 삭제 요청을 다시 보내려고</span></label><label><input type="radio" name="s9-p30-03-q1" value="4"> <span>4. 로그아웃하려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>replace는 현재 기록을 새 주소로 바꿔 끼웁니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">표지 파일을 브라우저에서 미리 검사해도 백엔드 검사가 필요한 이유는 무엇인가요?</p><label><input type="radio" name="s9-p30-03-q2" value="1"> <span>1. 브라우저 검사는 느려서</span></label><label><input type="radio" name="s9-p30-03-q2" value="2"> <span>2. 확장자는 이름일 뿐이고 프론트엔드 검사는 우회할 수 있어서</span></label><label><input type="radio" name="s9-p30-03-q2" value="3"> <span>3. FormData가 검사를 지원하지 않아서</span></label><label><input type="radio" name="s9-p30-03-q2" value="4"> <span>4. 백엔드가 이미지를 압축해야 해서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>실제 내용 검사는 서버가 해야 합니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s9-p30-02.html"><span class="dir">이전</span>S9-P30-02 삭제와 업로드 확인</a>
+  <a class="next" href="../p31/s9-p31-01.html"><span class="dir">다음</span>S9-P31-01 대여와 반납 API</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

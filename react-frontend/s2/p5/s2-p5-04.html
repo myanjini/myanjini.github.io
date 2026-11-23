@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P5-04 정리: 변수, 함수, 객체와 배열 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P5-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 모던 JavaScript</a><span class="sep">/</span><span>S2-P5 변수, 함수, 객체와 배열</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p5-01.html" style="flex:15" data-type="주요 개념" title="변수와 함수 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s2-p5-02.html" style="flex:15" data-type="주요 개념" title="구조 분해, 전개, 옵셔널 체이닝 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s2-p5-03.html" style="flex:15" data-type="실습" title="도서 객체 다루기 연습 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s2-p5-04.html" style="flex:5" data-type="정리" title="정리: 변수, 함수, 객체와 배열 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S2-P5-04</span></div>
+<h1>정리: 변수, 함수, 객체와 배열</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>기본은 <code>const</code>, 바꿔야 할 때만 <code>let</code>을 쓰며, <code>const</code>라도 객체 내부는 바뀔 수 있습니다.</li>
+<li>구조 분해로 필요한 값만 꺼내고, 전개 문법으로 원본을 바꾸지 않는 복사본을 만듭니다.</li>
+<li><code>?.</code>로 없는 값에 안전하게 접근하고, 0이 정상 값이면 <code>||</code> 대신 <code>??</code>를 씁니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q"><code>const p = { skip: 0 }</code>일 때 <code>p.skip ?? 10</code>의 결과는 무엇인가요?</p><label><input type="radio" name="s2-p5-04-q1" value="1"> <span>1. undefined</span></label><label><input type="radio" name="s2-p5-04-q1" value="2"> <span>2. null</span></label><label><input type="radio" name="s2-p5-04-q1" value="3"> <span>3. 0</span></label><label><input type="radio" name="s2-p5-04-q1" value="4"> <span>4. 10</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>??는 null과 undefined일 때만 오른쪽 값을 쓰므로 0은 그대로입니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">원본 <code>book</code>을 바꾸지 않고 가격만 바꾼 새 객체를 만드는 코드는 무엇인가요?</p><label><input type="radio" name="s2-p5-04-q2" value="1"> <span>1. <code>Object.freeze(book)</code></span></label><label><input type="radio" name="s2-p5-04-q2" value="2"> <span>2. <code>const copy = book; copy.price = 20000</code></span></label><label><input type="radio" name="s2-p5-04-q2" value="3"> <span>3. <code>book.price = 20000</code></span></label><label><input type="radio" name="s2-p5-04-q2" value="4"> <span>4. <code>{ ...book, price: 20000 }</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>전개 문법으로 복사본을 만들면서 일부 값만 바꿉니다. 대입만 하면 같은 객체를 가리킵니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s2-p5-03.html"><span class="dir">이전</span>S2-P5-03 도서 객체 다루기 연습</a>
+  <a class="next" href="../p6/s2-p6-01.html"><span class="dir">다음</span>S2-P6-01 배열 메서드</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

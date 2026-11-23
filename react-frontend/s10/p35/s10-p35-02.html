@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P35-02 대여, 반납, 삭제, 저장을 useMutation으로 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P35-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 서버 상태 관리</a><span class="sep">/</span><span>S10-P35 변경 요청과 캐시 무효화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p35-01.html" style="flex:10" data-type="주요 개념" title="useMutation과 캐시 무효화 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s10-p35-02.html" style="flex:35" data-type="실습" title="대여, 반납, 삭제, 저장을 useMutation으로 (35분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">35분</span></a><a href="s10-p35-03.html" style="flex:5" data-type="정리" title="정리: 변경 요청과 캐시 무효화 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>35분</span><span>S10-P35-02</span></div>
+<h1>대여, 반납, 삭제, 저장을 useMutation으로</h1>
+
+<p class="lead">상세 화면의 동작 세 가지(대여, 삭제, 표지 업로드)를 <code>useMutation</code>으로 바꿉니다. 표지 파일 검사 함수는 이 파일에서 내보내도록 했습니다(<a href="../../s12/p42/s12-p42-01.html">S12-P42</a>에서 별도 파일로 옮깁니다).</p>
+<div class="codeblock"><span class="file">src/pages/BookDetailPage.jsx</span><pre><code>import { useState } from &#x27;react&#x27;;
+import { Link, useNavigate, useParams } from &#x27;react-router&#x27;;
+import { useMutation, useQuery, useQueryClient } from &#x27;@tanstack/react-query&#x27;;
+import { deleteBook, getBook, uploadCover } from &#x27;../api/books&#x27;;
+import { toAssetUrl } from &#x27;../api/client&#x27;;
+import { borrowBook } from &#x27;../api/loans&#x27;;
+import { useAuth } from &#x27;../auth/useAuth&#x27;;
+import ErrorMessage from &#x27;../components/ErrorMessage&#x27;;
+
+const ALLOWED_EXT = [&#x27;.jpg&#x27;, &#x27;.jpeg&#x27;, &#x27;.png&#x27;];
+const MAX_BYTES = 2 * 1024 * 1024;
+
+// 업로드 전에 브라우저에서 미리 확인합니다. 사용자 편의를 위한 검사이며
+// 최종 판단(415, 413, 422)은 백엔드가 합니다.
+export function precheckCover(file) {
+  const name = file.name.toLowerCase();
+  if (!ALLOWED_EXT.some((ext) =&gt; name.endsWith(ext))) return &#x27;jpg, jpeg, png 파일만 올릴 수 있습니다.&#x27;;
+  if (file.size === 0) return &#x27;빈 파일입니다.&#x27;;
+  if (file.size &gt; MAX_BYTES) return &#x27;2MB 이하 파일만 올릴 수 있습니다.&#x27;;
+  return null;
+}
+
+export default function BookDetailPage() {
+  const { bookId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const detailKey = [&#x27;books&#x27;, &#x27;detail&#x27;, bookId];
+  const [notice, setNotice] = useState(&#x27;&#x27;);
+  const [localError, setLocalError] = useState(null);
+
+  const { data: book, error: loadError } = useQuery({
+    queryKey: detailKey,
+    queryFn: ({ signal }) =&gt; getBook(bookId, signal),
+  });
+
+  // 서버 데이터를 바꾸는 요청은 useMutation으로 다룹니다.
+  const borrow = useMutation({
+    mutationFn: () =&gt; borrowBook(book.id),
+    onSuccess: () =&gt; {
+      setNotice(&#x27;대여했습니다. 내 대여 화면에서 확인할 수 있습니다.&#x27;);
+      queryClient.invalidateQueries({ queryKey: [&#x27;loans&#x27;] }); // 내 대여 목록 캐시를 낡은 것으로 표시
+    },
+  });
+  const remove = useMutation({
+    mutationFn: () =&gt; deleteBook(book.id),
+    onSuccess: () =&gt; {
+      queryClient.removeQueries({ queryKey: detailKey });
+      queryClient.invalidateQueries({ queryKey: [&#x27;books&#x27;, &#x27;list&#x27;] });
+      navigate(&#x27;/&#x27;, { replace: true });
+    },
+  });
+  const cover = useMutation({
+    mutationFn: (file) =&gt; uploadCover(book.id, file),
+    onSuccess: (updated) =&gt; {
+      queryClient.setQueryData(detailKey, updated); // 응답으로 받은 최신 정보를 바로 캐시에
+      setNotice(&#x27;표지를 바꿨습니다.&#x27;);
+    },
+  });
+
+  const busy = borrow.isPending || remove.isPending || cover.isPending;
+  const error = localError ?? borrow.error ?? remove.error ?? cover.error;
+
+  function start(mutation, variables) {
+    setNotice(&#x27;&#x27;);
+    setLocalError(null);
+    [borrow, remove, cover].forEach((m) =&gt; m.reset()); // 이전 오류 메시지를 지웁니다.
+    mutation.mutate(variables);
+  }
+
+  function handleDelete() {
+    if (!window.confirm(`&quot;${book.title}&quot; 도서를 삭제할까요? 되돌릴 수 없습니다.`)) return;
+    start(remove);
+  }
+
+  function handleCoverChange(event) {
+    const file = event.target.files?.[0];
+    event.target.value = &#x27;&#x27;; // 같은 파일을 다시 고를 수 있게 비웁니다.
+    if (!file) return;
+    const problem = precheckCover(file);
+    if (problem) {
+      setLocalError({ message: problem });
+      return;
+    }
+    start(cover, file);
+  }
+
+  if (loadError) return &lt;ErrorMessage error={loadError} /&gt;;
+  if (!book) return &lt;p className=&quot;muted&quot;&gt;불러오는 중입니다.&lt;/p&gt;;
+
+  return (
+    &lt;section className=&quot;detail&quot;&gt;
+      &lt;div className=&quot;cover&quot;&gt;
+        {book.cover_url ? (
+          &lt;img src={toAssetUrl(book.cover_url)} alt={`${book.title} 표지`} /&gt;
+        ) : (
+          &lt;div className=&quot;cover-empty&quot;&gt;표지 없음&lt;/div&gt;
+        )}
+      &lt;/div&gt;
+      &lt;div&gt;
+        &lt;h1&gt;{book.title}&lt;/h1&gt;
+        &lt;dl className=&quot;meta&quot;&gt;
+          &lt;dt&gt;저자&lt;/dt&gt;
+          &lt;dd&gt;{book.author?.name}&lt;/dd&gt;
+          &lt;dt&gt;가격&lt;/dt&gt;
+          &lt;dd&gt;{book.price.toLocaleString(&#x27;ko-KR&#x27;)}원&lt;/dd&gt;
+          &lt;dt&gt;ISBN&lt;/dt&gt;
+          &lt;dd&gt;{book.isbn ?? &#x27;-&#x27;}&lt;/dd&gt;
+        &lt;/dl&gt;
+
+        &lt;ErrorMessage error={error} /&gt;
+        {notice &amp;&amp; &lt;p className=&quot;notice&quot;&gt;{notice}&lt;/p&gt;}
+
+        {user ? (
+          &lt;div className=&quot;actions&quot;&gt;
+            &lt;button onClick={() =&gt; start(borrow)} disabled={busy}&gt;대여하기&lt;/button&gt;
+            &lt;Link className=&quot;button&quot; to={`/books/${book.id}/edit`}&gt;수정&lt;/Link&gt;
+            &lt;label className=&quot;button&quot;&gt;
+              표지 올리기
+              &lt;input type=&quot;file&quot; accept=&quot;.jpg,.jpeg,.png&quot; hidden onChange={handleCoverChange} /&gt;
+            &lt;/label&gt;
+            &lt;button className=&quot;danger&quot; onClick={handleDelete} disabled={busy}&gt;삭제&lt;/button&gt;
+          &lt;/div&gt;
+        ) : (
+          &lt;p className=&quot;muted&quot;&gt;대여와 수정은 로그인 후 사용할 수 있습니다.&lt;/p&gt;
+        )}
+      &lt;/div&gt;
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p>내 대여 화면은 조회를 <code>useQuery</code>로, 반납을 <code>useMutation</code>으로 바꿉니다. 반납에 성공하면 <code>['loans']</code> 캐시를 무효화해 목록을 다시 불러옵니다.</p>
+<div class="codeblock"><span class="file">src/pages/MyLoansPage.jsx</span><pre><code>import { useMutation, useQuery, useQueryClient } from &#x27;@tanstack/react-query&#x27;;
+import { Link } from &#x27;react-router&#x27;;
+import { listMyLoans, returnLoan } from &#x27;../api/loans&#x27;;
+import ErrorMessage from &#x27;../components/ErrorMessage&#x27;;
+
+// 백엔드는 UTC로 저장합니다. 화면에서는 사용자의 시간대로 보여 줍니다.
+// 시간대 표시(Z 또는 +09:00)가 없는 문자열은 브라우저가 현지 시각으로 해석하므로
+// UTC임을 나타내는 Z를 붙여 줍니다.
+const dateFormat = new Intl.DateTimeFormat(&#x27;ko-KR&#x27;, { dateStyle: &#x27;medium&#x27;, timeStyle: &#x27;short&#x27; });
+function formatDate(iso) {
+  if (!iso) return &#x27;-&#x27;;
+  const hasZone = /(Z|[+-]\d{2}:\d{2})$/.test(iso);
+  return dateFormat.format(new Date(hasZone ? iso : `${iso}Z`));
+}
+
+export default function MyLoansPage() {
+  const queryClient = useQueryClient();
+  const { data: loans = [], error: loadError } = useQuery({
+    queryKey: [&#x27;loans&#x27;, &#x27;me&#x27;],
+    queryFn: ({ signal }) =&gt; listMyLoans(signal),
+  });
+
+  // 반납에 성공하면 내 대여 목록을 다시 불러오도록 캐시를 무효화합니다.
+  const giveBack = useMutation({
+    mutationFn: (loanId) =&gt; returnLoan(loanId),
+    onSuccess: () =&gt; queryClient.invalidateQueries({ queryKey: [&#x27;loans&#x27;] }),
+  });
+
+  const active = loans.filter((loan) =&gt; !loan.returned_at);
+
+  return (
+    &lt;section&gt;
+      &lt;h1&gt;내 대여&lt;/h1&gt;
+      &lt;p className=&quot;muted&quot;&gt;현재 대여 중 {active.length}권 / 최대 3권&lt;/p&gt;
+      &lt;ErrorMessage error={loadError ?? giveBack.error} /&gt;
+      &lt;table className=&quot;table&quot;&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;
+            &lt;th&gt;도서&lt;/th&gt;
+            &lt;th&gt;대여 시각&lt;/th&gt;
+            &lt;th&gt;반납 시각&lt;/th&gt;
+            &lt;th&gt;&lt;/th&gt;
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+          {loans.map((loan) =&gt; (
+            &lt;tr key={loan.id}&gt;
+              &lt;td&gt;
+                &lt;Link to={`/books/${loan.book.id}`}&gt;{loan.book.title}&lt;/Link&gt;
+              &lt;/td&gt;
+              &lt;td&gt;{formatDate(loan.loaned_at)}&lt;/td&gt;
+              &lt;td&gt;{formatDate(loan.returned_at)}&lt;/td&gt;
+              &lt;td&gt;{!loan.returned_at &amp;&amp; &lt;button onClick={() =&gt; giveBack.mutate(loan.id)} disabled={giveBack.isPending}&gt;반납&lt;/button&gt;}&lt;/td&gt;
+            &lt;/tr&gt;
+          ))}
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p>등록, 수정 화면은 저장에 성공하면 <code>['books']</code> 전체를, 저자를 추가하면 <code>['authors']</code>를 무효화합니다. 바뀌는 곳은 다음과 같습니다.</p>
+<div class="codeblock"><pre><code>const queryClient = useQueryClient();
+// 저장 성공 후
+queryClient.invalidateQueries({ queryKey: [&#x27;books&#x27;] });
+navigate(`/books/${saved.id}`);
+// 저자 추가 성공 후
+queryClient.invalidateQueries({ queryKey: [&#x27;authors&#x27;] });</code></pre></div>
+<p>마지막으로 <code>AuthProvider</code>의 로그아웃과 재발급 실패 처리에서 캐시를 비웁니다.</p>
+<div class="codeblock"><span class="file">src/auth/AuthProvider.jsx</span><pre><code>import { useCallback, useEffect, useMemo, useState } from &#x27;react&#x27;;
+import { useQueryClient } from &#x27;@tanstack/react-query&#x27;;
+import * as authApi from &#x27;../api/auth&#x27;;
+import { setOnAuthExpired } from &#x27;../api/client&#x27;;
+import { tokenStore } from &#x27;./tokenStore&#x27;;
+import { AuthContext } from &#x27;./useAuth&#x27;;
+
+export default function AuthProvider({ children }) {
+  const queryClient = useQueryClient();
+  const [user, setUser] = useState(null); // { id, email, role }
+  // 리프레시 토큰이 남아 있을 때만 &quot;확인 중&quot; 상태로 시작합니다.
+  const [initializing, setInitializing] = useState(() =&gt; Boolean(tokenStore.getRefresh()));
+
+  const loadMe = useCallback(async () =&gt; {
+    const me = await authApi.fetchMe();
+    setUser(me);
+    return me;
+  }, []);
+
+  useEffect(() =&gt; {
+    // 재발급까지 실패하면 client.js가 이 함수를 불러 로그인 상태를 지웁니다.
+    setOnAuthExpired(() =&gt; {
+      setUser(null);
+      queryClient.clear();
+    });
+  }, [queryClient]);
+
+  // 새로고침 직후: 액세스 토큰은 메모리에서 사라졌지만 리프레시 토큰이 남아 있으면
+  // /auth/me 호출이 401 -&gt; 재발급 -&gt; 재요청 흐름을 거쳐 로그인 상태를 되살립니다.
+  useEffect(() =&gt; {
+    if (!tokenStore.getRefresh()) return;
+    loadMe()
+      .catch(() =&gt; tokenStore.clear())
+      .finally(() =&gt; setInitializing(false));
+  }, [loadMe]);
+
+  const login = useCallback(
+    async (email, password) =&gt; {
+      const tokens = await authApi.login(email, password);
+      tokenStore.save(tokens);
+      return loadMe();
+    },
+    [loadMe],
+  );
+
+  const logout = useCallback(async () =&gt; {
+    const refreshToken = tokenStore.getRefresh();
+    try {
+      if (refreshToken) await authApi.logout(refreshToken);
+    } finally {
+      // 서버 호출이 실패해도 브라우저의 토큰은 반드시 지웁니다.
+      tokenStore.clear();
+      setUser(null);
+      // 다른 사용자가 같은 브라우저를 쓰더라도 이전 사용자의 데이터가 보이지 않게 캐시를 비웁니다.
+      queryClient.clear();
+    }
+  }, [queryClient]);
+
+  const value = useMemo(
+    () =&gt; ({ user, initializing, isAdmin: user?.role === &#x27;admin&#x27;, login, logout }),
+    [user, initializing, login, logout],
+  );
+
+  return &lt;AuthContext.Provider value={value}&gt;{children}&lt;/AuthContext.Provider&gt;;
+}</code></pre></div>
+<p>이제 <code>useAsync</code>를 쓰는 곳이 없으므로 <code>src/hooks/useAsync.js</code>를 지웁니다.</p>
+<p>확인할 내용은 다음과 같습니다.</p>
+<ol>
+<li>상세 화면에서 대여한 뒤 &quot;내 대여&quot;로 가면 방금 빌린 도서가 바로 보입니다.</li>
+<li>도서 가격을 수정하고 목록으로 돌아오면 30초가 지나지 않았어도 바뀐 가격이 보입니다(무효화).</li>
+<li>반납 버튼을 누르는 동안 버튼이 비활성화되고, 반납 후 목록이 갱신됩니다.</li>
+<li>사용자 A로 로그인해 내 대여를 본 뒤 로그아웃하고 사용자 B로 로그인합니다. B의 내 대여 화면에 A의 목록이 잠깐이라도 보이지 않는지 확인합니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p35-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s10-p35-01.html"><span class="dir">이전</span>S10-P35-01 useMutation과 캐시 무효화</a>
+  <a class="next" href="s10-p35-03.html"><span class="dir">다음</span>S10-P35-03 정리: 변경 요청과 캐시 무효화</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P42-04 정리: 공급망 보안과 보안 점검 실습 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P42-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. 프론트엔드 개발 보안</a><span class="sep">/</span><span>S12-P42 공급망 보안과 보안 점검 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p42-01.html" style="flex:10" data-type="주요 개념" title="의존성, 공급망, 요청 제한 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p42-02.html" style="flex:15" data-type="실습" title="보안 린트 규칙 추가 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s12-p42-03.html" style="flex:20" data-type="실습" title="보안 점검하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s12-p42-04.html" style="flex:5" data-type="정리" title="정리: 공급망 보안과 보안 점검 실습 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S12-P42-04</span></div>
+<h1>정리: 공급망 보안과 보안 점검 실습</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li><code>npm audit</code>, <code>npm ci</code>, 잠금 파일 관리로 의존성의 위험을 줄이고, 처리 중 버튼 비활성화와 요청 취소로 불필요한 요청을 막습니다.</li>
+<li>위험한 코드는 린트 규칙(<code>react/no-danger</code>, <code>no-eval</code> 등)으로 자동으로 막습니다.</li>
+<li>KISA 보안약점 분류에 맞춘 점검표로 코드를 정기적으로 확인합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">공급망 보안을 위해 CI와 Docker 빌드에서 <code>npm install</code> 대신 <code>npm ci</code>를 쓰는 이유는 무엇인가요?</p><label><input type="radio" name="s12-p42-04-q1" value="1"> <span>1. 취약점을 자동으로 고쳐서</span></label><label><input type="radio" name="s12-p42-04-q1" value="2"> <span>2. node_modules를 만들지 않아서</span></label><label><input type="radio" name="s12-p42-04-q1" value="3"> <span>3. 더 최신 버전을 설치해서</span></label><label><input type="radio" name="s12-p42-04-q1" value="4"> <span>4. package-lock.json에 적힌 버전 그대로 설치해 언제 빌드해도 같은 의존성이 들어가서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>npm ci는 잠금 파일과 package.json이 맞지 않으면 실패하며, 재현 가능한 설치를 보장합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q"><code>react/no-danger</code> 린트 규칙이 막는 것은 무엇인가요?</p><label><input type="radio" name="s12-p42-04-q2" value="1"> <span>1. eval 호출</span></label><label><input type="radio" name="s12-p42-04-q2" value="2"> <span>2. dangerouslySetInnerHTML 사용</span></label><label><input type="radio" name="s12-p42-04-q2" value="3"> <span>3. target=&quot;_blank&quot; 링크</span></label><label><input type="radio" name="s12-p42-04-q2" value="4"> <span>4. console.log</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>dangerouslySetInnerHTML은 XSS의 대표적인 통로라 린트로 사용을 막습니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s13/index.html">S13. 관제 대시보드</a>(7일차 오전, 4시간)로 이어집니다. 관제 환경에 맞는 대시보드를 설계하고, 폴링과 요청 기록, 지표 계산을 거쳐 Recharts로 상태와 추세를 시각화합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s12-p42-03.html"><span class="dir">이전</span>S12-P42-03 보안 점검하기</a>
+  <a class="next" href="../../s13/p43/s13-p43-01.html"><span class="dir">다음</span>S13-P43-01 관제 대시보드란</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P54-02 CI 워크플로 작성과 실행 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P54-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. GitHub Actions와 S3 배포</a><span class="sep">/</span><span>S16-P54 CI: 테스트 자동화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p54-01.html" style="flex:15" data-type="주요 개념" title="CI/CD와 GitHub Actions (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s16-p54-02.html" style="flex:30" data-type="실습" title="CI 워크플로 작성과 실행 (30분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s16-p54-03.html" style="flex:5" data-type="정리" title="정리: CI: 테스트 자동화 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>30분</span><span>S16-P54-02</span></div>
+<h1>CI 워크플로 작성과 실행</h1>
+
+<p class="lead">CI 워크플로를 작성합니다. <code>workflow_call</code>은 다음 파트의 배포 워크플로가 이 워크플로를 불러 쓸 수 있게 합니다.</p>
+<div class="codeblock"><span class="file">.github/workflows/ci.yml</span><pre><code># CI: 코드가 main에 들어가기 전에 린트, 단위 테스트, 빌드, E2E 테스트를 자동으로 실행합니다.
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_call: # 배포 워크플로(deploy.yml)가 배포 전에 이 워크플로를 불러 씁니다.
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm # package-lock.json을 기준으로 내려받은 패키지를 캐시합니다.
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 린트
+        run: npm run lint
+
+      - name: 단위, 컴포넌트 테스트
+        run: npm run test:run
+
+      - name: 빌드
+        run: npm run build
+
+      - name: Playwright 브라우저 설치
+        run: npx playwright install --with-deps chromium
+
+      - name: E2E 테스트
+        run: npm run test:e2e
+        env:
+          CI: true
+
+      - name: 실패 시 E2E 보고서 보관
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7</code></pre></div>
+<p>워크플로에서 볼 부분은 다음과 같습니다.</p>
+<ul>
+<li><code>permissions: contents: read</code>로 워크플로가 받는 GitHub 토큰의 권한을 읽기로 줄입니다. 필요한 권한만 주는 원칙은 CI에도 적용됩니다.</li>
+<li><code>cache: npm</code>은 내려받은 패키지를 캐시해 다음 실행을 빠르게 합니다.</li>
+<li>E2E 테스트는 <code>CI=true</code> 환경에서 재시도 2회, 기존 서버 재사용 안 함으로 동작합니다(<code>playwright.config.js</code>).</li>
+<li>실패했을 때만 Playwright 보고서를 결과물(artifact)로 올려, 실행 화면에서 내려받아 원인을 볼 수 있게 합니다.</li>
+</ul>
+<p>GitHub에 저장소를 만들고 실행해 봅니다.</p>
+<ol>
+<li>GitHub에서 <code>react-frontend</code> 저장소를 만들고, 로컬 프로젝트를 연결해 main 브랜치를 올립니다.</li>
+</ol>
+<div class="codeblock term"><pre><code>git remote add origin https://github.com/&lt;계정&gt;/react-frontend.git
+git push -u origin main</code></pre></div>
+<ol start="2">
+<li>기능 브랜치를 만들고 일부러 테스트를 깨뜨려 풀 리퀘스트를 엽니다.</li>
+</ol>
+<div class="codeblock term"><pre><code>git switch -c ci-test
+# src/utils/date.js의 formatDate가 빈 문자열 대신 &#x27;없음&#x27;을 돌려주게 고칩니다.
+git commit -am &quot;CI 실패 확인용 변경&quot;
+git push -u origin ci-test</code></pre></div>
+<ol start="3">
+<li>GitHub의 풀 리퀘스트 화면에서 CI가 실행되고 실패하는 것을 확인합니다. &quot;Details&quot;를 눌러 어느 스텝의 어느 테스트가 실패했는지 찾습니다.</li>
+<li>변경을 되돌려 다시 push하면 CI가 다시 실행되어 통과합니다.</li>
+<li>저장소의 Settings &gt; Branches에서 main에 규칙을 추가합니다. &quot;Require a pull request before merging&quot;과 &quot;Require status checks to pass&quot;를 켜고, 필수 검사로 <code>test</code>를 고릅니다. 이제 CI를 통과하지 않은 코드는 main에 들어갈 수 없습니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p54-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s16-p54-01.html"><span class="dir">이전</span>S16-P54-01 CI/CD와 GitHub Actions</a>
+  <a class="next" href="s16-p54-03.html"><span class="dir">다음</span>S16-P54-03 정리: CI: 테스트 자동화</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

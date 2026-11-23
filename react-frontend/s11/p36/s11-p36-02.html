@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P36-02 Vitest 설정과 첫 테스트 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P36-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 프론트엔드 테스트</a><span class="sep">/</span><span>S11-P36 테스트 전략과 Vitest</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p36-01.html" style="flex:15" data-type="주요 개념" title="프론트엔드 테스트 전략 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s11-p36-02.html" style="flex:30" data-type="실습" title="Vitest 설정과 첫 테스트 (30분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s11-p36-03.html" style="flex:5" data-type="정리" title="정리: 테스트 전략과 Vitest (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>30분</span><span>S11-P36-02</span></div>
+<h1>Vitest 설정과 첫 테스트</h1>
+
+<p class="lead">Vitest는 Vite의 설정을 그대로 쓰는 테스트 도구입니다. 컴포넌트 테스트에 필요한 도구도 함께 설치합니다.</p>
+<div class="codeblock term"><pre><code>npm install -D vitest jsdom @testing-library/react @testing-library/jest-dom @testing-library/user-event</code></pre></div>
+<p><code>vite.config.js</code>에 테스트 설정을 추가하고, 모든 테스트 전에 실행할 설정 파일을 만듭니다. 브라우저 대신 jsdom이라는 가짜 DOM 환경에서 실행합니다.</p>
+<div class="codeblock"><span class="file">vite.config.js</span><pre><code>/// &lt;reference types=&quot;vitest/config&quot; /&gt;
+import react from &#x27;@vitejs/plugin-react&#x27;;
+import { defineConfig } from &#x27;vite&#x27;;
+
+// https://vite.dev/config/
+export default defineConfig({
+  plugins: [react()],
+  test: {
+    environment: &#x27;jsdom&#x27;, // 브라우저와 비슷한 DOM 환경에서 테스트합니다.
+    setupFiles: &#x27;./src/test/setup.js&#x27;,
+    include: [&#x27;src/**/*.test.{js,jsx}&#x27;],
+  },
+});</code></pre></div>
+<div class="codeblock"><span class="file">src/test/setup.js</span><pre><code>import &#x27;@testing-library/jest-dom/vitest&#x27;; // toBeInTheDocument 같은 DOM 전용 검사 함수
+import { cleanup } from &#x27;@testing-library/react&#x27;;
+import { afterEach } from &#x27;vitest&#x27;;
+
+// 날짜 표시 테스트가 컴퓨터마다 달라지지 않도록 시간대를 고정합니다.
+process.env.TZ = &#x27;Asia/Seoul&#x27;;
+
+afterEach(() =&gt; cleanup());</code></pre></div>
+<p>테스트에서는 실제 백엔드로 요청이 나가면 안 되므로 가짜 주소를 쓰는 <code>.env.test</code>를 만듭니다. Vitest는 <code>test</code> 모드로 실행되어 이 파일을 읽습니다.</p>
+<div class="codeblock"><span class="file">.env.test</span><pre><code># 테스트(vitest)에서만 쓰는 값입니다. 실제 서버로 요청이 나가지 않도록 가짜 주소를 씁니다.
+VITE_API_BASE_URL=http://api.test</code></pre></div>
+<p><code>package.json</code>의 <code>scripts</code>에 두 줄을 추가합니다. <code>npm test</code>는 파일을 고칠 때마다 다시 실행하는 감시 모드, <code>npm run test:run</code>은 한 번 실행하고 끝나는 모드(CI용)입니다.</p>
+<div class="codeblock"><pre><code>&quot;test&quot;: &quot;vitest&quot;,
+&quot;test:run&quot;: &quot;vitest run&quot;</code></pre></div>
+<p>이제 테스트할 함수를 컴포넌트에서 꺼냅니다. 도서 폼의 검증과 변환은 <code>src/pages/bookForm.js</code>로, 날짜 표시는 <code>src/utils/date.js</code>로 옮기고, 원래 화면에서는 가져와 씁니다.</p>
+<div class="codeblock"><span class="file">src/pages/bookForm.js</span><pre><code>// 도서 폼의 값 변환과 검증 규칙입니다. 화면과 분리해 두면 따로 테스트하기 쉽습니다.
+export const EMPTY_FORM = { title: &#x27;&#x27;, author_id: &#x27;&#x27;, price: &#x27;&#x27;, isbn: &#x27;&#x27; };
+
+// 화면 입력값(문자열)을 API 본문(JSON)으로 바꿉니다.
+export function toPayload(form) {
+  return {
+    title: form.title.trim(),
+    author_id: Number(form.author_id),
+    price: Number(form.price),
+    isbn: form.isbn.trim() === &#x27;&#x27; ? null : form.isbn.trim(),
+  };
+}
+
+// 수정할 때는 바뀐 필드만 보냅니다 (PATCH).
+export function diff(original, payload) {
+  const changes = {};
+  if (payload.title !== original.title) changes.title = payload.title;
+  if (payload.author_id !== original.author?.id) changes.author_id = payload.author_id;
+  if (payload.price !== original.price) changes.price = payload.price;
+  if (payload.isbn !== (original.isbn ?? null)) changes.isbn = payload.isbn;
+  return changes;
+}
+
+// 백엔드 규칙과 같은 기준으로 먼저 확인해 사용자에게 빠르게 알려 줍니다.
+export function validate(form) {
+  const errors = {};
+  const title = form.title.trim();
+  if (title.length &lt; 1 || title.length &gt; 100) errors.title = &#x27;제목은 1~100자로 입력합니다.&#x27;;
+  if (!form.author_id) errors.author_id = &#x27;저자를 고릅니다.&#x27;;
+  const price = Number(form.price);
+  if (form.price === &#x27;&#x27; || !Number.isInteger(price) || price &lt; 0 || price &gt; 1_000_000)
+    errors.price = &#x27;가격은 0~1,000,000 사이의 정수입니다.&#x27;;
+  if (form.isbn.trim() &amp;&amp; !/^\d{13}$/.test(form.isbn.trim())) errors.isbn = &#x27;ISBN은 숫자 13자리입니다.&#x27;;
+  return errors;
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/utils/date.js</span><pre><code>// 백엔드는 UTC로 저장합니다. 화면에서는 사용자의 시간대로 보여 줍니다.
+// 시간대 표시(Z 또는 +09:00)가 없는 문자열은 브라우저가 현지 시각으로 해석하므로
+// UTC임을 나타내는 Z를 붙여 줍니다.
+const dateFormat = new Intl.DateTimeFormat(&#x27;ko-KR&#x27;, { dateStyle: &#x27;medium&#x27;, timeStyle: &#x27;short&#x27; });
+
+export function parseServerDate(iso) {
+  const hasZone = /(Z|[+-]\d{2}:\d{2})$/.test(iso);
+  return new Date(hasZone ? iso : `${iso}Z`);
+}
+
+export function formatDate(iso) {
+  if (!iso) return &#x27;-&#x27;;
+  return dateFormat.format(parseServerDate(iso));
+}</code></pre></div>
+<p>테스트 파일은 대상 파일 옆에 <code>.test.js</code> 이름으로 둡니다. <code>describe</code>로 묶고, <code>it</code>마다 하나의 동작을 문장으로 적고, <code>expect</code>로 결과를 확인합니다.</p>
+<div class="codeblock"><span class="file">src/api/errors.test.js</span><pre><code>import { describe, expect, it } from &#x27;vitest&#x27;;
+import { ApiError, toApiError } from &#x27;./errors&#x27;;
+
+describe(&#x27;toApiError&#x27;, () =&gt; {
+  it(&#x27;백엔드 AppError 형식에서 code와 message를 꺼낸다&#x27;, () =&gt; {
+    const error = toApiError(409, { code: &#x27;DUPLICATE_ISBN&#x27;, message: &#x27;이미 등록된 ISBN입니다.&#x27; });
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.status).toBe(409);
+    expect(error.code).toBe(&#x27;DUPLICATE_ISBN&#x27;);
+    expect(error.message).toBe(&#x27;이미 등록된 ISBN입니다.&#x27;);
+  });
+
+  it(&#x27;FastAPI 검증 오류를 칸 이름별 메시지로 바꾼다&#x27;, () =&gt; {
+    const body = {
+      detail: [
+        { loc: [&#x27;body&#x27;, &#x27;title&#x27;], msg: &#x27;String should have at least 1 character&#x27;, type: &#x27;string_too_short&#x27; },
+        { loc: [&#x27;body&#x27;, &#x27;price&#x27;], msg: &#x27;Input should be greater than or equal to 0&#x27;, type: &#x27;greater_than_equal&#x27; },
+      ],
+    };
+    const error = toApiError(422, body);
+    expect(error.code).toBe(&#x27;VALIDATION_ERROR&#x27;);
+    expect(error.fields).toEqual({
+      title: &#x27;String should have at least 1 character&#x27;,
+      price: &#x27;Input should be greater than or equal to 0&#x27;,
+    });
+  });
+
+  it(&#x27;알 수 없는 형식이면 상태 코드별 기본 메시지를 쓴다&#x27;, () =&gt; {
+    expect(toApiError(500, null).message).toBe(&#x27;서버에서 오류가 발생했습니다.&#x27;);
+    expect(toApiError(418, &#x27;teapot&#x27;).message).toBe(&#x27;알 수 없는 오류가 발생했습니다.&#x27;);
+  });
+
+  it(&#x27;429 응답의 Retry-After 헤더를 숫자로 읽는다&#x27;, () =&gt; {
+    const error = toApiError(429, { code: &#x27;TOO_MANY_ATTEMPTS&#x27;, message: &#x27;잠김&#x27; }, { &#x27;retry-after&#x27;: &#x27;900&#x27; });
+    expect(error.retryAfter).toBe(900);
+  });
+});</code></pre></div>
+<div class="codeblock"><span class="file">src/utils/date.test.js</span><pre><code>import { describe, expect, it } from &#x27;vitest&#x27;;
+import { formatDate, parseServerDate } from &#x27;./date&#x27;;
+
+describe(&#x27;parseServerDate&#x27;, () =&gt; {
+  it(&#x27;시간대 표시가 없으면 UTC로 해석한다&#x27;, () =&gt; {
+    expect(parseServerDate(&#x27;2026-11-23T06:58:12&#x27;).toISOString()).toBe(&#x27;2026-11-23T06:58:12.000Z&#x27;);
+  });
+
+  it(&#x27;시간대 표시가 있으면 그대로 해석한다&#x27;, () =&gt; {
+    expect(parseServerDate(&#x27;2026-11-23T15:58:12+09:00&#x27;).toISOString()).toBe(&#x27;2026-11-23T06:58:12.000Z&#x27;);
+  });
+});
+
+describe(&#x27;formatDate&#x27;, () =&gt; {
+  it(&#x27;UTC 시각을 한국 시간으로 표시한다&#x27;, () =&gt; {
+    expect(formatDate(&#x27;2026-11-23T06:58:12&#x27;)).toContain(&#x27;오후 3:58&#x27;);
+  });
+
+  it(&#x27;값이 없으면 -를 표시한다&#x27;, () =&gt; {
+    expect(formatDate(null)).toBe(&#x27;-&#x27;);
+  });
+});</code></pre></div>
+<div class="codeblock"><span class="file">src/pages/bookForm.test.js</span><pre><code>import { describe, expect, it } from &#x27;vitest&#x27;;
+import { diff, toPayload, validate } from &#x27;./bookForm&#x27;;
+
+const valid = { title: &#x27; 파이썬 입문 &#x27;, author_id: &#x27;1&#x27;, price: &#x27;18000&#x27;, isbn: &#x27;&#x27; };
+
+describe(&#x27;validate&#x27;, () =&gt; {
+  it(&#x27;올바른 입력이면 오류가 없다&#x27;, () =&gt; {
+    expect(validate(valid)).toEqual({});
+  });
+
+  it(&#x27;백엔드 BookCreate 규칙과 같은 기준으로 검사한다&#x27;, () =&gt; {
+    const errors = validate({ title: &#x27;&#x27;, author_id: &#x27;&#x27;, price: &#x27;-1&#x27;, isbn: &#x27;123&#x27; });
+    expect(Object.keys(errors).sort()).toEqual([&#x27;author_id&#x27;, &#x27;isbn&#x27;, &#x27;price&#x27;, &#x27;title&#x27;]);
+  });
+
+  it(&#x27;가격 상한은 1,000,000이다&#x27;, () =&gt; {
+    expect(validate({ ...valid, price: &#x27;1000000&#x27; }).price).toBeUndefined();
+    expect(validate({ ...valid, price: &#x27;1000001&#x27; }).price).toBeDefined();
+  });
+});
+
+describe(&#x27;toPayload&#x27;, () =&gt; {
+  it(&#x27;문자열 입력을 API 본문 형식으로 바꾼다&#x27;, () =&gt; {
+    expect(toPayload(valid)).toEqual({ title: &#x27;파이썬 입문&#x27;, author_id: 1, price: 18000, isbn: null });
+  });
+});
+
+describe(&#x27;diff&#x27;, () =&gt; {
+  it(&#x27;바뀐 필드만 담는다&#x27;, () =&gt; {
+    const original = { title: &#x27;파이썬 입문&#x27;, author: { id: 1, name: &#x27;홍길동&#x27; }, price: 18000, isbn: null };
+    expect(diff(original, toPayload({ ...valid, price: &#x27;20000&#x27; }))).toEqual({ price: 20000 });
+  });
+});</code></pre></div>
+<p><code>npm test</code>로 실행합니다. 13개 테스트가 모두 통과하면 성공입니다. 이어서 일부러 실패를 만들어 봅니다. <code>bookForm.js</code>의 가격 상한을 <code>1_000_000</code>에서 <code>100_000</code>으로 바꾸면 어느 테스트가 어떤 메시지로 실패하는지 확인하고 되돌립니다. 테스트 이름을 문장으로 적어 두면 실패했을 때 무엇이 깨졌는지 바로 알 수 있습니다.</p>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p36-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s11-p36-01.html"><span class="dir">이전</span>S11-P36-01 프론트엔드 테스트 전략</a>
+  <a class="next" href="s11-p36-03.html"><span class="dir">다음</span>S11-P36-03 정리: 테스트 전략과 Vitest</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

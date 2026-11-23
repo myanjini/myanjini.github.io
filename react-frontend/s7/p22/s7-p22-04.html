@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P22-04 정리: React Router와 앱 뼈대 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P22-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 라우팅과 조회 화면</a><span class="sep">/</span><span>S7-P22 React Router와 앱 뼈대</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p22-01.html" style="flex:10" data-type="주요 개념" title="클라이언트 측 라우팅 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s7-p22-02.html" style="flex:10" data-type="주요 개념" title="라우터 구성 요소 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s7-p22-03.html" style="flex:25" data-type="실습" title="앱 뼈대 만들기 (25분)"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s7-p22-04.html" style="flex:5" data-type="정리" title="정리: React Router와 앱 뼈대 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S7-P22-04</span></div>
+<h1>정리: React Router와 앱 뼈대</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>React Router의 선언형 모드로 주소와 화면을 연결하고, 레이아웃 라우트와 <code>&lt;Outlet&gt;</code>으로 공통 틀을 만듭니다.</li>
+<li>앱 안의 이동은 <code>&lt;Link&gt;</code>로 해야 새로고침 없이 이동하고 메모리의 상태가 유지됩니다.</li>
+<li>화면은 <code>pages</code>, 공통 표시는 <code>components</code>에 두며, 연습용 코드는 정리합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">앱 안에서 다른 화면으로 이동할 때 <code>&lt;a href&gt;</code> 대신 <code>&lt;Link to&gt;</code>를 쓰는 이유는 무엇인가요?</p><label><input type="radio" name="s7-p22-04-q1" value="1"> <span>1. a는 서버에 새 페이지를 요청해 앱이 다시 시작되고 메모리의 상태가 사라져서</span></label><label><input type="radio" name="s7-p22-04-q1" value="2"> <span>2. a는 React에서 쓸 수 없어서</span></label><label><input type="radio" name="s7-p22-04-q1" value="3"> <span>3. Link만 CSS를 적용할 수 있어서</span></label><label><input type="radio" name="s7-p22-04-q1" value="4"> <span>4. Link가 더 빨리 그려져서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>Link는 History API로 주소만 바꾸고 화면을 교체합니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">레이아웃 라우트에서 자식 화면이 그려지는 자리를 표시하는 컴포넌트는 무엇인가요?</p><label><input type="radio" name="s7-p22-04-q2" value="1"> <span>1. <code>&lt;Outlet&gt;</code></span></label><label><input type="radio" name="s7-p22-04-q2" value="2"> <span>2. <code>&lt;Suspense&gt;</code></span></label><label><input type="radio" name="s7-p22-04-q2" value="3"> <span>3. <code>&lt;Routes&gt;</code></span></label><label><input type="radio" name="s7-p22-04-q2" value="4"> <span>4. <code>&lt;Navigate&gt;</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>부모 라우트의 element 안에 Outlet을 두면 그 자리에 일치하는 자식 화면이 그려집니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s7-p22-03.html"><span class="dir">이전</span>S7-P22-03 앱 뼈대 만들기</a>
+  <a class="next" href="../p23/s7-p23-01.html"><span class="dir">다음</span>S7-P23-01 검색 조건을 URL에 두는 이유</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

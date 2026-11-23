@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P7-04 정리: Promise와 async/await | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P7-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 모던 JavaScript</a><span class="sep">/</span><span>S2-P7 Promise와 async/await</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p7-01.html" style="flex:15" data-type="주요 개념" title="비동기와 Promise (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s2-p7-02.html" style="flex:10" data-type="주요 개념" title="async/await와 Promise.all (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s2-p7-03.html" style="flex:20" data-type="실습" title="백엔드 요청을 순서대로, 동시에 보내기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s2-p7-04.html" style="flex:5" data-type="정리" title="정리: Promise와 async/await (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S2-P7-04</span></div>
+<h1>정리: Promise와 async/await</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>시간이 걸리는 작업은 Promise로 표현되며, <code>then</code>/<code>catch</code> 또는 <code>async</code>/<code>await</code>와 <code>try</code>/<code>catch</code>로 다룹니다.</li>
+<li>서로 의존하지 않는 요청은 <code>Promise.all</code>로 동시에 보내 기다리는 시간을 줄입니다.</li>
+<li><code>fetch</code>는 404 같은 오류 응답도 정상적으로 돌려주므로 상태 코드를 직접 확인해야 합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">다음 코드의 출력 순서로 알맞은 것은 무엇인가요? <code>console.log('A'); setTimeout(() =&gt; console.log('B'), 0); console.log('C');</code></p><label><input type="radio" name="s2-p7-04-q1" value="1"> <span>1. B, A, C</span></label><label><input type="radio" name="s2-p7-04-q1" value="2"> <span>2. C, A, B</span></label><label><input type="radio" name="s2-p7-04-q1" value="3"> <span>3. A, B, C</span></label><label><input type="radio" name="s2-p7-04-q1" value="4"> <span>4. A, C, B</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>setTimeout은 0ms여도 함수를 예약만 하고 넘어가므로 지금 실행 중인 코드가 끝난 뒤에 B가 출력됩니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">서로 의존하지 않는 요청 세 개를 가장 빨리 끝내는 방법은 무엇인가요?</p><label><input type="radio" name="s2-p7-04-q2" value="1"> <span>1. setTimeout으로 간격을 둔다.</span></label><label><input type="radio" name="s2-p7-04-q2" value="2"> <span>2. 동기 함수로 바꾼다.</span></label><label><input type="radio" name="s2-p7-04-q2" value="3"> <span>3. 하나씩 await한다.</span></label><label><input type="radio" name="s2-p7-04-q2" value="4"> <span>4. Promise.all로 동시에 보내고 함께 기다린다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>Promise.all은 요청을 동시에 진행시키므로 가장 느린 요청만큼만 걸립니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s3/index.html">S3. React 기초</a>(2일차 오전, 4시간)로 이어집니다. Vite로 React 프로젝트를 만들고 JSX, 컴포넌트, props, state, 이벤트, 리스트 렌더링으로 화면을 구성합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s2-p7-03.html"><span class="dir">이전</span>S2-P7-03 백엔드 요청을 순서대로, 동시에 보내기</a>
+  <a class="next" href="../../s3/p8/s3-p8-01.html"><span class="dir">다음</span>S3-P8-01 Vite란</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

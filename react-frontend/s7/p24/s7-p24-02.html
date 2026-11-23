@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P24-02 로딩, 오류, 빈 상태 설계 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P24-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 라우팅과 조회 화면</a><span class="sep">/</span><span>S7-P24 상세 화면과 로딩, 오류 처리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p24-01.html" style="flex:20" data-type="실습" title="도서 상세 화면 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s7-p24-02.html" style="flex:15" data-type="주요 개념" title="로딩, 오류, 빈 상태 설계 (15분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s7-p24-03.html" style="flex:10" data-type="실습" title="상세 화면 확인 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s7-p24-04.html" style="flex:5" data-type="정리" title="정리: 상세 화면과 로딩, 오류 처리 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S7-P24-02</span></div>
+<h1>로딩, 오류, 빈 상태 설계</h1>
+
+<p class="lead">데이터를 불러오는 화면은 정상 결과보다 그 밖의 상태를 더 자주 보여 줍니다. 각 상태를 어떻게 표현할지 미리 정해 두면 화면마다 다르게 처리하는 일을 막을 수 있습니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>상태</th>
+<th>이 과정의 표현</th>
+<th>생각할 점</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>처음 불러오는 중</td>
+<td>&quot;불러오는 중입니다.&quot; 문구</td>
+<td>빠른 응답에서는 깜빡임이 될 수 있습니다. 화면 크기가 크게 변한다면 같은 크기의 빈 틀(스켈레톤)을 쓰기도 합니다.</td>
+</tr>
+<tr>
+<td>다시 불러오는 중</td>
+<td>이전 결과를 그대로 두고 문구만 표시</td>
+<td>페이지를 넘길 때 표가 사라졌다 나타나면 읽던 위치를 잃습니다. <a href="../../s10/p34/s10-p34-01.html">S10-P34</a>에서 더 매끄럽게 바꿉니다.</td>
+</tr>
+<tr>
+<td>빈 결과</td>
+<td>&quot;조건에 맞는 도서가 없습니다.&quot;</td>
+<td>빈 표만 보여 주면 오류인지 결과가 없는지 구분할 수 없습니다.</td>
+</tr>
+<tr>
+<td>요청 오류</td>
+<td><code>ErrorMessage</code>로 메시지와 오류 코드</td>
+<td>오류 코드는 운영자가 백엔드 로그와 대조하는 데 씁니다.</td>
+</tr>
+<tr>
+<td>대상 없음(404)</td>
+<td>상세 화면 안에 오류 메시지</td>
+<td>없는 주소 전체(<code>/abc</code>)는 404 화면, 있는 화면의 없는 데이터는 화면 안에서 안내합니다.</td>
+</tr>
+<tr>
+<td>연결 실패</td>
+<td>&quot;서버에 연결할 수 없습니다...&quot;</td>
+<td>백엔드 중지와 CORS 차단은 브라우저가 구분해 주지 않습니다. 메시지에 둘 다 안내합니다.</td>
+</tr>
+</tbody>
+</table></div>
+<p>상태 코드별로 사용자에게 무엇을 할 수 있는지 알려 주는 것이 좋은 오류 메시지의 조건입니다. <a href="../../s6/p20/s6-p20-01.html">S6-P20</a>에서 만든 <code>toApiError</code>의 기본 메시지는 이 기준으로 썼습니다. 401은 로그인, 403은 권한 없음, 409는 현재 상태와의 충돌, 422는 입력 확인, 5xx는 잠시 후 다시 시도를 안내합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s7-p24-01.html"><span class="dir">이전</span>S7-P24-01 도서 상세 화면</a>
+  <a class="next" href="s7-p24-03.html"><span class="dir">다음</span>S7-P24-03 상세 화면 확인</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

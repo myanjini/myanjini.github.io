@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P28-04 정리: 로그인 상태 공유와 접근 제어 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P28-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 인증 연동</a><span class="sep">/</span><span>S8-P28 로그인 상태 공유와 접근 제어</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p28-01.html" style="flex:20" data-type="실습" title="로그인 상태 공유: Context (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s8-p28-02.html" style="flex:10" data-type="실습" title="로그인과 회원가입 화면 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s8-p28-03.html" style="flex:15" data-type="실습" title="접근 제어와 인증 흐름 점검 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s8-p28-04.html" style="flex:5" data-type="정리" title="정리: 로그인 상태 공유와 접근 제어 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S8-P28-04</span></div>
+<h1>정리: 로그인 상태 공유와 접근 제어</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li><code>AuthProvider</code>가 로그인 상태를 Context로 공유하고, 새로고침 후에는 재발급 흐름으로 상태를 복원합니다.</li>
+<li>로그인 오류 메시지는 하나로 통일하고, 429 잠금은 <code>Retry-After</code>로 안내하며, 이동 주소는 내부 경로만 허용합니다.</li>
+<li>메뉴 숨기기와 보호 라우트는 사용자 경험을 위한 장치이며, 실제 권한 검사는 백엔드가 합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">프론트엔드에서 관리자 메뉴를 숨기는 것에 대한 설명으로 옳은 것은 무엇인가요?</p><label><input type="radio" name="s8-p28-04-q1" value="1"> <span>1. 사용자 경험을 위한 장치이며 실제 권한 검사는 백엔드가 한다.</span></label><label><input type="radio" name="s8-p28-04-q1" value="2"> <span>2. 토큰을 숨기는 기능이다.</span></label><label><input type="radio" name="s8-p28-04-q1" value="3"> <span>3. CORS 설정을 대신한다.</span></label><label><input type="radio" name="s8-p28-04-q1" value="4"> <span>4. 이것만으로 관리자 기능이 보호된다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>프론트엔드 코드는 조작될 수 있으므로 권한 판단은 항상 백엔드가 합니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">새로고침 직후 로그인 상태가 복원되는 과정으로 옳은 것은 무엇인가요?</p><label><input type="radio" name="s8-p28-04-q2" value="1"> <span>1. 로그인 화면으로 보내 다시 로그인하게 한다.</span></label><label><input type="radio" name="s8-p28-04-q2" value="2"> <span>2. 쿠키가 자동으로 복원한다.</span></label><label><input type="radio" name="s8-p28-04-q2" value="3"> <span>3. localStorage의 액세스 토큰을 그대로 쓴다.</span></label><label><input type="radio" name="s8-p28-04-q2" value="4"> <span>4. /auth/me가 401을 받으면 인터셉터가 리프레시 토큰으로 재발급한 뒤 다시 요청한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>메모리의 액세스 토큰은 사라지지만 sessionStorage의 리프레시 토큰으로 복원합니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s9/index.html">S9. 쓰기 기능</a>(5일차 오전, 4시간)로 이어집니다. 도서 등록과 수정, 삭제, 표지 업로드, 대여와 반납을 구현하고 백엔드의 업무 규칙 오류를 사용자에게 안내합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s8-p28-03.html"><span class="dir">이전</span>S8-P28-03 접근 제어와 인증 흐름 점검</a>
+  <a class="next" href="../../s9/p29/s9-p29-01.html"><span class="dir">다음</span>S9-P29-01 쓰기 화면의 공통 원칙</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P32-03 정리: 5일차 통합 실습 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P32-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 쓰기 기능</a><span class="sep">/</span><span>S9-P32 5일차 통합 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p32-01.html" style="flex:25" data-type="실습" title="관리자 저자 추가 기능 (25분)"><span class="seg-num">01</span><span class="seg-min">25분</span></a><a href="s9-p32-02.html" style="flex:20" data-type="실습" title="쓰기 기능 종합 점검 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s9-p32-03.html" style="flex:5" data-type="정리" title="정리: 5일차 통합 실습 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S9-P32-03</span></div>
+<h1>정리: 5일차 통합 실습</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>역할에 따라 다른 기능을 보여 주되, 권한 판단은 백엔드에 맡깁니다.</li>
+<li>한 화면에 동작이 여럿이면 오류 상태도 동작별로 나눕니다.</li>
+<li>폼 안의 보조 버튼은 <code>type=&quot;button&quot;</code>으로 지정해 의도치 않은 제출을 막습니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">폼 안에 있는 &quot;저자 추가&quot; 버튼에 <code>type=&quot;button&quot;</code>을 지정하지 않으면 어떻게 되나요?</p><label><input type="radio" name="s9-p32-03-q1" value="1"> <span>1. 기본값 submit으로 동작해 도서 폼이 제출된다.</span></label><label><input type="radio" name="s9-p32-03-q1" value="2"> <span>2. 클릭 이벤트가 발생하지 않는다.</span></label><label><input type="radio" name="s9-p32-03-q1" value="3"> <span>3. 저자가 두 번 추가된다.</span></label><label><input type="radio" name="s9-p32-03-q1" value="4"> <span>4. 버튼이 보이지 않는다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>form 안의 button은 type을 지정하지 않으면 submit입니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">일반 사용자가 개발자 도구로 저자 추가 요청을 보내면 어떻게 되나요?</p><label><input type="radio" name="s9-p32-03-q2" value="1"> <span>1. 화면에서 막혀 요청이 나가지 않는다.</span></label><label><input type="radio" name="s9-p32-03-q2" value="2"> <span>2. 저자가 추가된다.</span></label><label><input type="radio" name="s9-p32-03-q2" value="3"> <span>3. 요청은 나가지만 백엔드가 403으로 거절한다.</span></label><label><input type="radio" name="s9-p32-03-q2" value="4"> <span>4. CORS 오류가 난다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>화면을 우회한 요청도 백엔드의 권한 검사를 통과할 수 없습니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s10/index.html">S10. 서버 상태 관리</a>(5일차 오후, 3시간)로 이어집니다. 반복되는 조회 코드를 커스텀 훅으로 줄이고, TanStack Query로 서버 데이터를 캐시하며 변경 후 화면을 일관되게 갱신합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s9-p32-02.html"><span class="dir">이전</span>S9-P32-02 쓰기 기능 종합 점검</a>
+  <a class="next" href="../../s10/p33/s10-p33-01.html"><span class="dir">다음</span>S10-P33-01 반복 코드와 커스텀 훅</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

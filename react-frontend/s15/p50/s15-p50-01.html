@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P50-01 운영 환경의 구조 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P50-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. 도커라이징과 운영 빌드</a><span class="sep">/</span><span>S15-P50 운영 빌드와 환경 변수</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p50-01.html" style="flex:15" data-type="주요 개념" title="운영 환경의 구조 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s15-p50-02.html" style="flex:30" data-type="실습" title="운영 빌드 만들고 확인하기 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s15-p50-03.html" style="flex:5" data-type="정리" title="정리: 운영 빌드와 환경 변수 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S15-P50-01</span></div>
+<h1>운영 환경의 구조</h1>
+<div class="goal"><p><strong>파트 목표</strong>개발 서버와 운영 환경의 차이를 설명하고, 운영용 환경 변수로 빌드한 결과물을 확인할 수 있습니다.</p></div>
+
+<p class="lead"><code>npm run dev</code>로 띄운 Vite 개발 서버는 코드 변환, HMR 같은 개발 편의 기능을 위한 서버이며 운영 용도가 아닙니다. 운영 환경에서는 <code>npm run build</code>로 만든 정적 파일(<code>dist</code>)을 웹 서버가 제공합니다. 빌드 결과물은 HTML, JavaScript, CSS 파일일 뿐이므로 Node.js가 실행될 필요가 없습니다.</p>
+<p>이 과정은 Nginx를 웹 서버로 사용하며, Nginx가 두 가지 일을 맡습니다.</p>
+<div class="codeblock"><pre><code>브라우저 ── http://localhost:8080 ──&gt; [web 컨테이너: Nginx]
+                                        ├─ /, /books/7, /dashboard ...  -&gt; dist의 index.html, JS, CSS
+                                        └─ /api/...  ──(프록시)──&gt; [api 컨테이너: FastAPI :8000] ──&gt; [db]</code></pre></div>
+<ol>
+<li>정적 파일 제공: 빌드 결과물을 보내고, 모든 응답에 <a href="../../s12/index.html">S12</a>의 보안 헤더를 붙입니다.</li>
+<li>리버스 프록시: <code>/api/</code>로 시작하는 요청을 백엔드 컨테이너로 전달합니다.</li>
+</ol>
+<p>이 구조에서 브라우저가 보는 출처는 <code>http://localhost:8080</code> 하나뿐입니다. 화면도 API도 같은 출처에서 오므로 CORS가 필요 없고 사전 요청도 생기지 않습니다. <a href="../../s5/p18/s5-p18-02.html">S5-P18-02</a>에서 비교한 프록시 방식을 운영 환경에 적용한 것입니다.</p>
+<p>이 구조는 Nginx가 화면과 API 앞에 함께 서는 배포 방식입니다. <a href="../../s16/index.html">S16</a>에서는 Nginx 없이 S3에 정적 파일만 올리는 방식을 다루며, 그때는 화면과 API의 출처가 달라집니다. 두 방식의 차이를 염두에 두고 이번 섹션을 진행합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s14/p49/s14-p49-03.html"><span class="dir">이전</span>S14-P49-03 정리: 접근성과 장애 관찰 실습</a>
+  <a class="next" href="s15-p50-02.html"><span class="dir">다음</span>S15-P50-02 운영 빌드 만들고 확인하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

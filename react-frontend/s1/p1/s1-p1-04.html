@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P1-04 예제 저장소와 단계별 브랜치 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P1-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. 웹 프론트엔드와 개발 환경</a><span class="sep">/</span><span>S1-P1 과정 소개와 결과물</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p1-01.html" style="flex:10" data-type="주요 개념" title="과정 소개와 로드맵 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p1-02.html" style="flex:10" data-type="주요 개념" title="학습 목표와 사전 지식 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s1-p1-03.html" style="flex:15" data-type="주요 개념" title="최종 결과물 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s1-p1-04.html" style="flex:10" data-type="주요 개념" title="예제 저장소와 단계별 브랜치 (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s1-p1-05.html" style="flex:5" data-type="정리" title="정리: 과정 소개와 결과물 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S1-P1-04</span></div>
+<h1>예제 저장소와 단계별 브랜치</h1>
+
+<p class="lead">실습 코드는 GitHub의 <code>react-frontend</code> 저장소에 있습니다. 저장소 주소는 첫날 강사가 알려 줍니다. 이 저장소에는 코드가 바뀌는 파트마다 그 파트를 마친 상태가 <code>pN-done</code> 브랜치로 남아 있습니다. 예를 들어 <code>p21-done</code>은 <a href="../../s6/p21/s6-p21-01.html">S6-P21</a>을 마친 코드이고, <code>main</code>은 과정을 모두 마친 최종 코드입니다.</p>
+<p>실습 페이지 끝에는 &quot;완성 코드: <code>p21-done</code> 브랜치&quot;처럼 비교할 브랜치가 적혀 있습니다. 막혔을 때는 다음처럼 내 코드와 완성 코드를 비교해 다른 곳만 찾아 고칩니다.</p>
+<div class="codeblock term"><pre><code>git clone &lt;저장소 주소&gt; react-frontend-sample   # 예제 저장소를 내 작업 폴더와 따로 받아 둡니다.
+cd react-frontend-sample
+git switch p21-done                              # 비교할 시점으로 이동
+git diff p20-done p21-done -- src                # 그 파트에서 바뀐 부분만 보기</code></pre></div>
+<p>완성 코드를 통째로 복사하지 않습니다. 복사한 코드는 다음 파트에서 고칠 때 어디를 바꿔야 할지 알 수 없게 만들고, 무엇보다 직접 입력하며 생기는 오류와 그 해결 과정이 이 과정에서 가장 중요한 학습입니다. 브랜치는 내 코드와 비교하는 용도로만 씁니다.</p>
+<p>다음 명령은 앞으로 자주 씁니다. 모두 프로젝트 폴더에서 실행합니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>명령</th>
+<th>하는 일</th>
+<th>처음 쓰는 곳</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>npm run dev</code></td>
+<td>개발 서버 실행</td>
+<td><a href="../../s3/p8/s3-p8-01.html">S3-P8</a></td>
+</tr>
+<tr>
+<td><code>npm run build</code></td>
+<td>운영 빌드</td>
+<td><a href="../../s12/p42/s12-p42-01.html">S12-P42</a></td>
+</tr>
+<tr>
+<td><code>npm run lint</code></td>
+<td>코드 규칙 검사</td>
+<td><a href="../../s12/p42/s12-p42-01.html">S12-P42</a></td>
+</tr>
+<tr>
+<td><code>npm test</code></td>
+<td>단위, 컴포넌트 테스트</td>
+<td><a href="../../s11/p36/s11-p36-01.html">S11-P36</a></td>
+</tr>
+<tr>
+<td><code>npm run test:e2e</code></td>
+<td>E2E 테스트</td>
+<td><a href="../../s11/p39/s11-p39-01.html">S11-P39</a></td>
+</tr>
+</tbody>
+</table></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s1-p1-03.html"><span class="dir">이전</span>S1-P1-03 최종 결과물</a>
+  <a class="next" href="s1-p1-05.html"><span class="dir">다음</span>S1-P1-05 정리: 과정 소개와 결과물</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

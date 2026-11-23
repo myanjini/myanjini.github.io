@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P5-02 구조 분해, 전개, 옵셔널 체이닝 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P5-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 모던 JavaScript</a><span class="sep">/</span><span>S2-P5 변수, 함수, 객체와 배열</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p5-01.html" style="flex:15" data-type="주요 개념" title="변수와 함수 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s2-p5-02.html" style="flex:15" data-type="주요 개념" title="구조 분해, 전개, 옵셔널 체이닝 (15분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s2-p5-03.html" style="flex:15" data-type="실습" title="도서 객체 다루기 연습 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s2-p5-04.html" style="flex:5" data-type="정리" title="정리: 변수, 함수, 객체와 배열 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S2-P5-02</span></div>
+<h1>구조 분해, 전개, 옵셔널 체이닝</h1>
+
+<h2>구조 분해</h2>
+<p>객체나 배열에서 필요한 값만 꺼내 변수로 만듭니다. React 컴포넌트가 props를 받을 때, <code>useState</code>의 결과를 받을 때 항상 씁니다.</p>
+<div class="codeblock"><pre><code>const book = { id: 7, title: &#x27;파이썬 입문&#x27;, price: 18000, author: { id: 1, name: &#x27;홍길동&#x27; } };
+
+const { title, price } = book;                 // 객체 구조 분해
+const { author: { name } } = book;             // 중첩된 값 꺼내기
+const { isbn = &#x27;없음&#x27; } = book;                // 값이 없을 때 기본값
+const [first, second] = [&#x27;가&#x27;, &#x27;나&#x27;];          // 배열 구조 분해
+const [count, setCount] = [0, () =&gt; {}];       // useState가 돌려주는 모양과 같습니다.
+
+function BookRow({ book }) { /* props 객체에서 book만 꺼냅니다 */ }</code></pre></div>
+<h2>전개 문법</h2>
+<p><code>...</code>으로 객체나 배열을 펼쳐 복사본을 만듭니다. 원본을 바꾸지 않고 일부만 바꾼 새 값을 만들 때 씁니다. React의 state 변경에 반드시 필요한 문법입니다.</p>
+<div class="codeblock"><pre><code>const changed = { ...book, price: 20000 };     // book은 그대로, price만 바뀐 새 객체
+const books = [book];
+const added = [...books, { id: 8, title: &#x27;React 시작하기&#x27; }]; // 끝에 추가한 새 배열
+console.log(book.price, changed.price, books.length, added.length); // 18000 20000 1 2</code></pre></div>
+<p>전개 문법은 한 단계만 복사합니다. <code>changed.author</code>와 <code>book.author</code>는 여전히 같은 객체이므로, 중첩된 값을 바꿀 때는 그 단계도 펼쳐야 합니다: <code>{ ...book, author: { ...book.author, name: '김철수' } }</code>.</p>
+<h2>옵셔널 체이닝과 널 병합</h2>
+<p><code>?.</code>는 앞의 값이 <code>null</code>이나 <code>undefined</code>이면 오류 없이 <code>undefined</code>를 돌려줍니다. <code>??</code>는 앞의 값이 <code>null</code>이나 <code>undefined</code>일 때만 오른쪽 값을 씁니다.</p>
+<div class="codeblock"><pre><code>const noAuthor = { title: &#x27;저자 미상 도서&#x27;, author: null };
+noAuthor.author.name;              // TypeError: Cannot read properties of null
+noAuthor.author?.name;             // undefined
+noAuthor.author?.name ?? &#x27;저자 미상&#x27;; // &#x27;저자 미상&#x27;
+
+const page = { skip: 0 };
+page.skip || 10;  // 10  ← 0을 &quot;없음&quot;으로 잘못 처리
+page.skip ?? 10;  // 0   ← 0은 그대로</code></pre></div>
+<p><code>||</code>는 0, 빈 문자열, <code>false</code>도 &quot;없음&quot;으로 보지만 <code>??</code>는 <code>null</code>과 <code>undefined</code>만 없음으로 봅니다. 페이지 번호나 가격처럼 0이 정상 값인 경우에는 <code>??</code>를 씁니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s2-p5-01.html"><span class="dir">이전</span>S2-P5-01 변수와 함수</a>
+  <a class="next" href="s2-p5-03.html"><span class="dir">다음</span>S2-P5-03 도서 객체 다루기 연습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

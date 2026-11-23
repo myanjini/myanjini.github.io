@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P5-01 변수와 함수 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P5-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 모던 JavaScript</a><span class="sep">/</span><span>S2-P5 변수, 함수, 객체와 배열</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p5-01.html" style="flex:15" data-type="주요 개념" title="변수와 함수 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s2-p5-02.html" style="flex:15" data-type="주요 개념" title="구조 분해, 전개, 옵셔널 체이닝 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s2-p5-03.html" style="flex:15" data-type="실습" title="도서 객체 다루기 연습 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s2-p5-04.html" style="flex:5" data-type="정리" title="정리: 변수, 함수, 객체와 배열 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S2-P5-01</span></div>
+<h1>변수와 함수</h1>
+<div class="goal"><p><strong>파트 목표</strong>const와 let, 화살표 함수, 구조 분해, 전개 문법, 옵셔널 체이닝을 사용할 수 있습니다.</p></div>
+
+<p class="lead">React 코드는 최신 JavaScript 문법을 적극적으로 사용합니다. 이번 섹션에서는 이후 모든 코드의 기본이 되는 문법을 정리하고, 백엔드가 돌려주는 도서 데이터로 직접 연습합니다. 예제는 브라우저 Console 탭에 그대로 붙여 넣어 실행할 수 있습니다.</p>
+<h2>const와 let</h2>
+<p>값을 다시 대입하지 않는 변수는 <code>const</code>, 바꿔야 하는 변수는 <code>let</code>으로 선언합니다. <code>var</code>는 쓰지 않습니다. 기본은 <code>const</code>로 쓰고, 정말 바꿔야 할 때만 <code>let</code>을 쓰면 &quot;이 값이 어디서 바뀌는가&quot;를 추적할 일이 줄어듭니다.</p>
+<div class="codeblock"><pre><code>const PAGE_SIZE = 10;
+let retries = 0;
+retries += 1;      // 가능
+// PAGE_SIZE = 20; // TypeError: Assignment to constant variable.
+
+const book = { title: &#x27;파이썬 입문&#x27; };
+book.title = &#x27;FastAPI 실전&#x27;; // 가능: const는 &quot;변수가 가리키는 대상&quot;을 바꾸지 못하게 할 뿐, 객체 내부는 바꿀 수 있습니다.</code></pre></div>
+<p>마지막 줄은 React에서 자주 하는 실수와 연결됩니다. React의 state는 이렇게 내부를 직접 고치면 안 되고, 새 객체를 만들어 바꿔 끼워야 합니다(<a href="../../s3/p10/s3-p10-01.html">S3-P10</a>).</p>
+<h2>템플릿 리터럴</h2>
+<p>백틱(<code>`</code>) 안에 <code>${}</code>로 값을 넣어 문자열을 만듭니다. 주소나 안내 문구를 만들 때 씁니다.</p>
+<div class="codeblock"><pre><code>const bookId = 7;
+const url = `/books/${bookId}/cover`;
+const message = `도서 ${3}권을 불러왔습니다.`;</code></pre></div>
+<h2>화살표 함수</h2>
+<p>함수를 짧게 쓰는 문법입니다. 본문이 식 하나면 중괄호와 <code>return</code>을 생략할 수 있습니다. 객체를 바로 돌려줄 때는 괄호로 감쌉니다.</p>
+<div class="codeblock"><pre><code>function add(a, b) { return a + b; }  // 함수 선언
+const add2 = (a, b) =&gt; a + b;          // 화살표 함수
+const toLabel = (book) =&gt; `${book.title} (${book.price}원)`;
+const toRow = (book) =&gt; ({ id: book.id, title: book.title }); // 객체를 돌려줄 때는 괄호</code></pre></div>
+<p>React 컴포넌트는 함수 선언(<code>function BookRow() {}</code>)으로, 이벤트 처리나 배열 메서드에 넘기는 짧은 함수는 화살표 함수로 쓰는 것이 이 과정의 관례입니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s1/p4/s1-p4-04.html"><span class="dir">이전</span>S1-P4-04 정리: 프론트엔드 관점의 HTTP와 JSON</a>
+  <a class="next" href="s2-p5-02.html"><span class="dir">다음</span>S2-P5-02 구조 분해, 전개, 옵셔널 체이닝</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

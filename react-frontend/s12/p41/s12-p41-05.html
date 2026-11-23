@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P41-05 정리: 보안 헤더, CSP, 비밀정보 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P41-05">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. 프론트엔드 개발 보안</a><span class="sep">/</span><span>S12-P41 보안 헤더, CSP, 비밀정보</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p41-01.html" style="flex:15" data-type="주요 개념" title="보안 헤더와 CSP (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s12-p41-02.html" style="flex:10" data-type="주요 개념" title="비밀정보와 빌드 결과물 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s12-p41-03.html" style="flex:10" data-type="주요 개념" title="정보 노출과 열린 리디렉션 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s12-p41-04.html" style="flex:10" data-type="실습" title="XSS 동작 확인 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s12-p41-05.html" style="flex:5" data-type="정리" title="정리: 보안 헤더, CSP, 비밀정보 (5분)" aria-current="page"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S12-P41-05</span></div>
+<h1>정리: 보안 헤더, CSP, 비밀정보</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>CSP의 <code>script-src 'self'</code>는 인라인 코드와 <code>eval</code>을 막아 XSS의 피해를 크게 줄입니다. 설정은 <a href="../../s15/p51/s15-p51-01.html">S15-P51</a>의 Nginx에서 적용합니다.</li>
+<li><code>VITE_</code> 값은 공개된 값으로 취급하고, 운영 빌드에는 소스맵을 넣지 않으며, 민감정보를 로그로 남기지 않습니다.</li>
+<li>로그인 후 이동 주소는 <code>/</code>로 시작하는 내부 경로만 허용하고 <code>//</code>로 시작하는 주소는 거부합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">CSP <code>script-src 'self'</code>의 효과로 옳은 것은 무엇인가요?</p><label><input type="radio" name="s12-p41-05-q1" value="1"> <span>1. 같은 출처의 스크립트 파일만 실행하고 인라인 코드를 막는다.</span></label><label><input type="radio" name="s12-p41-05-q1" value="2"> <span>2. 외부 이미지를 막는다.</span></label><label><input type="radio" name="s12-p41-05-q1" value="3"> <span>3. API 요청을 막는다.</span></label><label><input type="radio" name="s12-p41-05-q1" value="4"> <span>4. 모든 스크립트를 막는다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>인라인 스크립트와 onerror 같은 이벤트 속성, eval이 차단됩니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">로그인 후 이동 주소로 <code>//evil.example</code>을 거부해야 하는 이유는 무엇인가요?</p><label><input type="radio" name="s12-p41-05-q2" value="1"> <span>1. CSP가 막지 못해서</span></label><label><input type="radio" name="s12-p41-05-q2" value="2"> <span>2. 슬래시가 두 개라 문법 오류라서</span></label><label><input type="radio" name="s12-p41-05-q2" value="3"> <span>3. 브라우저가 현재 스킴으로 다른 호스트에 접속하는 주소로 해석해 외부 사이트로 이동하므로</span></label><label><input type="radio" name="s12-p41-05-q2" value="4"> <span>4. React Router가 지원하지 않아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>//로 시작하는 주소는 프로토콜 상대 주소로, 외부 사이트로 보내는 열린 리디렉션이 됩니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s12-p41-04.html"><span class="dir">이전</span>S12-P41-04 XSS 동작 확인</a>
+  <a class="next" href="../p42/s12-p42-01.html"><span class="dir">다음</span>S12-P42-01 의존성, 공급망, 요청 제한</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

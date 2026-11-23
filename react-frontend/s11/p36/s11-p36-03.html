@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P36-03 정리: 테스트 전략과 Vitest | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P36-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 프론트엔드 테스트</a><span class="sep">/</span><span>S11-P36 테스트 전략과 Vitest</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p36-01.html" style="flex:15" data-type="주요 개념" title="프론트엔드 테스트 전략 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s11-p36-02.html" style="flex:30" data-type="실습" title="Vitest 설정과 첫 테스트 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s11-p36-03.html" style="flex:5" data-type="정리" title="정리: 테스트 전략과 Vitest (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S11-P36-03</span></div>
+<h1>정리: 테스트 전략과 Vitest</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>단위 테스트를 가장 많이, E2E를 가장 적게 두고, 규칙이 있고 실수하기 쉬운 곳을 우선 테스트합니다.</li>
+<li>컴포넌트 안의 검증과 변환 함수를 별도 파일로 꺼내면 화면 없이 빠르게 테스트할 수 있습니다.</li>
+<li>테스트 환경은 시간대와 API 주소처럼 컴퓨터마다 다를 수 있는 값을 고정합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">다음 중 단위 테스트로 검사하기 가장 알맞은 것은 무엇인가요?</p><label><input type="radio" name="s11-p36-03-q1" value="1"> <span>1. 버튼의 색상</span></label><label><input type="radio" name="s11-p36-03-q1" value="2"> <span>2. 로그인 후 목록 화면으로 이동하는 흐름</span></label><label><input type="radio" name="s11-p36-03-q1" value="3"> <span>3. 폼 입력값을 API 본문으로 바꾸는 toPayload 함수</span></label><label><input type="radio" name="s11-p36-03-q1" value="4"> <span>4. React Router가 주소를 바꾸는지</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>화면과 무관한 순수 함수는 단위 테스트로 빠르게 검증합니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">테스트 설정에서 시간대를 Asia/Seoul로 고정한 이유는 무엇인가요?</p><label><input type="radio" name="s11-p36-03-q2" value="1"> <span>1. 실행하는 컴퓨터의 시간대에 따라 날짜 표시 결과가 달라지지 않게 하려고</span></label><label><input type="radio" name="s11-p36-03-q2" value="2"> <span>2. Vitest의 기본값이 아니어서 오류가 나서</span></label><label><input type="radio" name="s11-p36-03-q2" value="3"> <span>3. 백엔드가 한국 시간을 보내서</span></label><label><input type="radio" name="s11-p36-03-q2" value="4"> <span>4. 한국 사용자만 쓰는 앱이라서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>CI 서버는 보통 UTC입니다. 환경에 따라 결과가 바뀌는 테스트는 믿을 수 없습니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s11-p36-02.html"><span class="dir">이전</span>S11-P36-02 Vitest 설정과 첫 테스트</a>
+  <a class="next" href="../p37/s11-p37-01.html"><span class="dir">다음</span>S11-P37-01 사용자처럼 테스트하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

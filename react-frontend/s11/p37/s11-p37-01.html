@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P37-01 사용자처럼 테스트하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P37-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 프론트엔드 테스트</a><span class="sep">/</span><span>S11-P37 React Testing Library</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p37-01.html" style="flex:15" data-type="주요 개념" title="사용자처럼 테스트하기 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s11-p37-02.html" style="flex:30" data-type="실습" title="페이지 이동과 로그인 화면 테스트 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s11-p37-03.html" style="flex:5" data-type="정리" title="정리: React Testing Library (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S11-P37-01</span></div>
+<h1>사용자처럼 테스트하기</h1>
+<div class="goal"><p><strong>파트 목표</strong>사용자가 화면을 쓰는 방식대로 요소를 찾고 조작하는 컴포넌트 테스트를 작성할 수 있습니다.</p></div>
+
+<p class="lead">React Testing Library는 &quot;사용자가 화면을 쓰는 방식에 가까울수록 믿을 만한 테스트&quot;라는 원칙을 따릅니다. 그래서 클래스 이름이나 컴포넌트 내부 state 대신, 사용자가 보는 역할과 글자로 요소를 찾습니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>찾는 방법</th>
+<th>예</th>
+<th>우선순위</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>역할(role)과 이름</td>
+<td><code>getByRole('button', { name: '다음' })</code></td>
+<td>가장 먼저. 접근성 정보와 같으므로 화면 낭독기 사용자 경험도 함께 검증됩니다.</td>
+</tr>
+<tr>
+<td>레이블</td>
+<td><code>getByLabelText('이메일')</code></td>
+<td>폼 입력 칸</td>
+</tr>
+<tr>
+<td>글자</td>
+<td><code>getByText('조건에 맞는 도서가 없습니다.')</code></td>
+<td>안내 문구</td>
+</tr>
+<tr>
+<td>테스트 ID</td>
+<td><code>getByTestId('...')</code></td>
+<td>다른 방법이 없을 때만</td>
+</tr>
+</tbody>
+</table></div>
+<p>찾는 함수는 접두사에 따라 동작이 다릅니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>접두사</th>
+<th>없을 때</th>
+<th>용도</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>getBy</code></td>
+<td>즉시 실패</td>
+<td>지금 화면에 있어야 하는 요소</td>
+</tr>
+<tr>
+<td><code>queryBy</code></td>
+<td><code>null</code> 반환</td>
+<td>없어야 함을 확인할 때 (<code>expect(...).not.toBeInTheDocument()</code>)</td>
+</tr>
+<tr>
+<td><code>findBy</code></td>
+<td>나타날 때까지 기다림 (기본 1초)</td>
+<td>비동기로 나타나는 요소 (요청 후 결과, 오류 메시지)</td>
+</tr>
+</tbody>
+</table></div>
+<p>조작은 <code>@testing-library/user-event</code>로 합니다. <code>userEvent.type</code>은 키를 하나씩 누르고, <code>userEvent.click</code>은 실제 클릭처럼 포커스와 이벤트를 차례로 일으킵니다. 둘 다 Promise를 돌려주므로 <code>await</code>합니다. 함수가 호출되었는지는 <code>vi.fn()</code>으로 만든 가짜 함수로 확인합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p36/s11-p36-03.html"><span class="dir">이전</span>S11-P36-03 정리: 테스트 전략과 Vitest</a>
+  <a class="next" href="s11-p37-02.html"><span class="dir">다음</span>S11-P37-02 페이지 이동과 로그인 화면 테스트</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>
