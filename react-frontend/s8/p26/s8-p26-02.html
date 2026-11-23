@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P26-02 토큰 보관소와 인증 API | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P26-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 인증 연동</a><span class="sep">/</span><span>S8-P26 SPA 인증 흐름과 토큰 보관</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p26-01.html" style="flex:20" data-type="주요 개념" title="SPA의 인증 흐름 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s8-p26-02.html" style="flex:15" data-type="실습" title="토큰 보관소와 인증 API (15분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s8-p26-03.html" style="flex:10" data-type="실습" title="Console로 로그인 API 확인하기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s8-p26-04.html" style="flex:5" data-type="정리" title="정리: SPA 인증 흐름과 토큰 보관 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S8-P26-02</span></div>
+<h1>토큰 보관소와 인증 API</h1>
+
+<p class="lead">이 과정은 액세스 토큰을 JavaScript 변수(메모리)에만 두고, 리프레시 토큰은 <code>sessionStorage</code>에 둡니다.</p>
+<div class="codeblock"><span class="file">src/auth/tokenStore.js</span><pre><code>// 토큰 보관소
+// - 액세스 토큰: 메모리(모듈 변수)에만 둡니다. 새로고침하면 사라집니다.
+// - 리프레시 토큰: sessionStorage에 둡니다. 탭을 닫으면 사라집니다.
+// 저장 위치를 이렇게 고른 이유는 교안의 &quot;프론트엔드 개발 보안&quot; 단원에서 다룹니다.
+const REFRESH_KEY = &#x27;book-admin.refresh&#x27;;
+
+let accessToken = null;
+
+export const tokenStore = {
+  getAccess: () =&gt; accessToken,
+  getRefresh: () =&gt; sessionStorage.getItem(REFRESH_KEY),
+  save({ access_token, refresh_token }) {
+    accessToken = access_token;
+    if (refresh_token) sessionStorage.setItem(REFRESH_KEY, refresh_token);
+  },
+  clear() {
+    accessToken = null;
+    sessionStorage.removeItem(REFRESH_KEY);
+  },
+};</code></pre></div>
+<p>메모리에 둔 액세스 토큰은 새로고침하면 사라지지만, 리프레시 토큰으로 바로 다시 받을 수 있습니다. <code>sessionStorage</code>는 탭 단위로 분리되며 탭을 닫으면 지워집니다. 저장 위치마다 장단점이 있고 정답이 하나로 정해져 있지 않으므로, 각 방식의 위험과 이 선택의 근거는 <a href="../../s12/index.html">S12</a>에서 따로 비교합니다. 여기서는 &quot;토큰을 어디에 두든 화면 코드는 <code>tokenStore</code>만 통해 접근한다&quot;는 구조에 집중합니다. 저장 위치를 바꾸더라도 이 파일 하나만 고치면 됩니다.</p>
+<div class="codeblock"><span class="file">src/api/auth.js</span><pre><code>import { api } from &#x27;./client&#x27;;
+
+export async function signup(email, password) {
+  const { data } = await api.post(&#x27;/auth/signup&#x27;, { email, password });
+  return data;
+}
+
+// OAuth2 Password Flow: JSON이 아니라 폼 형식으로 보내야 합니다.
+export async function login(email, password) {
+  const form = new URLSearchParams();
+  form.append(&#x27;username&#x27;, email); // 이 백엔드는 username 칸에 이메일을 받습니다.
+  form.append(&#x27;password&#x27;, password);
+  const { data } = await api.post(&#x27;/auth/token&#x27;, form);
+  return data; // { access_token, refresh_token, token_type }
+}
+
+export async function fetchMe() {
+  const { data } = await api.get(&#x27;/auth/me&#x27;);
+  return data; // { id, email, role }
+}
+
+export async function logout(refreshToken) {
+  await api.post(&#x27;/auth/logout&#x27;, { refresh_token: refreshToken });
+}</code></pre></div>
+<p>로그인은 <a href="../../s6/index.html">S6</a>에서 배운 대로 <code>URLSearchParams</code>로 폼 형식을 만들고, <code>username</code> 칸에 이메일을 넣습니다. axios는 <code>URLSearchParams</code>를 받으면 <code>Content-Type: application/x-www-form-urlencoded</code>를 자동으로 지정합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s8-p26-01.html"><span class="dir">이전</span>S8-P26-01 SPA의 인증 흐름</a>
+  <a class="next" href="s8-p26-03.html"><span class="dir">다음</span>S8-P26-03 Console로 로그인 API 확인하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

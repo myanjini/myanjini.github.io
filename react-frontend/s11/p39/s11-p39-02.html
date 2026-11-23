@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P39-02 핵심 흐름 E2E 테스트 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P39-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 프론트엔드 테스트</a><span class="sep">/</span><span>S11-P39 Playwright E2E</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p39-01.html" style="flex:10" data-type="주요 개념" title="E2E 테스트 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s11-p39-02.html" style="flex:35" data-type="실습" title="핵심 흐름 E2E 테스트 (35분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">35분</span></a><a href="s11-p39-03.html" style="flex:5" data-type="정리" title="정리: Playwright E2E (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>35분</span><span>S11-P39-02</span></div>
+<h1>핵심 흐름 E2E 테스트</h1>
+
+<p class="lead">Playwright를 설치하고 브라우저를 내려받습니다.</p>
+<div class="codeblock term"><pre><code>npm install -D @playwright/test
+npx playwright install chromium</code></pre></div>
+<p>설정 파일을 만듭니다. 테스트 전에 개발 서버를 5174 포트로 띄우고(평소 쓰는 5173과 겹치지 않게), 테스트가 끝나면 끕니다.</p>
+<div class="codeblock"><span class="file">playwright.config.js</span><pre><code>import { defineConfig, devices } from &#x27;@playwright/test&#x27;;
+
+// 실제 브라우저로 화면을 끝까지 조작하는 E2E 테스트 설정입니다.
+export default defineConfig({
+  testDir: &#x27;./e2e&#x27;,
+  retries: process.env.CI ? 1 : 0,
+  reporter: process.env.CI ? &#x27;github&#x27; : &#x27;list&#x27;,
+  use: {
+    baseURL: &#x27;http://localhost:5174&#x27;,
+    trace: &#x27;on-first-retry&#x27;, // 실패한 테스트를 다시 돌릴 때 기록을 남겨 원인을 찾습니다.
+    // 사내망처럼 브라우저를 내려받을 수 없는 환경에서만 이미 설치된 Chromium 경로를 지정합니다.
+    launchOptions: { executablePath: process.env.PW_CHROMIUM_PATH || undefined },
+  },
+  projects: [{ name: &#x27;chromium&#x27;, use: { ...devices[&#x27;Desktop Chrome&#x27;] } }],
+  // 테스트 전에 개발 서버를 띄웁니다. 이미 떠 있으면 그대로 씁니다.
+  webServer: {
+    command: &#x27;npm run dev -- --port 5174 --strictPort&#x27;,
+    url: &#x27;http://localhost:5174&#x27;,
+    reuseExistingServer: !process.env.CI,
+  },
+});</code></pre></div>
+<p>브라우저의 API 요청을 가로채는 도우미를 만듭니다.</p>
+<div class="codeblock"><span class="file">e2e/mockApi.js</span><pre><code>// 브라우저가 보내는 API 요청을 가로채 가짜 응답을 돌려줍니다. 백엔드 없이도 E2E 테스트가 돌아갑니다.
+const API = &#x27;http://127.0.0.1:8000&#x27;;
+
+const book = { id: 1, title: &#x27;파이썬 입문&#x27;, price: 18000, isbn: null, author: { id: 1, name: &#x27;홍길동&#x27; }, cover_url: null };
+
+function json(route, body, status = 200) {
+  return route.fulfill({
+    status,
+    contentType: &#x27;application/json&#x27;,
+    headers: { &#x27;Access-Control-Allow-Origin&#x27;: &#x27;*&#x27;, &#x27;Access-Control-Allow-Headers&#x27;: &#x27;*&#x27; },
+    body: JSON.stringify(body),
+  });
+}
+
+export async function mockApi(page) {
+  await page.route(`${API}/**`, (route) =&gt; {
+    const request = route.request();
+    const { pathname } = new URL(request.url());
+    if (request.method() === &#x27;OPTIONS&#x27;) return json(route, {}); // 사전 요청 허락
+    if (pathname === &#x27;/authors&#x27;) return json(route, [book.author]);
+    if (pathname === &#x27;/books&#x27;) return json(route, { items: [book], total: 1, skip: 0, limit: 10 });
+    if (pathname === &#x27;/books/1&#x27;) return json(route, book);
+    if (pathname === &#x27;/auth/token&#x27;) {
+      return json(route, { access_token: &#x27;access-1&#x27;, refresh_token: &#x27;refresh-1&#x27;, token_type: &#x27;bearer&#x27; });
+    }
+    if (pathname === &#x27;/auth/me&#x27;) return json(route, { id: 7, email: &#x27;reader@example.com&#x27;, role: &#x27;user&#x27; });
+    return json(route, { code: &#x27;NOT_FOUND&#x27;, message: &#x27;없음&#x27; }, 404);
+  });
+}</code></pre></div>
+<p>핵심 흐름 세 가지를 테스트합니다.</p>
+<div class="codeblock"><span class="file">e2e/books.spec.js</span><pre><code>import { expect, test } from &#x27;@playwright/test&#x27;;
+import { mockApi } from &#x27;./mockApi&#x27;;
+
+test.beforeEach(async ({ page }) =&gt; {
+  await mockApi(page);
+});
+
+test(&#x27;목록에서 도서를 눌러 상세 화면으로 이동한다&#x27;, async ({ page }) =&gt; {
+  await page.goto(&#x27;/&#x27;);
+  await page.getByRole(&#x27;link&#x27;, { name: &#x27;파이썬 입문&#x27; }).click();
+  await expect(page).toHaveURL(/\/books\/1$/);
+  await expect(page.getByRole(&#x27;heading&#x27;, { name: &#x27;파이썬 입문&#x27; })).toBeVisible();
+  await expect(page.getByText(&#x27;18,000원&#x27;)).toBeVisible();
+});
+
+test(&#x27;로그인하면 상단에 이메일이 보이고 로그인 화면을 벗어난다&#x27;, async ({ page }) =&gt; {
+  await page.goto(&#x27;/login&#x27;);
+  await page.getByLabel(&#x27;이메일&#x27;).fill(&#x27;reader@example.com&#x27;);
+  await page.getByLabel(&#x27;비밀번호&#x27;).fill(&#x27;secret-1234&#x27;);
+  await page.getByRole(&#x27;button&#x27;, { name: &#x27;로그인&#x27; }).click();
+  await expect(page.getByText(&#x27;reader@example.com (user)&#x27;)).toBeVisible();
+  await expect(page).toHaveURL(&#x27;http://localhost:5174/&#x27;);
+});
+
+test(&#x27;로그인하지 않고 내 대여 화면에 가면 로그인 화면으로 보낸다&#x27;, async ({ page }) =&gt; {
+  await page.goto(&#x27;/loans&#x27;);
+  await expect(page).toHaveURL(/\/login$/);
+});</code></pre></div>
+<p><code>package.json</code>의 <code>scripts</code>에 <code>&quot;test:e2e&quot;: &quot;playwright test&quot;</code>를 추가하고, 테스트 결과 폴더를 <code>.gitignore</code>에 넣습니다.</p>
+<div class="codeblock"><pre><code># Playwright
+test-results
+playwright-report</code></pre></div>
+<p>확인할 내용은 다음과 같습니다.</p>
+<ol>
+<li><code>npm run test:e2e</code>로 실행해 3개 테스트가 통과합니다. Vitest 테스트와 달리 몇 초가 걸립니다.</li>
+<li><code>npx playwright test --headed</code>로 실행하면 실제 브라우저 창이 열리고 테스트가 화면을 조작하는 모습을 볼 수 있습니다.</li>
+<li><code>npx playwright test --ui</code>로 실행하면 단계별 화면을 되돌려 보며 실패 원인을 찾을 수 있습니다.</li>
+<li><code>mockApi.js</code>에서 <code>/books/1</code> 응답의 제목을 바꾸면 첫 번째 테스트가 어디서 실패하는지 확인하고 되돌립니다.</li>
+<li>진짜 백엔드로 돌려 보려면 <code>books.spec.js</code>의 <code>beforeEach</code>에서 <code>mockApi</code> 호출을 지우고 백엔드를 켠 뒤 실행합니다. 데이터에 따라 결과가 달라지는 것을 확인하고 되돌립니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p39-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s11-p39-01.html"><span class="dir">이전</span>S11-P39-01 E2E 테스트</a>
+  <a class="next" href="s11-p39-03.html"><span class="dir">다음</span>S11-P39-03 정리: Playwright E2E</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P20-03 환경 변수와 첫 axios 인스턴스 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P20-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. Fetch API와 axios로 API 계층 만들기</a><span class="sep">/</span><span>S6-P20 axios와 환경 변수</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p20-01.html" style="flex:10" data-type="주요 개념" title="axios (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p20-02.html" style="flex:10" data-type="주요 개념" title="axios 인스턴스와 인터셉터 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p20-03.html" style="flex:25" data-type="실습" title="환경 변수와 첫 axios 인스턴스 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s6-p20-04.html" style="flex:5" data-type="정리" title="정리: axios와 환경 변수 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S6-P20-03</span></div>
+<h1>환경 변수와 첫 axios 인스턴스</h1>
+
+<p class="lead">API 주소를 코드에 직접 적으면 개발 환경과 운영 환경을 바꿀 때마다 코드를 고쳐야 합니다. Vite는 프로젝트 루트의 <code>.env</code> 파일을 읽어 <code>import.meta.env</code>로 제공합니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>파일</th>
+<th>적용 시점</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.env</code></td>
+<td>항상</td>
+</tr>
+<tr>
+<td><code>.env.development</code></td>
+<td><code>npm run dev</code></td>
+</tr>
+<tr>
+<td><code>.env.production</code></td>
+<td><code>npm run build</code></td>
+</tr>
+<tr>
+<td><code>.env.local</code>, <code>.env.[모드].local</code></td>
+<td>위와 같으며 Git에 올리지 않는 개인 설정용</td>
+</tr>
+</tbody>
+</table></div>
+<p>프로젝트 루트에 <code>.env.development</code>를 만듭니다.</p>
+<div class="codeblock"><span class="file">.env.development</span><pre><code># 개발 서버(npm run dev)에서 사용하는 값입니다.
+# VITE_ 로 시작하는 값은 빌드 결과물에 그대로 들어가므로 비밀정보를 넣지 않습니다.
+VITE_API_BASE_URL=http://127.0.0.1:8000</code></pre></div>
+<p>코드에서는 <code>import.meta.env.VITE_API_BASE_URL</code>로 읽습니다. 이름이 <code>VITE_</code>로 시작하는 값만 코드에 노출됩니다. 이 값들은 빌드할 때 JavaScript 파일에 문자열로 새겨지므로, 사용자가 개발자 도구에서 누구나 볼 수 있습니다. 비밀번호나 API 키 같은 비밀정보를 프론트엔드 환경 변수에 넣으면 안 되는 이유이며, <a href="../../s12/index.html">S12</a>에서 다시 다룹니다. <code>.env</code> 파일을 고친 뒤에는 개발 서버를 다시 시작해야 반영됩니다.</p>
+<p>이제 백엔드의 오류 응답을 하나의 모양으로 바꾸는 <code>src/api/errors.js</code>와 axios 인스턴스 <code>src/api/client.js</code>를 만듭니다.</p>
+<p>백엔드의 오류 응답은 세 가지 모양으로 올 수 있습니다. 백엔드가 직접 만든 <code>AppError</code>(<code>{&quot;code&quot;, &quot;message&quot;}</code>), FastAPI가 자동으로 만드는 검증 오류(<code>{&quot;detail&quot;: [...]}</code>), 그리고 FastAPI의 <code>HTTPException</code> 기본 형식(<code>{&quot;detail&quot;: &quot;...&quot;}</code>)입니다. 화면 코드가 이 차이를 신경 쓰지 않도록 모두 <code>ApiError</code> 하나로 바꿉니다. 422 검증 오류는 <code>loc</code>의 마지막 값(입력 칸 이름)별로 메시지를 모아 <code>fields</code>에 담아 두므로, <a href="../../s9/index.html">S9</a>의 폼이 칸 옆에 오류를 표시할 수 있습니다.</p>
+<div class="codeblock"><span class="file">src/api/errors.js</span><pre><code>// 백엔드 오류 응답을 화면에서 쓰기 쉬운 하나의 모양으로 바꿉니다.
+// 백엔드 AppError 형식: {&quot;code&quot;: &quot;...&quot;, &quot;message&quot;: &quot;...&quot;}
+// FastAPI 기본 검증 오류(422) 형식: {&quot;detail&quot;: [{&quot;loc&quot;: [...], &quot;msg&quot;: &quot;...&quot;, &quot;type&quot;: &quot;...&quot;}]}
+export class ApiError extends Error {
+  constructor({ status, code, message, fields = {}, retryAfter = null }) {
+    super(message);
+    this.name = &#x27;ApiError&#x27;;
+    this.status = status; // HTTP 상태 코드, 네트워크 오류면 0
+    this.code = code; // 백엔드 오류 코드 (예: DUPLICATE_ISBN)
+    this.fields = fields; // 입력 칸별 오류 메시지 { title: &#x27;...&#x27; }
+    this.retryAfter = retryAfter; // 429 응답의 Retry-After(초)
+  }
+}
+
+const STATUS_MESSAGES = {
+  400: &#x27;요청 형식이 올바르지 않습니다.&#x27;,
+  401: &#x27;로그인이 필요합니다.&#x27;,
+  403: &#x27;이 작업을 할 권한이 없습니다.&#x27;,
+  404: &#x27;요청한 대상을 찾을 수 없습니다.&#x27;,
+  409: &#x27;현재 상태에서는 처리할 수 없는 요청입니다.&#x27;,
+  413: &#x27;파일이 너무 큽니다.&#x27;,
+  415: &#x27;지원하지 않는 파일 형식입니다.&#x27;,
+  422: &#x27;입력값을 확인해 주세요.&#x27;,
+  429: &#x27;요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.&#x27;,
+  500: &#x27;서버에서 오류가 발생했습니다.&#x27;,
+  503: &#x27;서비스를 일시적으로 사용할 수 없습니다.&#x27;,
+};
+
+export function toApiError(status, body, headers = {}) {
+  const retryAfterRaw = headers[&#x27;retry-after&#x27;];
+  const retryAfter = retryAfterRaw ? Number(retryAfterRaw) : null;
+
+  // 1) 백엔드가 직접 만든 오류
+  if (body &amp;&amp; typeof body.code === &#x27;string&#x27;) {
+    return new ApiError({ status, code: body.code, message: body.message, retryAfter });
+  }
+
+  // 2) FastAPI 검증 오류: 칸 이름별로 메시지를 모읍니다.
+  if (body &amp;&amp; Array.isArray(body.detail)) {
+    const fields = {};
+    for (const item of body.detail) {
+      const name = item.loc?.[item.loc.length - 1];
+      if (name !== undefined &amp;&amp; !fields[name]) fields[name] = item.msg;
+    }
+    return new ApiError({ status, code: &#x27;VALIDATION_ERROR&#x27;, message: STATUS_MESSAGES[422], fields });
+  }
+
+  // 3) detail이 문자열인 경우 (FastAPI HTTPException 기본 형식)
+  if (body &amp;&amp; typeof body.detail === &#x27;string&#x27;) {
+    return new ApiError({ status, code: `HTTP_${status}`, message: body.detail, retryAfter });
+  }
+
+  // 4) 그 밖의 경우: 상태 코드로 기본 메시지를 고릅니다.
+  return new ApiError({
+    status,
+    code: `HTTP_${status}`,
+    message: STATUS_MESSAGES[status] ?? &#x27;알 수 없는 오류가 발생했습니다.&#x27;,
+    retryAfter,
+  });
+}
+
+export const NETWORK_ERROR_MESSAGE =
+  &#x27;서버에 연결할 수 없습니다. 백엔드 실행 여부와 CORS 설정을 확인해 주세요.&#x27;;</code></pre></div>
+<h2>axios 인스턴스: <code>src/api/client.js</code></h2>
+<p>이번 장에서는 기본 주소, 시간 제한, 오류 통일만 담은 첫 버전을 만듭니다. <a href="../../s8/index.html">S8</a>에서 인증 처리를, <a href="../../s13/index.html">S13</a>에서 요청 기록을 이 파일에 추가합니다.</p>
+<div class="codeblock"><span class="file">src/api/client.js</span><pre><code>import axios from &#x27;axios&#x27;;
+import { toApiError, ApiError, NETWORK_ERROR_MESSAGE } from &#x27;./errors&#x27;;
+
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 10000,
+});
+
+// 응답 인터셉터: 모든 실패를 ApiError 하나로 통일합니다.
+api.interceptors.response.use(
+  (response) =&gt; response,
+  (error) =&gt; {
+    // 화면을 떠나 취소한 요청은 오류가 아니므로 그대로 넘깁니다.
+    if (axios.isCancel(error)) throw error;
+
+    const { response } = error;
+    if (!response) {
+      throw new ApiError({ status: 0, code: &#x27;NETWORK_ERROR&#x27;, message: NETWORK_ERROR_MESSAGE });
+    }
+    throw toApiError(response.status, response.data, response.headers);
+  },
+);
+
+// 백엔드가 돌려준 /covers/... 같은 경로를 화면에서 열 수 있는 주소로 바꿉니다.
+export function toAssetUrl(path) {
+  if (!path) return null;
+  return `${API_BASE_URL}${path}`;
+}</code></pre></div>
+<p><code>toAssetUrl</code>은 백엔드가 돌려준 표지 경로(<code>/covers/...</code>)를 화면의 <code>&lt;img&gt;</code>가 열 수 있는 전체 주소로 바꿉니다. 개발 환경에서는 <code>http://127.0.0.1:8000/covers/...</code>, <a href="../../s15/index.html">S15</a>의 운영 환경에서는 <code>/api/covers/...</code>가 됩니다. <code>&lt;img&gt;</code>로 다른 출처의 이미지를 표시하는 것은 <a href="../../s5/index.html">S5</a>에서 본 것처럼 동일 출처 정책의 제한을 받지 않습니다.</p>
+<p>인스턴스가 제대로 동작하는지 확인하는 연습용 컴포넌트를 만들고, <code>App</code>에서 <code>StaticBookPage</code> 위에 보여 줍니다.</p>
+<div class="codeblock"><span class="file">src/practice/ApiCheck.jsx</span><pre><code>import { useEffect, useState } from &#x27;react&#x27;;
+import { api } from &#x27;../api/client&#x27;;
+
+// S6-P20 실습: axios 인스턴스로 요청하고 오류가 ApiError로 통일되는지 확인합니다.
+export default function ApiCheck() {
+  const [log, setLog] = useState([]);
+  const write = (line) =&gt; setLog((prev) =&gt; [...prev, line]);
+
+  useEffect(() =&gt; {
+    const controller = new AbortController();
+    (async () =&gt; {
+      const { data } = await api.get(&#x27;/books&#x27;, { params: { sort: &#x27;-price&#x27;, limit: 3 }, signal: controller.signal });
+      write(`가장 비싼 3권: ${data.items.map((b) =&gt; b.title).join(&#x27;, &#x27;)} (전체 ${data.total}권)`);
+      try {
+        await api.get(&#x27;/books/999999&#x27;, { signal: controller.signal });
+      } catch (err) {
+        write(`없는 도서 조회: status=${err.status}, code=${err.code}, message=${err.message}`);
+      }
+    })().catch((err) =&gt; {
+      if (err.name !== &#x27;CanceledError&#x27;) write(`실패: ${err.message}`);
+    });
+    return () =&gt; controller.abort();
+  }, []);
+
+  return &lt;pre&gt;{log.join(&#x27;\n&#x27;)}&lt;/pre&gt;;
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/App.jsx</span><pre><code>import ApiCheck from &#x27;./practice/ApiCheck&#x27;;
+import StaticBookPage from &#x27;./practice/StaticBookPage&#x27;;
+
+export default function App() {
+  return (
+    &lt;&gt;
+      &lt;ApiCheck /&gt;
+      &lt;StaticBookPage /&gt;
+    &lt;/&gt;
+  );
+}</code></pre></div>
+<p>확인할 내용은 다음과 같습니다.</p>
+<ol>
+<li><code>.env.development</code>를 만든 뒤 개발 서버를 다시 시작하고, 화면에 가장 비싼 3권과 없는 도서 조회 결과(404와 오류 코드)가 나오는지 확인합니다.</li>
+<li>Console에서 <code>import.meta.env</code>를 볼 수는 없지만, 소스 코드 안에서는 <code>console.log(import.meta.env.VITE_API_BASE_URL)</code>로 값을 확인할 수 있습니다. <code>ApiCheck</code>에 잠시 넣어 확인한 뒤 지웁니다.</li>
+<li>백엔드를 <code>docker compose stop api</code>로 멈추고 새로고침해 &quot;서버에 연결할 수 없습니다.&quot; 메시지가 나오는지 확인합니다. 확인 후 <code>docker compose start api</code>로 다시 실행합니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p20-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s6-p20-02.html"><span class="dir">이전</span>S6-P20-02 axios 인스턴스와 인터셉터</a>
+  <a class="next" href="s6-p20-04.html"><span class="dir">다음</span>S6-P20-04 정리: axios와 환경 변수</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

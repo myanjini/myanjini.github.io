@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P5-03 도서 객체 다루기 연습 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P5-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 모던 JavaScript</a><span class="sep">/</span><span>S2-P5 변수, 함수, 객체와 배열</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p5-01.html" style="flex:15" data-type="주요 개념" title="변수와 함수 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s2-p5-02.html" style="flex:15" data-type="주요 개념" title="구조 분해, 전개, 옵셔널 체이닝 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s2-p5-03.html" style="flex:15" data-type="실습" title="도서 객체 다루기 연습 (15분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s2-p5-04.html" style="flex:5" data-type="정리" title="정리: 변수, 함수, 객체와 배열 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S2-P5-03</span></div>
+<h1>도서 객체 다루기 연습</h1>
+
+<p class="lead"><code>http://127.0.0.1:8000/docs</code>를 열고 Console 탭에서 아래 데이터로 연습합니다. 각 문제를 먼저 직접 풀고, 아래의 예시 답과 비교합니다.</p>
+<div class="codeblock"><pre><code>const page = {
+  items: [
+    { id: 1, title: &#x27;파이썬 입문&#x27;, price: 18000, isbn: null, author: { id: 1, name: &#x27;홍길동&#x27; } },
+    { id: 2, title: &#x27;FastAPI 실전&#x27;, price: 32000, isbn: &#x27;9791100000011&#x27;, author: { id: 2, name: &#x27;김철수&#x27; } },
+    { id: 3, title: &#x27;저자 미상 도서&#x27;, price: 0, isbn: null, author: null },
+  ],
+  total: 3, skip: 0, limit: 10,
+};</code></pre></div>
+<ol>
+<li>구조 분해로 <code>page</code>에서 <code>items</code>와 <code>total</code>을 꺼내 <code>&quot;전체 3권&quot;</code>을 출력합니다.</li>
+<li>첫 번째 도서의 가격만 20000으로 바꾼 새 객체를 만들고, 원본 가격이 그대로인지 확인합니다.</li>
+<li>세 번째 도서의 저자 이름을 출력하되, 저자가 없으면 <code>&quot;저자 미상&quot;</code>을 출력합니다.</li>
+<li>세 번째 도서의 가격을 <code>?? '가격 미정'</code>과 <code>|| '가격 미정'</code>으로 각각 출력해 차이를 확인합니다.</li>
+<li>도서 하나를 받아 <code>&quot;파이썬 입문 - 홍길동 (18,000원)&quot;</code> 형태의 문자열을 돌려주는 화살표 함수 <code>toLabel</code>을 만듭니다. 가격의 천 단위 쉼표는 <code>price.toLocaleString('ko-KR')</code>로 만듭니다.</li>
+</ol>
+<p>예시 답은 다음과 같습니다.</p>
+<div class="codeblock"><pre><code>const { items, total } = page;
+console.log(`전체 ${total}권`);
+
+const changed = { ...items[0], price: 20000 };
+console.log(items[0].price, changed.price); // 18000 20000
+
+console.log(items[2].author?.name ?? &#x27;저자 미상&#x27;);
+
+console.log(items[2].price ?? &#x27;가격 미정&#x27;); // 0
+console.log(items[2].price || &#x27;가격 미정&#x27;); // &#x27;가격 미정&#x27;
+
+const toLabel = (book) =&gt; `${book.title} - ${book.author?.name ?? &#x27;저자 미상&#x27;} (${book.price.toLocaleString(&#x27;ko-KR&#x27;)}원)`;
+items.forEach((b) =&gt; console.log(toLabel(b)));</code></pre></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s2-p5-02.html"><span class="dir">이전</span>S2-P5-02 구조 분해, 전개, 옵셔널 체이닝</a>
+  <a class="next" href="s2-p5-04.html"><span class="dir">다음</span>S2-P5-04 정리: 변수, 함수, 객체와 배열</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

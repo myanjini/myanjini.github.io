@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P23-03 목록 화면 완성 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P23-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 라우팅과 조회 화면</a><span class="sep">/</span><span>S7-P23 목록: URL 조건과 페이지네이션</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p23-01.html" style="flex:10" data-type="주요 개념" title="검색 조건을 URL에 두는 이유 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s7-p23-02.html" style="flex:10" data-type="주요 개념" title="백엔드 페이지네이션과 화면 페이지 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s7-p23-03.html" style="flex:25" data-type="실습" title="목록 화면 완성 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s7-p23-04.html" style="flex:5" data-type="정리" title="정리: 목록: URL 조건과 페이지네이션 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S7-P23-03</span></div>
+<h1>목록 화면 완성</h1>
+
+<div class="codeblock"><span class="file">src/pages/BookListPage.jsx</span><pre><code>import { useEffect, useState } from &#x27;react&#x27;;
+import { Link, useSearchParams } from &#x27;react-router&#x27;;
+import { listBooks } from &#x27;../api/books&#x27;;
+import ErrorMessage from &#x27;../components/ErrorMessage&#x27;;
+import Pagination from &#x27;../components/Pagination&#x27;;
+
+const PAGE_SIZE = 10;
+const SORT_OPTIONS = [
+  { value: &#x27;id&#x27;, label: &#x27;등록순&#x27; },
+  { value: &#x27;price&#x27;, label: &#x27;가격 낮은 순&#x27; },
+  { value: &#x27;-price&#x27;, label: &#x27;가격 높은 순&#x27; },
+];
+
+export default function BookListPage() {
+  // 검색 조건을 URL에 두면 새로고침, 뒤로 가기, 주소 공유에도 화면이 유지됩니다.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sort = searchParams.get(&#x27;sort&#x27;) ?? &#x27;id&#x27;;
+  const skip = Number(searchParams.get(&#x27;skip&#x27;) ?? 0);
+
+  const q = searchParams.get(&#x27;q&#x27;) ?? &#x27;&#x27;;
+  const [keyword, setKeyword] = useState(q);
+
+  const [page, setPage] = useState(null); // { items, total, skip, limit }
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  function updateParams(changes) {
+    const next = new URLSearchParams(searchParams);
+    for (const [key, value] of Object.entries(changes)) {
+      if (value === &#x27;&#x27; || value === null || value === undefined) next.delete(key);
+      else next.set(key, String(value));
+    }
+    setSearchParams(next);
+  }
+
+  // 검색 버튼(또는 Enter)을 누르면 URL에 반영하고 첫 페이지부터 다시 봅니다.
+  function handleSearch(event) {
+    event.preventDefault();
+    updateParams({ q: keyword.trim(), skip: &#x27;&#x27; });
+  }
+
+  // URL의 검색 조건이 바뀔 때마다 목록을 다시 불러옵니다.
+  useEffect(() =&gt; {
+    const controller = new AbortController();
+    setLoading(true);
+    setError(null);
+    listBooks({ q, sort, skip, limit: PAGE_SIZE }, controller.signal)
+      .then(setPage)
+      .catch((err) =&gt; {
+        if (err.name !== &#x27;CanceledError&#x27;) setError(err);
+      })
+      .finally(() =&gt; {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    // 조건이 바뀌거나 화면을 떠나면 이전 요청을 취소합니다.
+    return () =&gt; controller.abort();
+  }, [q, sort, skip]);
+
+  return (
+    &lt;section&gt;
+      &lt;h1&gt;도서 목록&lt;/h1&gt;
+      &lt;form className=&quot;toolbar&quot; onSubmit={handleSearch}&gt;
+        &lt;input
+          type=&quot;search&quot;
+          placeholder=&quot;제목으로 검색&quot;
+          maxLength={50}
+          value={keyword}
+          onChange={(e) =&gt; setKeyword(e.target.value)}
+        /&gt;
+        &lt;button type=&quot;submit&quot;&gt;검색&lt;/button&gt;
+        &lt;select value={sort} onChange={(e) =&gt; updateParams({ sort: e.target.value, skip: &#x27;&#x27; })}&gt;
+          {SORT_OPTIONS.map((option) =&gt; (
+            &lt;option key={option.value} value={option.value}&gt;
+              {option.label}
+            &lt;/option&gt;
+          ))}
+        &lt;/select&gt;
+      &lt;/form&gt;
+
+      &lt;ErrorMessage error={error} /&gt;
+      {loading &amp;&amp; &lt;p className=&quot;muted&quot;&gt;불러오는 중입니다.&lt;/p&gt;}
+
+      {page &amp;&amp; !loading &amp;&amp; page.items.length === 0 &amp;&amp; &lt;p&gt;조건에 맞는 도서가 없습니다.&lt;/p&gt;}
+      {page &amp;&amp; page.items.length &gt; 0 &amp;&amp; (
+        &lt;table className=&quot;table&quot;&gt;
+          &lt;thead&gt;
+            &lt;tr&gt;
+              &lt;th&gt;번호&lt;/th&gt;
+              &lt;th&gt;제목&lt;/th&gt;
+              &lt;th&gt;저자&lt;/th&gt;
+              &lt;th className=&quot;num&quot;&gt;가격&lt;/th&gt;
+            &lt;/tr&gt;
+          &lt;/thead&gt;
+          &lt;tbody&gt;
+            {page.items.map((book) =&gt; (
+              &lt;tr key={book.id}&gt;
+                &lt;td&gt;{book.id}&lt;/td&gt;
+                &lt;td&gt;
+                  &lt;Link to={`/books/${book.id}`}&gt;{book.title}&lt;/Link&gt;
+                &lt;/td&gt;
+                &lt;td&gt;{book.author?.name}&lt;/td&gt;
+                &lt;td className=&quot;num&quot;&gt;{book.price.toLocaleString(&#x27;ko-KR&#x27;)}원&lt;/td&gt;
+              &lt;/tr&gt;
+            ))}
+          &lt;/tbody&gt;
+        &lt;/table&gt;
+      )}
+      {page &amp;&amp; (
+        &lt;Pagination
+          total={page.total}
+          skip={page.skip}
+          limit={page.limit}
+          onChange={(nextSkip) =&gt; updateParams({ skip: nextSkip })}
+        /&gt;
+      )}
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p>코드의 흐름을 정리하면 다음과 같습니다.</p>
+<ol>
+<li><code>useSearchParams</code>로 URL에서 <code>q</code>, <code>sort</code>, <code>skip</code>을 읽습니다. 값이 없으면 기본값을 씁니다.</li>
+<li><code>updateParams</code>는 현재 쿼리 문자열을 복사한 뒤 바꿀 값만 고치고, 빈 값은 지워서 주소를 깔끔하게 유지합니다.</li>
+<li>검색어나 정렬을 바꾸면 <code>skip</code>을 지워 첫 페이지로 돌아갑니다. 검색 결과가 5건인데 3쪽에 머물러 있으면 빈 화면이 나오기 때문입니다.</li>
+<li><code>q</code>, <code>sort</code>, <code>skip</code>이 바뀔 때마다 이펙트가 실행되어 목록을 불러오고, 이전 요청은 정리 함수에서 취소합니다.</li>
+<li>화면은 오류, 로딩, 빈 결과, 목록을 각각 다르게 보여 줍니다.</li>
+</ol>
+<p>가격은 <code>toLocaleString('ko-KR')</code>로 천 단위 쉼표를 넣고, 숫자 열은 <code>num</code> 클래스로 오른쪽 정렬합니다. 숫자를 오른쪽에 맞추면 자릿수를 한눈에 비교할 수 있습니다.</p>
+<p><code>sort</code>의 선택지는 백엔드가 허용하는 <code>id</code>, <code>price</code>, <code>-price</code> 세 가지만 제공합니다. 사용자가 주소창에 <code>?sort=title</code>처럼 직접 입력하면 백엔드가 422를 돌려주고, 화면은 <code>ErrorMessage</code>로 &quot;입력값을 확인해 주세요.&quot;를 표시합니다. 프론트엔드가 허용 값을 제한하더라도 최종 검증은 백엔드가 한다는 점을 확인할 수 있습니다.</p>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p23-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s7-p23-02.html"><span class="dir">이전</span>S7-P23-02 백엔드 페이지네이션과 화면 페이지</a>
+  <a class="next" href="s7-p23-04.html"><span class="dir">다음</span>S7-P23-04 정리: 목록: URL 조건과 페이지네이션</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

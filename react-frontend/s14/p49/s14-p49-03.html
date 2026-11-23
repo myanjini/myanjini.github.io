@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P49-03 정리: 접근성과 장애 관찰 실습 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P49-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 대시보드 고도화</a><span class="sep">/</span><span>S14-P49 접근성과 장애 관찰 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p49-01.html" style="flex:15" data-type="주요 개념" title="대시보드 접근성 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s14-p49-02.html" style="flex:30" data-type="실습" title="표 보기, 상태 알림, 키보드 점검 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s14-p49-03.html" style="flex:5" data-type="정리" title="정리: 접근성과 장애 관찰 실습 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S14-P49-03</span></div>
+<h1>정리: 접근성과 장애 관찰 실습</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>상태는 색, 모양, 글자로 함께 전달하고, 차트에는 요약 문장과 같은 데이터의 표 보기를 제공합니다.</li>
+<li><code>aria-live</code> 영역은 바뀐 내용만 보조 기술에 알리며, 숨길 때는 <code>display: none</code>이 아니라 <code>sr-only</code>를 씁니다.</li>
+<li>키보드만으로 모든 기능을 쓸 수 있는지, Lighthouse와 화면 낭독기로 점검합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">화면에는 보이지 않지만 화면 낭독기는 읽게 하려면 어떻게 숨겨야 하나요?</p><label><input type="radio" name="s14-p49-03-q1" value="1"> <span>1. visibility: hidden</span></label><label><input type="radio" name="s14-p49-03-q1" value="2"> <span>2. sr-only 클래스(크기를 1px로 줄이고 잘라 내기)</span></label><label><input type="radio" name="s14-p49-03-q1" value="3"> <span>3. aria-hidden=&quot;true&quot;</span></label><label><input type="radio" name="s14-p49-03-q1" value="4"> <span>4. display: none</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>display: none, visibility: hidden, aria-hidden은 보조 기술에서도 숨깁니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">SVG 차트의 접근성을 높이는 방법으로 알맞은 것은 무엇인가요?</p><label><input type="radio" name="s14-p49-03-q2" value="1"> <span>1. 애니메이션을 켠다.</span></label><label><input type="radio" name="s14-p49-03-q2" value="2"> <span>2. 범례를 지운다.</span></label><label><input type="radio" name="s14-p49-03-q2" value="3"> <span>3. 차트 색을 더 진하게 한다.</span></label><label><input type="radio" name="s14-p49-03-q2" value="4"> <span>4. role=&quot;img&quot;와 요약 문장을 붙이고, 같은 데이터를 표로도 볼 수 있게 한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>화면 낭독기는 차트의 모양을 읽지 못하므로 글로 된 대체 정보가 필요합니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s15/index.html">S15. 도커라이징과 운영 빌드</a>(8일차 오전, 4시간)로 이어집니다. 운영 빌드를 Nginx로 제공하는 컨테이너 이미지를 만들고, 백엔드와 함께 Compose로 실행해 같은 출처 구성으로 점검합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s14-p49-02.html"><span class="dir">이전</span>S14-P49-02 표 보기, 상태 알림, 키보드 점검</a>
+  <a class="next" href="../../s15/p50/s15-p50-01.html"><span class="dir">다음</span>S15-P50-01 운영 환경의 구조</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

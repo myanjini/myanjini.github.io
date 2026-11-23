@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P48-03 정리: 성능: 코드 분할과 렌더링 최적화 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P48-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 대시보드 고도화</a><span class="sep">/</span><span>S14-P48 성능: 코드 분할과 렌더링 최적화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p48-01.html" style="flex:15" data-type="주요 개념" title="렌더링 성능 기초 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s14-p48-02.html" style="flex:30" data-type="실습" title="코드 분할과 메모이제이션 적용 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s14-p48-03.html" style="flex:5" data-type="정리" title="정리: 성능: 코드 분할과 렌더링 최적화 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S14-P48-03</span></div>
+<h1>정리: 성능: 코드 분할과 렌더링 최적화</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>큰 라이브러리를 쓰는 화면은 <code>lazy</code>와 <code>Suspense</code>로 분할해 필요한 사용자만 내려받게 합니다.</li>
+<li><code>memo</code>, <code>useMemo</code>, <code>useCallback</code>은 측정한 뒤 느린 곳에만 씁니다.</li>
+<li>빌드 결과의 파일 크기와 Profiler 기록으로 개선 전후를 비교합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q"><code>lazy(() =&gt; import('./dashboard/DashboardPage'))</code>의 효과로 옳은 것은 무엇인가요?</p><label><input type="radio" name="s14-p48-03-q1" value="1"> <span>1. 대시보드가 더 빨리 그려진다.</span></label><label><input type="radio" name="s14-p48-03-q1" value="2"> <span>2. 대시보드 코드가 별도 파일로 나뉘어 처음 열 때만 내려받아진다.</span></label><label><input type="radio" name="s14-p48-03-q1" value="3"> <span>3. 대시보드가 서버에서 그려진다.</span></label><label><input type="radio" name="s14-p48-03-q1" value="4"> <span>4. 대시보드의 state가 유지된다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>동적 import는 빌드 시 별도 파일을 만들고, 그 화면을 처음 그릴 때 내려받습니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q"><code>memo</code>를 쓰기 알맞은 경우는 무엇인가요?</p><label><input type="radio" name="s14-p48-03-q2" value="1"> <span>1. 모든 컴포넌트에 기본으로</span></label><label><input type="radio" name="s14-p48-03-q2" value="2"> <span>2. 부모가 자주 다시 그려지지만 props가 거의 바뀌지 않는 무거운 컴포넌트</span></label><label><input type="radio" name="s14-p48-03-q2" value="3"> <span>3. props가 매번 바뀌는 컴포넌트</span></label><label><input type="radio" name="s14-p48-03-q2" value="4"> <span>4. state가 없는 아주 작은 컴포넌트</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>memo는 비교 비용이 있으므로 효과가 측정되는 곳에만 씁니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s14-p48-02.html"><span class="dir">이전</span>S14-P48-02 코드 분할과 메모이제이션 적용</a>
+  <a class="next" href="../p49/s14-p49-01.html"><span class="dir">다음</span>S14-P49-01 대시보드 접근성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

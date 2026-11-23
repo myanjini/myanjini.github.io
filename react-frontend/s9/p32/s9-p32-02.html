@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S9-P32-02 쓰기 기능 종합 점검 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S9-P32-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S9. 쓰기 기능</a><span class="sep">/</span><span>S9-P32 5일차 통합 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s9-p32-01.html" style="flex:25" data-type="실습" title="관리자 저자 추가 기능 (25분)"><span class="seg-num">01</span><span class="seg-min">25분</span></a><a href="s9-p32-02.html" style="flex:20" data-type="실습" title="쓰기 기능 종합 점검 (20분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s9-p32-03.html" style="flex:5" data-type="정리" title="정리: 5일차 통합 실습 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S9-P32-02</span></div>
+<h1>쓰기 기능 종합 점검</h1>
+
+<p class="lead">일반 사용자와 관리자 계정으로 각각 로그인해 다음을 확인합니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>번호</th>
+<th>동작</th>
+<th>기대 결과</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>빈 폼으로 저장</td>
+<td>제목, 저자, 가격 칸 아래 오류 메시지 (요청 없음)</td>
+</tr>
+<tr>
+<td>2</td>
+<td>ISBN에 <code>123</code> 입력 후 저장</td>
+<td>&quot;ISBN은 숫자 13자리입니다.&quot;</td>
+</tr>
+<tr>
+<td>3</td>
+<td>올바르게 입력해 저장</td>
+<td>201 응답 후 새 도서의 상세 화면으로 이동</td>
+</tr>
+<tr>
+<td>4</td>
+<td>이미 있는 ISBN으로 등록</td>
+<td>409, <code>DUPLICATE_ISBN</code> 표시</td>
+</tr>
+<tr>
+<td>5</td>
+<td>내가 등록한 도서의 가격만 수정</td>
+<td>Network 탭의 PATCH 본문이 <code>{&quot;price&quot;: ...}</code> 하나뿐</td>
+</tr>
+<tr>
+<td>6</td>
+<td>남이 등록한 도서 수정</td>
+<td>403 &quot;이 작업을 할 권한이 없습니다.&quot;</td>
+</tr>
+<tr>
+<td>7</td>
+<td>도서 대여</td>
+<td>안내 문구 표시, 내 대여 화면에 추가</td>
+</tr>
+<tr>
+<td>8</td>
+<td>같은 도서 다시 대여</td>
+<td>409, <code>ALREADY_LOANED</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>서로 다른 도서 4권 대여</td>
+<td>네 번째에서 409, <code>LOAN_LIMIT_EXCEEDED</code></td>
+</tr>
+<tr>
+<td>10</td>
+<td>내 대여 화면에서 반납</td>
+<td>반납 시각이 현재 한국 시각으로 표시, 반납 버튼 사라짐</td>
+</tr>
+<tr>
+<td>11</td>
+<td>대여 기록이 있는 도서 삭제</td>
+<td>409, <code>BOOK_HAS_LOANS</code></td>
+</tr>
+<tr>
+<td>12</td>
+<td>3MB 이미지 또는 <code>.gif</code> 파일을 표지로 선택</td>
+<td>요청 없이 안내 문구 표시</td>
+</tr>
+<tr>
+<td>13</td>
+<td>2MB 이하 PNG를 표지로 업로드</td>
+<td>상세 화면에 새 표지 표시</td>
+</tr>
+<tr>
+<td>14</td>
+<td>관리자로 등록 화면에서 새 저자 추가</td>
+<td>선택 상자에 추가되고 바로 선택됨</td>
+</tr>
+<tr>
+<td>15</td>
+<td>같은 이름으로 다시 추가</td>
+<td>&quot;이미 등록된 저자입니다.&quot;</td>
+</tr>
+<tr>
+<td>16</td>
+<td>일반 사용자로 등록 화면 열기</td>
+<td>저자 추가 칸이 보이지 않음</td>
+</tr>
+</tbody>
+</table></div>
+<p>브라우저의 검증을 우회했을 때 백엔드가 막는지도 확인합니다. Console에서 다음을 실행하면 프론트엔드 검증과 관계없이 백엔드가 422를 돌려줍니다.</p>
+<div class="codeblock"><pre><code>const { api } = await import(&#x27;/src/api/client.js&#x27;);
+await api.post(&#x27;/books&#x27;, { title: &#x27;&#x27;, author_id: 1, price: -1 }).catch((e) =&gt; console.log(e.status, e.fields));</code></pre></div>
+<p>모두 확인했으면 <code>P32: 쓰기 기능 통합 실습</code>으로 커밋합니다.</p>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p32-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s9-p32-01.html"><span class="dir">이전</span>S9-P32-01 관리자 저자 추가 기능</a>
+  <a class="next" href="s9-p32-03.html"><span class="dir">다음</span>S9-P32-03 정리: 5일차 통합 실습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

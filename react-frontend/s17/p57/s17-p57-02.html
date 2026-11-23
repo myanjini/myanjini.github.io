@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P57-02 주제 고르고 설계 문서 쓰기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P57-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P57 주제 선정과 화면 설계</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p57-01.html" style="flex:10" data-type="주요 개념" title="미니 프로젝트 안내 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s17-p57-02.html" style="flex:35" data-type="실습" title="주제 고르고 설계 문서 쓰기 (35분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">35분</span></a><a href="s17-p57-03.html" style="flex:5" data-type="정리" title="정리: 주제 선정과 화면 설계 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>35분</span><span>S17-P57-02</span></div>
+<h1>주제 고르고 설계 문서 쓰기</h1>
+
+<p class="lead">아래 주제 중 하나를 고르거나, 같은 규모의 주제를 직접 정합니다. 난이도 순서입니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>번호</th>
+<th>주제</th>
+<th>사용할 API</th>
+<th>다루는 내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>저자별 도서 목록</td>
+<td><code>GET /authors/{author_id}/books</code></td>
+<td>라우트 매개변수, <code>useQuery</code>, 링크 연결</td>
+</tr>
+<tr>
+<td>2</td>
+<td>저자 관리 화면(관리자)</td>
+<td><code>GET/POST/DELETE /authors</code></td>
+<td>관리자 권한, 409 <code>DUPLICATE_AUTHOR</code>, <code>AUTHOR_HAS_BOOKS</code> 처리, 캐시 무효화</td>
+</tr>
+<tr>
+<td>3</td>
+<td>표지 미리보기와 업로드 개선</td>
+<td><code>POST /books/{book_id}/cover</code></td>
+<td><code>URL.createObjectURL</code>과 정리, 파일 검사, 업로드 중 상태</td>
+</tr>
+<tr>
+<td>4</td>
+<td>대여 이력과 반납 예정 알림</td>
+<td><code>GET /loans/me</code></td>
+<td>날짜 계산, 정렬, 반납 기한 임박 표시</td>
+</tr>
+<tr>
+<td>5</td>
+<td>대시보드 기간 필터</td>
+<td>로그 분석(브라우저)</td>
+<td>필터 상태, <code>useMemo</code>, 필터를 차트 위 한 줄에 배치</td>
+</tr>
+<tr>
+<td>6</td>
+<td>대시보드 경보</td>
+<td><code>/health</code>, 요청 기록</td>
+<td>기준값 설정, &quot;연속 3회 초과&quot; 같은 조건 설계, 상태 색 규칙</td>
+</tr>
+</tbody>
+</table></div>
+<p>주제를 골랐으면 <code>docs/mini-project.md</code>에 설계를 적습니다. 다음 양식을 복사해 채웁니다.</p>
+<div class="codeblock"><pre><code># 미니 프로젝트: (주제)
+
+## 1. 목표
+- 사용자: (누가 쓰는가: 방문자, 로그인 사용자, 관리자)
+- 해결하는 문제: (한두 문장)
+
+## 2. 화면과 라우트
+| 주소 | 화면 | 접근 권한 |
+|---|---|---|
+
+## 3. API
+| 메서드와 경로 | 요청 | 성공 응답 | 처리할 오류 |
+|---|---|---|---|
+
+## 4. 상태
+- 서버 상태(Query 키):
+- 화면 상태(useState):
+- URL 상태(검색 매개변수):
+
+## 5. 오류와 빈 결과 안내 문구
+| 상황 | 안내 |
+|---|---|
+
+## 6. 테스트 계획
+- 단위:
+- 컴포넌트(MSW):
+- E2E:</code></pre></div>
+<p>설계할 때 다음을 확인합니다.</p>
+<ol>
+<li>Swagger UI(<code>http://127.0.0.1:8000/docs</code>)에서 쓸 API를 직접 호출해 요청과 응답 형식, 오류 코드를 확인합니다. <a href="../../s1/p3/s1-p3-03.html">S1-P3-03</a>의 API 표처럼 정리합니다.</li>
+<li>상태를 <a href="../../s10/index.html">S10</a>에서 배운 기준으로 나눕니다. 서버에서 오는 데이터는 Query 캐시, 입력 중인 값은 화면 상태, 공유하거나 새로고침해도 남아야 하는 조건은 URL에 둡니다.</li>
+<li>쓰기 기능이 있다면 성공 뒤에 어떤 Query 키를 무효화할지 미리 정합니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s17-p57-01.html"><span class="dir">이전</span>S17-P57-01 미니 프로젝트 안내</a>
+  <a class="next" href="s17-p57-03.html"><span class="dir">다음</span>S17-P57-03 정리: 주제 선정과 화면 설계</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P40-01 프론트엔드 보안의 전제 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P40-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. 프론트엔드 개발 보안</a><span class="sep">/</span><span>S12-P40 XSS, 토큰 보호, CSRF</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p40-01.html" style="flex:10" data-type="주요 개념" title="프론트엔드 보안의 전제 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p40-02.html" style="flex:15" data-type="주요 개념" title="XSS(크로스 사이트 스크립팅) (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s12-p40-03.html" style="flex:10" data-type="주요 개념" title="토큰 저장 위치 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s12-p40-04.html" style="flex:10" data-type="주요 개념" title="CSRF와 클릭재킹 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s12-p40-05.html" style="flex:5" data-type="정리" title="정리: XSS, 토큰 보호, CSRF (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S12-P40-01</span></div>
+<h1>프론트엔드 보안의 전제</h1>
+<div class="goal"><p><strong>파트 목표</strong>프론트엔드 보안의 전제를 이해하고, XSS, 토큰 저장 위치, CSRF와 클릭재킹의 위험과 대책을 설명할 수 있습니다.</p></div>
+
+<p class="lead">백엔드 과정 <a href="../../../fastapi-rest-api/s9/index.html">S9</a>~<a href="../../../fastapi-rest-api/s11/index.html">S11</a>에서 KISA 소프트웨어 개발보안 가이드를 바탕으로 서버 쪽 보안약점을 진단하고 조치했습니다. 프론트엔드 보안을 생각할 때 가장 먼저 받아들여야 할 사실은 다음과 같습니다.</p>
+<p><strong>프론트엔드 코드는 사용자의 컴퓨터에서 실행되므로 공개되어 있고, 언제든 조작될 수 있습니다.</strong> 빌드 결과물인 JavaScript는 누구나 내려받아 읽을 수 있고, 개발자 도구로 변수 값을 바꾸거나, 화면을 거치지 않고 API를 직접 호출할 수 있습니다.</p>
+<p>이 전제에서 두 가지 원칙이 나옵니다.</p>
+<ol>
+<li><strong>보안 결정은 백엔드가 합니다.</strong> 입력 검증, 권한 검사, 요청 제한은 반드시 백엔드에 있어야 합니다. 프론트엔드의 검증과 메뉴 숨기기는 사용자 경험을 위한 것입니다(<a href="../../s8/index.html">S8</a>, <a href="../../s9/index.html">S9</a>).</li>
+<li><strong>프론트엔드는 사용자를 보호합니다.</strong> 프론트엔드의 보안 대책은 주로 &quot;정상 사용자의 브라우저가 공격에 악용되지 않게 하는 것&quot;입니다. 사용자의 화면에 악성 스크립트가 실행되거나(XSS), 사용자의 토큰이 유출되거나, 사용자가 속아서 원치 않는 동작을 하게 되는 것(CSRF, 클릭재킹, 열린 리디렉션)을 막습니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p39/s11-p39-03.html"><span class="dir">이전</span>S11-P39-03 정리: Playwright E2E</a>
+  <a class="next" href="s12-p40-02.html"><span class="dir">다음</span>S12-P40-02 XSS(크로스 사이트 스크립팅)</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

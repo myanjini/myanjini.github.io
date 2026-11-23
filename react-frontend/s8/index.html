@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>S8. 쓰기 기능: 등록, 수정, 삭제, 표지 업로드, 대여와 반납 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<title>S8. 인증 연동 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
@@ -12,16 +12,10 @@
 <body data-page="index">
 <header class="topbar">
   <a class="course" href="../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
-  <nav class="crumbs" aria-label="현재 위치"><span>S8. 쓰기 기능: 등록, 수정, 삭제, 표지 업로드, 대여와 반납</span></nav>
+  <nav class="crumbs" aria-label="현재 위치"><span>S8. 인증 연동</span></nav>
 </header>
 <main class="page">
-<h1>S8. 쓰기 기능: 등록, 수정, 삭제, 표지 업로드, 대여와 반납</h1><div class="goal"><p><strong>섹션 목표</strong>도서 등록과 수정, 삭제, 표지 업로드, 대여와 반납 기능을 완성합니다.</p><ul>
-<li>입력값을 검증하고 API 본문 형식으로 변환해 도서를 등록하고 수정합니다.</li>
-<li>PATCH 요청에서 바뀐 필드만 보내고, 422 검증 오류를 입력 칸별로 표시합니다.</li>
-<li>삭제, 표지 업로드, 대여와 반납을 구현하고 409 같은 업무 규칙 오류를 사용자에게 안내합니다.</li>
-<li>백엔드가 UTC로 보낸 시각을 사용자의 시간대로 올바르게 표시합니다.</li>
-</ul>
-</div><div class="toc-part"><h3>S8-P17 도서 등록과 수정</h3><p>입력 검증과 본문 변환, PATCH를 적용한 등록, 수정 화면을 만들 수 있습니다.</p><ol class="toc-pages"><li><a href="p17/s8-p17-01.html">쓰기 화면의 공통 원칙</a> <span class="min">주요 개념, 5분</span></li><li><a href="p17/s8-p17-02.html">도서 등록과 수정: <code>src/pages/BookFormPage.jsx</code></a> <span class="min">실습, 30분</span></li></ol></div><div class="toc-part"><h3>S8-P18 상세 동작과 대여, 반납</h3><p>삭제, 표지 업로드, 대여와 반납을 구현하고 오류를 안내할 수 있습니다.</p><ol class="toc-pages"><li><a href="p18/s8-p18-01.html">대여와 반납 API: <code>src/api/loans.js</code></a> <span class="min">실습, 10분</span></li><li><a href="p18/s8-p18-02.html">도서 상세 화면 완성: <code>src/pages/BookDetailPage.jsx</code></a> <span class="min">실습, 25분</span></li><li><a href="p18/s8-p18-03.html">내 대여 화면: <code>src/pages/MyLoansPage.jsx</code></a> <span class="min">실습, 15분</span></li><li><a href="p18/s8-p18-04.html">라우트 등록: <code>src/App.jsx</code></a> <span class="min">실습, 10분</span></li><li><a href="p18/s8-p18-05.html">쓰기 기능 확인하기</a> <span class="min">실습, 10분</span></li><li><a href="p18/s8-p18-06.html">정리: 쓰기 기능: 등록, 수정, 삭제, 표지 업로드, 대여와 반납</a> <span class="min">정리, 5분</span></li></ol></div>
+<h1>S8. 인증 연동</h1><div class="goal"><p><strong>섹션 목표</strong>JWT 토큰으로 로그인, 자동 재발급, 로그아웃, 역할에 따른 접근 제어를 구현합니다.</p><p>4일차 오후, 3시간, 파트마다 50분 학습과 10분 휴식</p></div><div class="toc-part"><h3>S8-P26 SPA 인증 흐름과 토큰 보관</h3><p>액세스 토큰과 리프레시 토큰을 쓰는 SPA의 인증 흐름을 설명하고, 토큰 보관소와 인증 API 함수를 만들 수 있습니다.</p><ol class="toc-pages"><li><a href="p26/s8-p26-01.html">SPA의 인증 흐름</a> <span class="min">주요 개념, 20분</span></li><li><a href="p26/s8-p26-02.html">토큰 보관소와 인증 API</a> <span class="min">실습, 15분</span></li><li><a href="p26/s8-p26-03.html">Console로 로그인 API 확인하기</a> <span class="min">실습, 10분</span></li><li><a href="p26/s8-p26-04.html">정리: SPA 인증 흐름과 토큰 보관</a> <span class="min">정리, 5분</span></li></ol></div><div class="toc-part"><h3>S8-P27 인터셉터와 자동 재발급</h3><p>axios 인터셉터로 모든 요청에 토큰을 붙이고, 만료 시 한 번만 재발급해 원래 요청을 다시 보낼 수 있습니다.</p><ol class="toc-pages"><li><a href="p27/s8-p27-01.html">토큰 부착과 자동 재발급</a> <span class="min">실습, 30분</span></li><li><a href="p27/s8-p27-02.html">재발급 흐름 직접 확인하기</a> <span class="min">실습, 15분</span></li><li><a href="p27/s8-p27-03.html">정리: 인터셉터와 자동 재발급</a> <span class="min">정리, 5분</span></li></ol></div><div class="toc-part"><h3>S8-P28 로그인 상태 공유와 접근 제어</h3><p>Context로 로그인 상태를 공유하고, 로그인과 회원가입 화면, 역할에 따른 화면 접근 제어를 구현할 수 있습니다.</p><ol class="toc-pages"><li><a href="p28/s8-p28-01.html">로그인 상태 공유: Context</a> <span class="min">실습, 20분</span></li><li><a href="p28/s8-p28-02.html">로그인과 회원가입 화면</a> <span class="min">실습, 10분</span></li><li><a href="p28/s8-p28-03.html">접근 제어와 인증 흐름 점검</a> <span class="min">실습, 15분</span></li><li><a href="p28/s8-p28-04.html">정리: 로그인 상태 공유와 접근 제어</a> <span class="min">정리, 5분</span></li></ol></div>
 </main>
 </body>
 </html>

@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P14-02 화면 컴포넌트로 정리하고 삭제 기능 추가하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P14-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 폼, 이펙트, 컴포넌트 설계</a><span class="sep">/</span><span>S4-P14 2일차 통합 실습: 정적 도서 목록</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p14-01.html" style="flex:15" data-type="주요 개념" title="컴포넌트를 나누는 기준 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s4-p14-02.html" style="flex:30" data-type="실습" title="화면 컴포넌트로 정리하고 삭제 기능 추가하기 (30분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s4-p14-03.html" style="flex:5" data-type="정리" title="정리: 2일차 통합 실습 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>30분</span><span>S4-P14-02</span></div>
+<h1>화면 컴포넌트로 정리하고 삭제 기능 추가하기</h1>
+
+<p class="lead">목록 화면 전체를 <code>StaticBookPage</code>로 옮기고, 검색과 정렬 입력을 <code>BookToolbar</code>로 묶고, 행마다 삭제 버튼을 추가합니다.</p>
+<div class="codeblock"><span class="file">src/practice/BookToolbar.jsx</span><pre><code>import SearchBox from &#x27;./SearchBox&#x27;;
+
+// 검색과 정렬 입력을 한곳에 모은 컴포넌트입니다. 값은 부모가 가지고, 바뀐 값만 알려 줍니다.
+export default function BookToolbar({ keyword, onKeywordChange, sort, onSortChange }) {
+  return (
+    &lt;div&gt;
+      &lt;SearchBox keyword={keyword} onChange={onKeywordChange} /&gt;
+      &lt;select value={sort} onChange={(e) =&gt; onSortChange(e.target.value)}&gt;
+        &lt;option value=&quot;id&quot;&gt;등록순&lt;/option&gt;
+        &lt;option value=&quot;price&quot;&gt;가격 낮은 순&lt;/option&gt;
+        &lt;option value=&quot;-price&quot;&gt;가격 높은 순&lt;/option&gt;
+      &lt;/select&gt;
+    &lt;/div&gt;
+  );
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/practice/BookRow.jsx</span><pre><code>export default function BookRow({ book, onDelete }) {
+  return (
+    &lt;tr&gt;
+      &lt;td&gt;{book.id}&lt;/td&gt;
+      &lt;td&gt;{book.title}&lt;/td&gt;
+      &lt;td&gt;{book.author?.name}&lt;/td&gt;
+      &lt;td&gt;{book.price.toLocaleString(&#x27;ko-KR&#x27;)}원&lt;/td&gt;
+      &lt;td&gt;
+        &lt;button type=&quot;button&quot; onClick={() =&gt; onDelete(book.id)}&gt;
+          삭제
+        &lt;/button&gt;
+      &lt;/td&gt;
+    &lt;/tr&gt;
+  );
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/practice/BookTable.jsx</span><pre><code>import BookRow from &#x27;./BookRow&#x27;;
+
+export default function BookTable({ books, onDelete }) {
+  return (
+    &lt;table&gt;
+      &lt;thead&gt;
+        &lt;tr&gt;
+          &lt;th&gt;번호&lt;/th&gt;
+          &lt;th&gt;제목&lt;/th&gt;
+          &lt;th&gt;저자&lt;/th&gt;
+          &lt;th&gt;가격&lt;/th&gt;
+          &lt;th&gt;&lt;/th&gt;
+        &lt;/tr&gt;
+      &lt;/thead&gt;
+      &lt;tbody&gt;
+        {books.map((book) =&gt; (
+          &lt;BookRow key={book.id} book={book} onDelete={onDelete} /&gt;
+        ))}
+      &lt;/tbody&gt;
+    &lt;/table&gt;
+  );
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/practice/StaticBookPage.jsx</span><pre><code>import { useEffect, useState } from &#x27;react&#x27;;
+import AddBookForm from &#x27;./AddBookForm&#x27;;
+import BookTable from &#x27;./BookTable&#x27;;
+import BookToolbar from &#x27;./BookToolbar&#x27;;
+import { loadSampleBooks } from &#x27;./sampleBooks&#x27;;
+
+const SORTERS = {
+  id: (a, b) =&gt; a.id - b.id,
+  price: (a, b) =&gt; a.price - b.price,
+  &#x27;-price&#x27;: (a, b) =&gt; b.price - a.price,
+};
+
+export default function StaticBookPage() {
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // 처음 그린 뒤 한 번 데이터를 불러옵니다.
+  useEffect(() =&gt; {
+    let ignore = false;
+    loadSampleBooks().then((items) =&gt; {
+      if (!ignore) {
+        setBooks(items);
+        setLoading(false);
+      }
+    });
+    // 정리 함수: 화면이 사라지면 늦게 도착한 결과를 무시합니다.
+    return () =&gt; {
+      ignore = true;
+    };
+  }, []);
+
+  // books가 바뀔 때마다 브라우저 탭 제목을 맞춥니다.
+  useEffect(() =&gt; {
+    document.title = `도서 관리 (${books.length}권)`;
+  }, [books.length]);
+  const [keyword, setKeyword] = useState(&#x27;&#x27;);
+  const [sort, setSort] = useState(&#x27;id&#x27;);
+
+  // 자식(BookRow)에서 일어난 삭제를 부모가 처리합니다. 상태는 가진 쪽에서만 바꿉니다.
+  function handleDelete(bookId) {
+    setBooks((prev) =&gt; prev.filter((b) =&gt; b.id !== bookId));
+  }
+
+  function handleAdd(book) {
+    // 기존 배열을 고치지 않고 새 배열로 바꿔 끼웁니다.
+    const nextId = Math.max(0, ...books.map((b) =&gt; b.id)) + 1;
+    setBooks((prev) =&gt; [...prev, { ...book, id: nextId, isbn: null }]);
+  }
+
+  // filter는 새 배열을 돌려주므로 sort로 정렬해도 원본 데이터가 바뀌지 않습니다.
+  const visible = books
+    .filter((book) =&gt; book.title.includes(keyword.trim()))
+    .sort(SORTERS[sort]);
+
+  return (
+    &lt;main&gt;
+      &lt;h1&gt;도서 목록&lt;/h1&gt;
+      &lt;AddBookForm onAdd={handleAdd} /&gt;
+      &lt;BookToolbar keyword={keyword} onKeywordChange={setKeyword} sort={sort} onSortChange={setSort} /&gt;
+      {loading &amp;&amp; &lt;p&gt;불러오는 중입니다.&lt;/p&gt;}
+      {!loading &amp;&amp; (visible.length === 0 ? &lt;p&gt;조건에 맞는 도서가 없습니다.&lt;/p&gt; : &lt;BookTable books={visible} onDelete={handleDelete} /&gt;)}
+      &lt;p&gt;
+        전체 {books.length}권 중 {visible.length}권 표시
+      &lt;/p&gt;
+    &lt;/main&gt;
+  );
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/App.jsx</span><pre><code>import StaticBookPage from &#x27;./practice/StaticBookPage&#x27;;
+
+export default function App() {
+  return &lt;StaticBookPage /&gt;;
+}</code></pre></div>
+<p>삭제 버튼은 <code>BookRow</code>에 있지만 도서 배열은 <code>StaticBookPage</code>에 있습니다. 그래서 <code>onDelete</code>가 <code>StaticBookPage → BookTable → BookRow</code>로 내려가고, 버튼을 누르면 <code>BookRow</code>가 <code>onDelete(book.id)</code>를 불러 부모에게 알립니다. 중간의 <code>BookTable</code>은 받은 함수를 전달만 합니다.</p>
+<p>확인할 내용은 다음과 같습니다.</p>
+<ol>
+<li>검색, 정렬, 추가, 삭제가 모두 이전처럼 동작하는지 확인합니다.</li>
+<li>도서를 삭제하면 탭 제목의 권수가 줄어드는지 확인합니다.</li>
+<li>검색어를 입력한 상태에서 삭제해도 남은 결과가 올바른지 확인합니다.</li>
+<li><code>App.jsx</code>가 세 줄로 줄었습니다. 다음 섹션에서 백엔드 연결 실습 컴포넌트를 <code>App</code>에 추가할 때 이 구조가 어떤 점에서 편한지 생각해 봅니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p14-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s4-p14-01.html"><span class="dir">이전</span>S4-P14-01 컴포넌트를 나누는 기준</a>
+  <a class="next" href="s4-p14-03.html"><span class="dir">다음</span>S4-P14-03 정리: 2일차 통합 실습</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

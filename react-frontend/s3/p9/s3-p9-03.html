@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P9-03 샘플 데이터로 도서 표 만들기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P9-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. React 기초</a><span class="sep">/</span><span>S3-P9 JSX, 컴포넌트, props</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p9-01.html" style="flex:15" data-type="주요 개념" title="JSX (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s3-p9-02.html" style="flex:10" data-type="주요 개념" title="컴포넌트와 props (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s3-p9-03.html" style="flex:20" data-type="실습" title="샘플 데이터로 도서 표 만들기 (20분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s3-p9-04.html" style="flex:5" data-type="정리" title="정리: JSX, 컴포넌트, props (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S3-P9-03</span></div>
+<h1>샘플 데이터로 도서 표 만들기</h1>
+
+<p class="lead">백엔드에 연결하기 전에, 백엔드 <code>GET /books</code> 응답과 같은 모양의 샘플 데이터로 화면을 먼저 만듭니다. API 연결과 화면 구성을 분리해서 연습하는 것이 목적입니다. 이번 섹션의 연습용 코드는 <code>src/practice</code> 폴더에 모읍니다. <a href="../../s7/index.html">S7</a>에서 진짜 화면을 만들면 이 폴더는 지웁니다.</p>
+<div class="codeblock"><span class="file">src/practice/sampleBooks.js</span><pre><code>// 백엔드 GET /books 응답(BookPage)과 같은 모양의 샘플 데이터
+export const SAMPLE_PAGE = {
+  items: [
+    { id: 1, title: &#x27;파이썬 입문&#x27;, price: 18000, isbn: null, author: { id: 1, name: &#x27;홍길동&#x27; } },
+    { id: 2, title: &#x27;FastAPI 실전&#x27;, price: 32000, isbn: &#x27;9791100000011&#x27;, author: { id: 2, name: &#x27;김철수&#x27; } },
+    { id: 3, title: &#x27;데이터베이스 첫걸음&#x27;, price: 21000, isbn: null, author: { id: 1, name: &#x27;홍길동&#x27; } },
+    { id: 4, title: &#x27;React 시작하기&#x27;, price: 27000, isbn: null, author: { id: 3, name: &#x27;이영희&#x27; } },
+  ],
+  total: 4,
+  skip: 0,
+  limit: 10,
+};</code></pre></div>
+<p>한 행을 그리는 <code>BookRow</code>와 표 전체를 그리는 <code>BookTable</code>을 만듭니다. <code>BookTable</code>은 도서 배열을 props로 받아 행마다 <code>BookRow</code>를 그립니다.</p>
+<div class="codeblock"><span class="file">src/practice/BookRow.jsx</span><pre><code>export default function BookRow({ book }) {
+  return (
+    &lt;tr&gt;
+      &lt;td&gt;{book.id}&lt;/td&gt;
+      &lt;td&gt;{book.title}&lt;/td&gt;
+      &lt;td&gt;{book.author?.name}&lt;/td&gt;
+      &lt;td&gt;{book.price.toLocaleString(&#x27;ko-KR&#x27;)}원&lt;/td&gt;
+    &lt;/tr&gt;
+  );
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/practice/BookTable.jsx</span><pre><code>import BookRow from &#x27;./BookRow&#x27;;
+
+export default function BookTable({ books }) {
+  return (
+    &lt;table&gt;
+      &lt;thead&gt;
+        &lt;tr&gt;
+          &lt;th&gt;번호&lt;/th&gt;
+          &lt;th&gt;제목&lt;/th&gt;
+          &lt;th&gt;저자&lt;/th&gt;
+          &lt;th&gt;가격&lt;/th&gt;
+        &lt;/tr&gt;
+      &lt;/thead&gt;
+      &lt;tbody&gt;
+        {books.map((book) =&gt; (
+          &lt;BookRow key={book.id} book={book} /&gt;
+        ))}
+      &lt;/tbody&gt;
+    &lt;/table&gt;
+  );
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/App.jsx</span><pre><code>import BookTable from &#x27;./practice/BookTable&#x27;;
+import { SAMPLE_PAGE } from &#x27;./practice/sampleBooks&#x27;;
+
+export default function App() {
+  return (
+    &lt;main&gt;
+      &lt;h1&gt;도서 목록&lt;/h1&gt;
+      &lt;BookTable books={SAMPLE_PAGE.items} /&gt;
+      &lt;p&gt;전체 {SAMPLE_PAGE.total}권&lt;/p&gt;
+    &lt;/main&gt;
+  );
+}</code></pre></div>
+<p>확인할 내용은 다음과 같습니다.</p>
+<ol>
+<li>화면에 도서 4권이 표로 나오고, 가격에 천 단위 쉼표가 붙는지 확인합니다.</li>
+<li>개발자 도구의 Elements 탭에서 <code>&lt;table&gt;</code> 안의 <code>&lt;tr&gt;</code>이 4개인지 확인합니다. 컴포넌트는 DOM에 흔적을 남기지 않고, 반환한 요소만 남습니다.</li>
+<li><code>sampleBooks.js</code>에서 한 도서의 <code>author</code>를 <code>null</code>로 바꿔 봅니다. <code>book.author?.name</code>이 없으면 어떤 오류가 나는지 <code>?.</code>를 지워서도 확인한 뒤 되돌립니다.</li>
+<li><code>BookTable</code>에 <code>caption</code> props를 추가해 표 위에 제목을 보여 주도록 바꿔 봅니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p9-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s3-p9-02.html"><span class="dir">이전</span>S3-P9-02 컴포넌트와 props</a>
+  <a class="next" href="s3-p9-04.html"><span class="dir">다음</span>S3-P9-04 정리: JSX, 컴포넌트, props</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

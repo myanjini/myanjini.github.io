@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S18-P63-01 회고 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S18-P63-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S18. 배포와 발표</a><span class="sep">/</span><span>S18-P63 평가, 회고와 자원 정리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s18-p63-01.html" style="flex:15" data-type="실습" title="회고 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s18-p63-02.html" style="flex:15" data-type="실습" title="AWS 자원 정리 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s18-p63-03.html" style="flex:15" data-type="주요 개념" title="과정을 마치며 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s18-p63-04.html" style="flex:5" data-type="정리" title="정리: 평가, 회고와 자원 정리 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S18-P63-01</span></div>
+<h1>회고</h1>
+<div class="goal"><p><strong>파트 목표</strong>과정 전체를 돌아보고 확장 과제를 정하며, 실습에 만든 AWS 자원을 안전하게 정리할 수 있습니다.</p></div>
+
+<p class="lead">다음 질문에 답을 적어 <code>docs/mini-project.md</code>의 마지막에 &quot;회고&quot; 절로 추가합니다.</p>
+<ol>
+<li>설계 문서와 실제 구현이 달라진 부분은 무엇이며, 왜 달라졌습니까?</li>
+<li>9일 동안 배운 내용 중 미니 프로젝트에서 가장 도움이 된 것은 무엇입니까?</li>
+<li>다시 한다면 처음부터 다르게 할 것은 무엇입니까?</li>
+<li>다음으로 공부할 주제를 아래 확장 과제나 스스로 정한 주제에서 하나 고릅니다.</li>
+</ol>
+<p>확장 과제 후보는 다음과 같습니다. 미니 프로젝트에서 고르지 않은 <a href="../../s17/p57/s17-p57-02.html">S17-P57-02</a>의 주제도 좋은 과제입니다.</p>
+<ol>
+<li><strong>HttpOnly 쿠키 기반 리프레시 토큰.</strong> 백엔드가 리프레시 토큰을 <code>HttpOnly; Secure; SameSite=Strict</code> 쿠키로 발급하고, <code>/auth/refresh</code>가 쿠키에서 토큰을 읽도록 바꿉니다. 프론트엔드는 <code>withCredentials</code>를 설정하고 <code>sessionStorage</code> 저장을 제거합니다. 백엔드 CORS의 <code>allow_credentials</code> 설정과 CSRF 대책을 함께 설계합니다(<a href="../../s12/p40/s12-p40-04.html">S12-P40-04</a>).</li>
+<li><strong>CloudFront로 운영 배포.</strong> S3 버킷을 비공개로 바꾸고 OAC로 CloudFront만 읽게 한 뒤, 인증서를 연결해 HTTPS로 서비스합니다. 응답 헤더 정책으로 <a href="../../s15/index.html">S15</a>의 보안 헤더를 적용하고, 배포 워크플로에 무효화 단계를 추가합니다(<a href="../../s16/p55/s16-p55-02.html">S16-P55-02</a>).</li>
+<li><strong>같은 출처 운영 구성.</strong> CloudFront에 <code>/api/*</code> 동작을 추가해 백엔드로 전달하고, <code>VITE_API_BASE_URL</code>을 <code>/api</code>로 되돌려 CORS 없이 동작하게 합니다.</li>
+<li><strong>통계 API와 Grafana.</strong> 백엔드에 도서, 대여 현황 통계 API를 추가해 대시보드에 업무 지표를 늘리고, 같은 데이터를 Grafana의 PostgreSQL 데이터 소스로 연결해 직접 만든 대시보드와 비교합니다.</li>
+<li><strong>미리보기 배포.</strong> 풀 리퀘스트마다 별도 경로나 버킷에 미리보기를 배포하고, 풀 리퀘스트에 주소를 남기는 워크플로를 만듭니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p62/s18-p62-02.html"><span class="dir">이전</span>S18-P62-02 정리: 프로젝트 발표</a>
+  <a class="next" href="s18-p63-02.html"><span class="dir">다음</span>S18-P63-02 AWS 자원 정리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

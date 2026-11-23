@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P58-01 구현 순서 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P58-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P58 구현 1: API 계층과 조회</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p58-01.html" style="flex:5" data-type="주요 개념" title="구현 순서 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s17-p58-02.html" style="flex:40" data-type="실습" title="API 함수와 조회 화면 구현 (40분)"><span class="seg-num">02</span><span class="seg-min">40분</span></a><a href="s17-p58-03.html" style="flex:5" data-type="정리" title="정리: 구현 1: API 계층과 조회 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S17-P58-01</span></div>
+<h1>구현 순서</h1>
+<div class="goal"><p><strong>파트 목표</strong>설계에 따라 API 함수와 조회 화면을 구현하고, 로딩, 오류, 빈 결과를 구분해 보여 줄 수 있습니다.</p></div>
+
+<p class="lead">구현은 바깥(API)에서 안쪽(화면)으로 진행합니다. 각 단계가 끝날 때마다 브라우저나 테스트로 확인하고 커밋합니다.</p>
+<ol>
+<li>API 함수: <code>src/api/</code>에 함수를 추가합니다. 요청 형식(쿼리, 본문, 폼)만 책임지고, 화면 로직은 넣지 않습니다(<a href="../../s6/index.html">S6</a>).</li>
+<li>쿼리 연결: 화면에서 <code>useQuery</code>로 API 함수를 부릅니다. 쿼리 키는 기존 규칙(<code>['도메인', '종류', 조건]</code>)을 따릅니다(<a href="../../s10/index.html">S10</a>).</li>
+<li>화면 상태: 로딩, 오류(<code>ErrorMessage</code>), 빈 결과, 정상 결과를 차례로 만듭니다(<a href="../../s7/index.html">S7</a>).</li>
+<li>라우트와 메뉴: <code>App.jsx</code>에 라우트를 추가하고, 필요하면 <code>Layout</code>에 메뉴를 추가합니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p57/s17-p57-03.html"><span class="dir">이전</span>S17-P57-03 정리: 주제 선정과 화면 설계</a>
+  <a class="next" href="s17-p58-02.html"><span class="dir">다음</span>S17-P58-02 API 함수와 조회 화면 구현</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

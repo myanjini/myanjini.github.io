@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S1-P3-04 정리: 개발 환경 구성과 백엔드 준비 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S1-P3-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. 웹 프론트엔드와 개발 환경</a><span class="sep">/</span><span>S1-P3 개발 환경 구성과 백엔드 준비</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s1-p3-01.html" style="flex:15" data-type="실습" title="Node.js, 편집기, Git 준비 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s1-p3-02.html" style="flex:20" data-type="실습" title="백엔드 실행과 실습 데이터 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s1-p3-03.html" style="flex:10" data-type="주요 개념" title="연계할 백엔드 API 한눈에 보기 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s1-p3-04.html" style="flex:5" data-type="정리" title="정리: 개발 환경 구성과 백엔드 준비 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S1-P3-04</span></div>
+<h1>정리: 개발 환경 구성과 백엔드 준비</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>Node.js 22.22 이상(LTS 24 권장), VS Code, Chrome 또는 Edge, Git을 준비했습니다.</li>
+<li>백엔드는 Docker Compose로 <code>http://127.0.0.1:8000</code>에서 실행하고, <code>/health</code>와 <code>/docs</code>로 동작을 확인합니다.</li>
+<li>연계 API 표는 과정 전체에서 참고하는 기준 자료이며, 요청 형식이 헷갈리면 이 표로 돌아옵니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">백엔드가 정상 실행 중인지 가장 간단히 확인하는 방법은 무엇인가요?</p><label><input type="radio" name="s1-p3-04-q1" value="1"> <span>1. <code>curl http://127.0.0.1:8000/health</code>로 상태를 확인한다.</span></label><label><input type="radio" name="s1-p3-04-q1" value="2"> <span>2. <code>npm run build</code>를 실행한다.</span></label><label><input type="radio" name="s1-p3-04-q1" value="3"> <span>3. 데이터베이스 파일을 직접 연다.</span></label><label><input type="radio" name="s1-p3-04-q1" value="4"> <span>4. 브라우저에서 프론트엔드 화면을 연다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>헬스 체크 API는 API와 데이터베이스 연결 상태를 함께 알려 줍니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">로그인 API <code>POST /auth/token</code>이 요구하는 본문 형식은 무엇인가요?</p><label><input type="radio" name="s1-p3-04-q2" value="1"> <span>1. application/x-www-form-urlencoded</span></label><label><input type="radio" name="s1-p3-04-q2" value="2"> <span>2. multipart/form-data</span></label><label><input type="radio" name="s1-p3-04-q2" value="3"> <span>3. text/plain</span></label><label><input type="radio" name="s1-p3-04-q2" value="4"> <span>4. application/json</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>OAuth2 Password Flow를 따르므로 폼 형식으로 username과 password를 보냅니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s1-p3-03.html"><span class="dir">이전</span>S1-P3-03 연계할 백엔드 API 한눈에 보기</a>
+  <a class="next" href="../p4/s1-p4-01.html"><span class="dir">다음</span>S1-P4-01 프론트엔드 관점에서 본 HTTP</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

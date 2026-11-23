@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P8-02 프로젝트 만들기와 Git 저장소 시작 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P8-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. React 기초</a><span class="sep">/</span><span>S3-P8 Vite 프로젝트와 실행 흐름</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p8-01.html" style="flex:10" data-type="주요 개념" title="Vite란 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p8-02.html" style="flex:20" data-type="실습" title="프로젝트 만들기와 Git 저장소 시작 (20분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s3-p8-03.html" style="flex:15" data-type="주요 개념" title="프로젝트 구조와 실행 흐름 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s3-p8-04.html" style="flex:5" data-type="정리" title="정리: Vite 프로젝트와 실행 흐름 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>20분</span><span>S3-P8-02</span></div>
+<h1>프로젝트 만들기와 Git 저장소 시작</h1>
+
+<p class="lead"><code>workspace</code> 폴더에서 다음 명령을 실행합니다. <code>--template react</code>는 TypeScript가 아닌 JavaScript 기반 React 템플릿을 뜻합니다.</p>
+<div class="codeblock term"><pre><code>cd workspace
+npm create vite@latest react-frontend -- --template react
+cd react-frontend
+npm install
+npm run dev</code></pre></div>
+<p>터미널에 <code>Local: http://localhost:5173/</code>이 나오면 브라우저로 접속합니다. Vite와 React 로고가 있는 기본 화면이 보이면 성공입니다. 개발 서버는 <code>Ctrl + C</code>로 종료합니다.</p>
+<div class="callout note"><p class="callout-title">참고</p><p>주소 표기에 주의합니다. 이 과정에서는 프론트엔드를 항상 <code>http://localhost:5173</code>으로 엽니다. 백엔드는 <code>http://127.0.0.1:8000</code>으로 부릅니다. 두 주소의 차이가 <a href="../../s5/index.html">S5</a>의 핵심 주제와 연결됩니다.</p></div>
+<p>이제 이 폴더를 Git 저장소로 만들고 첫 커밋을 남깁니다. Vite 템플릿에는 <code>node_modules</code>와 <code>dist</code>를 제외하는 <code>.gitignore</code>가 이미 들어 있습니다.</p>
+<div class="codeblock term"><pre><code>git init -b main
+git add .
+git commit -m &quot;Vite React 템플릿 생성&quot;</code></pre></div>
+<p>앞으로 파트를 하나 마칠 때마다 커밋합니다. 커밋 메시지에 파트 번호를 넣어 두면(<code>P9: 샘플 데이터와 컴포넌트</code>) 나중에 예제 저장소의 브랜치와 비교하기 쉽습니다.</p>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p8-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s3-p8-01.html"><span class="dir">이전</span>S3-P8-01 Vite란</a>
+  <a class="next" href="s3-p8-03.html"><span class="dir">다음</span>S3-P8-03 프로젝트 구조와 실행 흐름</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

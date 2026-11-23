@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P6-01 배열 메서드 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P6-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 모던 JavaScript</a><span class="sep">/</span><span>S2-P6 배열 메서드와 모듈</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p6-01.html" style="flex:15" data-type="주요 개념" title="배열 메서드 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s2-p6-02.html" style="flex:10" data-type="주요 개념" title="모듈 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s2-p6-03.html" style="flex:20" data-type="실습" title="백엔드 목록 데이터 가공하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s2-p6-04.html" style="flex:5" data-type="정리" title="정리: 배열 메서드와 모듈 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S2-P6-01</span></div>
+<h1>배열 메서드</h1>
+<div class="goal"><p><strong>파트 목표</strong>map, filter, reduce 같은 배열 메서드로 데이터를 가공하고, 모듈로 코드를 나누고 가져올 수 있습니다.</p></div>
+
+<p class="lead">화면을 그릴 때는 <code>for</code> 문 대신 배열 메서드를 주로 씁니다. 배열 메서드는 원본을 바꾸지 않고 새 값을 돌려주는 것이 많아서, 앞에서 본 &quot;원본을 바꾸지 않는다&quot;는 원칙과 잘 맞습니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>메서드</th>
+<th>하는 일</th>
+<th>돌려주는 것</th>
+<th>원본 변경</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>map(fn)</code></td>
+<td>각 요소를 바꾼다</td>
+<td>같은 길이의 새 배열</td>
+<td>없음</td>
+</tr>
+<tr>
+<td><code>filter(fn)</code></td>
+<td>조건에 맞는 요소만 남긴다</td>
+<td>새 배열</td>
+<td>없음</td>
+</tr>
+<tr>
+<td><code>find(fn)</code></td>
+<td>조건에 맞는 첫 요소</td>
+<td>요소 또는 <code>undefined</code></td>
+<td>없음</td>
+</tr>
+<tr>
+<td><code>some(fn)</code>, <code>every(fn)</code></td>
+<td>하나라도, 모두 조건에 맞는가</td>
+<td>불리언</td>
+<td>없음</td>
+</tr>
+<tr>
+<td><code>reduce(fn, 초깃값)</code></td>
+<td>요소를 하나의 값으로 모은다</td>
+<td>모은 값</td>
+<td>없음</td>
+</tr>
+<tr>
+<td><code>sort(fn)</code></td>
+<td>정렬</td>
+<td>같은 배열</td>
+<td><strong>있음</strong></td>
+</tr>
+<tr>
+<td><code>forEach(fn)</code></td>
+<td>각 요소로 무언가를 한다</td>
+<td><code>undefined</code></td>
+<td>없음</td>
+</tr>
+</tbody>
+</table></div>
+<div class="codeblock"><pre><code>const books = [
+  { id: 1, title: &#x27;파이썬 입문&#x27;, price: 18000, author: { name: &#x27;홍길동&#x27; } },
+  { id: 2, title: &#x27;FastAPI 실전&#x27;, price: 32000, author: { name: &#x27;김철수&#x27; } },
+  { id: 3, title: &#x27;데이터베이스 첫걸음&#x27;, price: 21000, author: { name: &#x27;홍길동&#x27; } },
+];
+
+books.map((b) =&gt; b.title);                       // [&#x27;파이썬 입문&#x27;, &#x27;FastAPI 실전&#x27;, &#x27;데이터베이스 첫걸음&#x27;]
+books.filter((b) =&gt; b.price &gt;= 20000);           // FastAPI 실전, 데이터베이스 첫걸음
+books.find((b) =&gt; b.id === 2)?.title;            // &#x27;FastAPI 실전&#x27;
+books.some((b) =&gt; b.price &gt; 30000);              // true
+books.reduce((sum, b) =&gt; sum + b.price, 0);      // 71000</code></pre></div>
+<p><code>sort</code>는 원본 배열을 바꾸는 예외입니다. React의 state 배열을 정렬할 때는 복사본을 만든 뒤 정렬하거나, 원본을 바꾸지 않는 <code>toSorted</code>를 씁니다.</p>
+<div class="codeblock"><pre><code>const byPrice = [...books].sort((a, b) =&gt; a.price - b.price); // 복사본 정렬
+const byPrice2 = books.toSorted((a, b) =&gt; a.price - b.price);  // 원본 유지 (최신 브라우저)</code></pre></div>
+<p>메서드는 이어서 쓸 수 있습니다. &quot;2만 원 이상인 도서의 제목을 가격 순으로&quot; 같은 요구를 한 줄로 표현할 수 있어, 화면 코드가 데이터의 흐름을 그대로 드러냅니다.</p>
+<div class="codeblock"><pre><code>books.filter((b) =&gt; b.price &gt;= 20000).toSorted((a, b) =&gt; a.price - b.price).map((b) =&gt; b.title);</code></pre></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p5/s2-p5-04.html"><span class="dir">이전</span>S2-P5-04 정리: 변수, 함수, 객체와 배열</a>
+  <a class="next" href="s2-p6-02.html"><span class="dir">다음</span>S2-P6-02 모듈</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

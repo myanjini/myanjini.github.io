@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P15-04 정리: 첫 요청과 출처 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P15-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. Origin, SOP, CORS</a><span class="sep">/</span><span>S5-P15 첫 요청과 출처</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p15-01.html" style="flex:20" data-type="실습" title="백엔드로 첫 요청 보내기 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s5-p15-02.html" style="flex:15" data-type="주요 개념" title="출처(Origin) (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s5-p15-03.html" style="flex:10" data-type="실습" title="출처 비교 연습 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p15-04.html" style="flex:5" data-type="정리" title="정리: 첫 요청과 출처 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S5-P15-04</span></div>
+<h1>정리: 첫 요청과 출처</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>다른 출처의 백엔드로 보낸 요청은 서버에 도착해 처리되었지만, 브라우저가 응답을 JavaScript에 넘겨주지 않았습니다.</li>
+<li>출처는 스킴, 호스트, 포트의 조합이며 경로와 쿼리는 포함되지 않습니다.</li>
+<li><code>localhost</code>와 <code>127.0.0.1</code>은 같은 컴퓨터를 가리켜도 다른 출처입니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q"><code>http://localhost:5173</code>과 같은 출처인 주소는 무엇인가요?</p><label><input type="radio" name="s5-p15-04-q1" value="1"> <span>1. <code>http://localhost:5173/books/7</code></span></label><label><input type="radio" name="s5-p15-04-q1" value="2"> <span>2. <code>http://localhost:8000</code></span></label><label><input type="radio" name="s5-p15-04-q1" value="3"> <span>3. <code>http://127.0.0.1:5173</code></span></label><label><input type="radio" name="s5-p15-04-q1" value="4"> <span>4. <code>https://localhost:5173</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>출처는 스킴, 호스트, 포트의 조합이며 경로는 포함되지 않습니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q"><a href="s5-p15-01.html">S5-P15-01</a>의 CORS 오류 상황에서 일어난 일로 옳은 것은 무엇인가요?</p><label><input type="radio" name="s5-p15-04-q2" value="1"> <span>1. 서버가 403으로 거절했다.</span></label><label><input type="radio" name="s5-p15-04-q2" value="2"> <span>2. 서버는 200으로 응답했지만 브라우저가 JavaScript에 응답을 넘기지 않았다.</span></label><label><input type="radio" name="s5-p15-04-q2" value="3"> <span>3. 프론트엔드 코드의 문법 오류였다.</span></label><label><input type="radio" name="s5-p15-04-q2" value="4"> <span>4. 요청이 서버에 도착하지 않았다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>단순 요청은 서버에서 처리되며, 차단은 브라우저가 응답을 읽을 때 일어납니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s5-p15-03.html"><span class="dir">이전</span>S5-P15-03 출처 비교 연습</a>
+  <a class="next" href="../p16/s5-p16-01.html"><span class="dir">다음</span>S5-P16-01 동일 출처 정책(SOP)</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

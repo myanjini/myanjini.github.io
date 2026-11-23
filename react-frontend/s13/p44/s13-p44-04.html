@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P44-04 정리: 차트 형태와 시각화 도구 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P44-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. 관제 대시보드</a><span class="sep">/</span><span>S13-P44 차트 형태와 시각화 도구</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p44-01.html" style="flex:10" data-type="주요 개념" title="차트 형태 고르기 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s13-p44-02.html" style="flex:15" data-type="주요 개념" title="시각화 도구 비교 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s13-p44-03.html" style="flex:20" data-type="실습" title="대시보드 화면 설계하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s13-p44-04.html" style="flex:5" data-type="정리" title="정리: 차트 형태와 시각화 도구 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S13-P44-04</span></div>
+<h1>정리: 차트 형태와 시각화 도구</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>데이터가 하는 일(핵심 수치, 현재 상태, 상태 이력, 수치 변화, 범주 비교, 정밀 비교)에 따라 형태를 고릅니다.</li>
+<li>React 차트 라이브러리는 SVG와 Canvas 방식의 장단점이 있으며, 이 과정은 Recharts를 씁니다.</li>
+<li>서버 자원과 경보는 Grafana, CloudWatch 같은 전용 도구에 맡기고, 직접 만든 대시보드는 업무 지표와 사용자 관점의 상태를 보여 줍니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="4"><p class="q">시간에 따른 응답 시간 변화를 보여 주기에 알맞은 형태는 무엇인가요?</p><label><input type="radio" name="s13-p44-04-q1" value="1"> <span>1. 숫자 타일</span></label><label><input type="radio" name="s13-p44-04-q1" value="2"> <span>2. 3D 막대 차트</span></label><label><input type="radio" name="s13-p44-04-q1" value="3"> <span>3. 원형 차트</span></label><label><input type="radio" name="s13-p44-04-q1" value="4"> <span>4. 선 차트</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>시간에 따른 수치 변화는 선 차트가 가장 잘 보여 줍니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">수만 개의 점을 초 단위로 그려야 할 때 유리한 렌더링 방식은 무엇인가요?</p><label><input type="radio" name="s13-p44-04-q2" value="1"> <span>1. HTML 표</span></label><label><input type="radio" name="s13-p44-04-q2" value="2"> <span>2. CSS 그리드</span></label><label><input type="radio" name="s13-p44-04-q2" value="3"> <span>3. SVG</span></label><label><input type="radio" name="s13-p44-04-q2" value="4"> <span>4. Canvas</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>SVG는 요소가 DOM이 되어 많아지면 느려지고, Canvas는 많은 데이터를 빠르게 그립니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s13-p44-03.html"><span class="dir">이전</span>S13-P44-03 대시보드 화면 설계하기</a>
+  <a class="next" href="../p45/s13-p45-01.html"><span class="dir">다음</span>S13-P45-01 실시간 갱신 방식</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

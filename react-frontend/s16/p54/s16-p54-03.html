@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P54-03 정리: CI: 테스트 자동화 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P54-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. GitHub Actions와 S3 배포</a><span class="sep">/</span><span>S16-P54 CI: 테스트 자동화</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p54-01.html" style="flex:15" data-type="주요 개념" title="CI/CD와 GitHub Actions (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s16-p54-02.html" style="flex:30" data-type="실습" title="CI 워크플로 작성과 실행 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s16-p54-03.html" style="flex:5" data-type="정리" title="정리: CI: 테스트 자동화 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S16-P54-03</span></div>
+<h1>정리: CI: 테스트 자동화</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>GitHub Actions는 워크플로, 트리거, 잡, 러너, 스텝으로 구성되며 <code>.github/workflows</code>의 YAML로 정의합니다.</li>
+<li>CI는 풀 리퀘스트마다 린트, 단위 테스트, 빌드, E2E를 실행하고, 브랜치 보호 규칙으로 통과한 코드만 병합되게 합니다.</li>
+<li>워크플로의 토큰 권한은 필요한 만큼만 줍니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="1"><p class="q">풀 리퀘스트에서 CI가 실패한 코드가 main에 병합되지 않게 하려면 무엇을 설정해야 하나요?</p><label><input type="radio" name="s16-p54-03-q1" value="1"> <span>1. 브랜치 보호 규칙의 필수 상태 검사</span></label><label><input type="radio" name="s16-p54-03-q1" value="2"> <span>2. cache: npm</span></label><label><input type="radio" name="s16-p54-03-q1" value="3"> <span>3. permissions: contents: read</span></label><label><input type="radio" name="s16-p54-03-q1" value="4"> <span>4. workflow_call</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>필수 상태 검사로 지정한 잡이 통과해야 병합 버튼이 활성화됩니다.</p></div>
+<div class="quiz" data-answer="1"><p class="q">GitHub Actions에서 같은 러너에서 실행되는 스텝의 묶음을 무엇이라고 하나요?</p><label><input type="radio" name="s16-p54-03-q2" value="1"> <span>1. 잡</span></label><label><input type="radio" name="s16-p54-03-q2" value="2"> <span>2. 트리거</span></label><label><input type="radio" name="s16-p54-03-q2" value="3"> <span>3. 액션</span></label><label><input type="radio" name="s16-p54-03-q2" value="4"> <span>4. 워크플로</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>워크플로는 하나 이상의 잡으로, 잡은 여러 스텝으로 이루어집니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s16-p54-02.html"><span class="dir">이전</span>S16-P54-02 CI 워크플로 작성과 실행</a>
+  <a class="next" href="../p55/s16-p55-01.html"><span class="dir">다음</span>S16-P55-01 S3 정적 웹 호스팅</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

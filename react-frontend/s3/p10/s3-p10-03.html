@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P10-03 정리: state와 이벤트 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P10-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. React 기초</a><span class="sep">/</span><span>S3-P10 state와 이벤트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p10-01.html" style="flex:20" data-type="주요 개념" title="state와 이벤트 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s3-p10-02.html" style="flex:25" data-type="실습" title="제목 검색 기능 만들기 (25분)"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s3-p10-03.html" style="flex:5" data-type="정리" title="정리: state와 이벤트 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S3-P10-03</span></div>
+<h1>정리: state와 이벤트</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>state가 바뀌면 React가 컴포넌트를 다시 호출해 화면을 새로 그립니다.</li>
+<li>state는 직접 고치지 않고 새 값으로 교체하며, 다른 값에서 계산할 수 있는 값은 state로 두지 않습니다.</li>
+<li>여러 컴포넌트가 함께 쓰는 값은 공통 부모로 끌어올리고, 값과 변경 함수를 props로 내립니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q"><code>onClick={handleClick()}</code>의 문제점은 무엇인가요?</p><label><input type="radio" name="s3-p10-03-q1" value="1"> <span>1. 문제가 없다.</span></label><label><input type="radio" name="s3-p10-03-q1" value="2"> <span>2. 클릭할 때가 아니라 그릴 때 함수가 바로 실행된다.</span></label><label><input type="radio" name="s3-p10-03-q1" value="3"> <span>3. 이벤트 객체를 받을 수 없을 뿐 동작은 같다.</span></label><label><input type="radio" name="s3-p10-03-q1" value="4"> <span>4. React가 오류를 내지 않고 무시한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>함수 자체(handleClick)를 넘겨야 합니다. 괄호를 붙이면 호출 결과가 넘어갑니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">검색어로 거른 목록(visible)을 state로 따로 두지 않는 이유는 무엇인가요?</p><label><input type="radio" name="s3-p10-03-q2" value="1"> <span>1. state는 배열을 담을 수 없어서</span></label><label><input type="radio" name="s3-p10-03-q2" value="2"> <span>2. keyword와 원본에서 매번 계산할 수 있고, 따로 두면 서로 어긋날 수 있어서</span></label><label><input type="radio" name="s3-p10-03-q2" value="3"> <span>3. 성능이 항상 더 좋아서</span></label><label><input type="radio" name="s3-p10-03-q2" value="4"> <span>4. React가 금지해서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>계산할 수 있는 값을 state로 중복해 두면 동기화 버그가 생기기 쉽습니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s3-p10-02.html"><span class="dir">이전</span>S3-P10-02 제목 검색 기능 만들기</a>
+  <a class="next" href="../p11/s3-p11-01.html"><span class="dir">다음</span>S3-P11-01 조건부 렌더링과 리스트</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

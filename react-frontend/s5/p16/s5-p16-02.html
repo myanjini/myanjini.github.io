@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P16-02 막는 것과 막지 않는 것 관찰하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P16-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. Origin, SOP, CORS</a><span class="sep">/</span><span>S5-P16 동일 출처 정책</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p16-01.html" style="flex:20" data-type="주요 개념" title="동일 출처 정책(SOP) (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s5-p16-02.html" style="flex:25" data-type="실습" title="막는 것과 막지 않는 것 관찰하기 (25분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s5-p16-03.html" style="flex:5" data-type="정리" title="정리: 동일 출처 정책 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S5-P16-02</span></div>
+<h1>막는 것과 막지 않는 것 관찰하기</h1>
+
+<p class="lead"><code>http://localhost:5173</code>을 열고 Console 탭에서 하나씩 실행하며 Network 탭과 백엔드 로그(<code>docker compose logs -f api</code>)를 함께 봅니다.</p>
+<p><strong>1) 응답 읽기는 막힌다</strong></p>
+<div class="codeblock"><pre><code>await fetch(&#x27;http://127.0.0.1:8000/health&#x27;).then((r) =&gt; r.json());
+// TypeError: Failed to fetch  (Console에 CORS 오류)</code></pre></div>
+<p><strong>2) 요청 보내기는 막히지 않는다</strong></p>
+<p><code>no-cors</code> 모드는 &quot;응답을 읽지 않겠다&quot;고 약속하고 다른 출처로 요청을 보내는 방식입니다. 로그인 요청을 일부러 틀린 비밀번호로 보내 봅니다.</p>
+<div class="codeblock"><pre><code>const form = new URLSearchParams({ username: &#x27;nobody@example.com&#x27;, password: &#x27;wrong&#x27; });
+const res = await fetch(&#x27;http://127.0.0.1:8000/auth/token&#x27;, { method: &#x27;POST&#x27;, body: form, mode: &#x27;no-cors&#x27; });
+console.log(res.type, res.status); // opaque 0 : 응답 내용은 볼 수 없습니다.</code></pre></div>
+<p>백엔드 로그에는 <code>POST /auth/token</code>이 401로 기록됩니다. 다른 출처의 페이지가 로그인 시도를 실제로 서버에 보낼 수 있다는 뜻입니다. 백엔드가 로그인 실패 횟수를 서버에서 제한하는 이유(백엔드 <a href="../../../fastapi-rest-api/s10/p34/s10-p34-01.html">S10-P34</a>)이자, <a href="../../s12/index.html">S12</a>에서 다룰 CSRF가 생기는 배경입니다.</p>
+<p><strong>3) 이미지 같은 자원 불러오기는 막히지 않는다</strong></p>
+<div class="codeblock"><pre><code>const img = new Image();
+img.src = &#x27;http://127.0.0.1:8000/health?from=img&#x27;;</code></pre></div>
+<p>Network 탭에 <code>health?from=img</code> 요청이 나타납니다. 응답이 이미지가 아니라 화면에 표시되지는 않지만, 요청 자체는 아무 제한 없이 나갑니다. <code>&lt;img&gt;</code>, <code>&lt;script&gt;</code>, <code>&lt;link&gt;</code>로 다른 출처의 자원을 쓰는 것은 웹의 기본 동작입니다.</p>
+<p><strong>4) 저장소는 출처마다 따로 있다</strong></p>
+<div class="codeblock"><pre><code>localStorage.setItem(&#x27;hello&#x27;, &#x27;localhost에서 저장&#x27;);</code></pre></div>
+<p>같은 개발 서버를 <code>http://127.0.0.1:5173</code>으로도 열어(앞 파트의 방법) Console에서 <code>localStorage.getItem('hello')</code>를 실행하면 <code>null</code>이 나옵니다. 출처가 다르면 저장소도 다릅니다. 확인 후 <code>localStorage.removeItem('hello')</code>로 지웁니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s5-p16-01.html"><span class="dir">이전</span>S5-P16-01 동일 출처 정책(SOP)</a>
+  <a class="next" href="s5-p16-03.html"><span class="dir">다음</span>S5-P16-03 정리: 동일 출처 정책</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

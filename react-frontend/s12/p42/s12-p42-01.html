@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P42-01 의존성, 공급망, 요청 제한 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P42-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. 프론트엔드 개발 보안</a><span class="sep">/</span><span>S12-P42 공급망 보안과 보안 점검 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p42-01.html" style="flex:10" data-type="주요 개념" title="의존성, 공급망, 요청 제한 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p42-02.html" style="flex:15" data-type="실습" title="보안 린트 규칙 추가 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s12-p42-03.html" style="flex:20" data-type="실습" title="보안 점검하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s12-p42-04.html" style="flex:5" data-type="정리" title="정리: 공급망 보안과 보안 점검 실습 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S12-P42-01</span></div>
+<h1>의존성, 공급망, 요청 제한</h1>
+<div class="goal"><p><strong>파트 목표</strong>의존성과 요청 제한의 위험을 관리하고, 린트 규칙과 점검표로 프론트엔드 코드의 보안을 점검할 수 있습니다.</p></div>
+
+<p class="lead">프론트엔드 프로젝트는 직접 설치한 패키지 몇 개에 딸려 오는 수백 개의 간접 의존성을 포함합니다. 이 중 하나라도 취약하거나 악성으로 바뀌면 빌드 결과물에 그대로 들어갑니다. 백엔드 과정 <a href="../../../fastapi-rest-api/s11/p37/s11-p37-01.html">S11-P37</a>에서 <code>pip-audit</code>로 파이썬 의존성을 점검한 것처럼 다음을 실천합니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>실천 사항</th>
+<th>방법</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>알려진 취약점 점검</td>
+<td><code>npm audit</code>로 확인하고, 운영 의존성만 보려면 <code>npm audit --omit=dev</code>를 씁니다.</td>
+</tr>
+<tr>
+<td>설치 결과 고정</td>
+<td><code>package-lock.json</code>을 Git에 포함하고, CI와 Docker 빌드에서는 잠금 파일 그대로 설치하는 <code>npm ci</code>를 씁니다(<a href="../../s15/index.html">S15</a>).</td>
+</tr>
+<tr>
+<td>패키지 출처 확인</td>
+<td><code>npm audit signatures</code>로 레지스트리 서명을 확인합니다. 설치 전 패키지 이름의 철자를 확인합니다. 인기 패키지와 비슷한 이름의 악성 패키지(타이포스쿼팅)가 있습니다.</td>
+</tr>
+<tr>
+<td>의존성 최소화</td>
+<td>몇 줄로 구현할 수 있는 기능 때문에 패키지를 추가하지 않습니다.</td>
+</tr>
+<tr>
+<td>꾸준한 갱신</td>
+<td>GitHub Dependabot 같은 도구로 갱신 알림을 받습니다. 차트처럼 큰 라이브러리는 메이저 버전 변경 시 동작을 확인합니다.</td>
+</tr>
+<tr>
+<td>외부 CDN 스크립트</td>
+<td>가능하면 사용하지 않습니다. 써야 한다면 <code>integrity</code> 속성(SRI)으로 내용이 바뀌지 않았는지 검증합니다.</td>
+</tr>
+</tbody>
+</table></div>
+<p>백엔드는 로그인 실패를 제한하고 429를 돌려줍니다(백엔드 <a href="../../../fastapi-rest-api/s10/p34/s10-p34-01.html">S10-P34</a>). 프론트엔드는 이를 사용자에게 안내하고(<a href="../../s8/index.html">S8</a>), 스스로 불필요한 요청을 만들지 않아야 합니다.</p>
+<ul>
+<li>처리 중에는 제출 버튼을 비활성화합니다(<a href="../../s8/index.html">S8</a>, <a href="../../s9/index.html">S9</a>).</li>
+<li>검색은 입력할 때마다가 아니라 제출할 때 요청합니다(<a href="../../s7/index.html">S7</a>).</li>
+<li>주기적으로 상태를 조회하는 화면은 간격을 적절히 두고, 탭이 보이지 않을 때는 멈춥니다(<a href="../../s13/index.html">S13</a>).</li>
+<li>화면을 떠나면 진행 중인 요청을 취소합니다(<a href="../../s6/index.html">S6</a>).</li>
+</ul>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p41/s12-p41-05.html"><span class="dir">이전</span>S12-P41-05 정리: 보안 헤더, CSP, 비밀정보</a>
+  <a class="next" href="s12-p42-02.html"><span class="dir">다음</span>S12-P42-02 보안 린트 규칙 추가</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

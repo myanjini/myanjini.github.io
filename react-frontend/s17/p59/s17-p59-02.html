@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P59-02 정리: 구현 2: 인증과 쓰기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P59-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P59 구현 2: 인증과 쓰기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p59-01.html" style="flex:45" data-type="실습" title="권한과 쓰기 기능 구현 (45분)"><span class="seg-num">01</span><span class="seg-min">45분</span></a><a href="s17-p59-02.html" style="flex:5" data-type="정리" title="정리: 구현 2: 인증과 쓰기 (5분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S17-P59-02</span></div>
+<h1>정리: 구현 2: 인증과 쓰기</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>화면의 권한 처리는 사용자 경험을 위한 것이며 실제 권한 검사는 백엔드가 합니다.</li>
+<li>쓰기는 <code>useMutation</code>으로 처리하고, 성공하면 관련 쿼리를 무효화하며, 처리 중에는 버튼을 비활성화합니다.</li>
+<li>되돌릴 수 없는 동작에는 확인 단계를 두고, 오류 코드별로 안내합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">관리자 메뉴를 일반 사용자에게 숨겼다면 보안 대책으로 충분한가요?</p><label><input type="radio" name="s17-p59-02-q1" value="1"> <span>1. 충분하다. 메뉴가 없으면 접근할 수 없다.</span></label><label><input type="radio" name="s17-p59-02-q1" value="2"> <span>2. 충분하지 않다. 주소 입력이나 API 직접 호출이 가능하므로 백엔드가 권한을 검사해야 한다.</span></label><label><input type="radio" name="s17-p59-02-q1" value="3"> <span>3. RequireAuth를 쓰면 충분하다.</span></label><label><input type="radio" name="s17-p59-02-q1" value="4"> <span>4. CSP를 적용하면 충분하다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>프론트엔드 코드는 사용자가 조작할 수 있으므로 권한의 최종 판단은 백엔드가 합니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">처리 중 버튼 비활성화에 쓰는 useMutation의 값은 무엇인가요?</p><label><input type="radio" name="s17-p59-02-q2" value="1"> <span>1. isError</span></label><label><input type="radio" name="s17-p59-02-q2" value="2"> <span>2. data</span></label><label><input type="radio" name="s17-p59-02-q2" value="3"> <span>3. isPending</span></label><label><input type="radio" name="s17-p59-02-q2" value="4"> <span>4. isStale</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>isPending은 요청이 진행 중일 때 true입니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s17-p59-01.html"><span class="dir">이전</span>S17-P59-01 권한과 쓰기 기능 구현</a>
+  <a class="next" href="../p60/s17-p60-01.html"><span class="dir">다음</span>S17-P60-01 기능 테스트 작성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

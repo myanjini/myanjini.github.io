@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P18-03 CORS에 대한 흔한 오해 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P18-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. Origin, SOP, CORS</a><span class="sep">/</span><span>S5-P18 백엔드 CORS 설정과 프록시</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p18-01.html" style="flex:20" data-type="실습" title="백엔드 CORS 설정 고치기 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s5-p18-02.html" style="flex:10" data-type="주요 개념" title="다른 해결 방법: 프록시 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p18-03.html" style="flex:15" data-type="주요 개념" title="CORS에 대한 흔한 오해 (15분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s5-p18-04.html" style="flex:5" data-type="정리" title="정리: 백엔드 CORS 설정과 프록시 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S5-P18-03</span></div>
+<h1>CORS에 대한 흔한 오해</h1>
+
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>오해</th>
+<th>사실</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CORS는 서버를 보호하는 보안 장치다.</td>
+<td>CORS는 동일 출처 정책을 <strong>완화</strong>하는 장치입니다. 서버 보호는 인증과 인가가 담당합니다.</td>
+</tr>
+<tr>
+<td>CORS 오류가 나면 요청이 서버에 가지 않았다.</td>
+<td>단순 요청은 서버에 도착해 처리됩니다. 사전 요청이 거절된 경우에만 본 요청이 전송되지 않습니다.</td>
+</tr>
+<tr>
+<td>CORS를 설정하면 다른 사이트가 API를 호출하지 못한다.</td>
+<td><code>curl</code>, Postman, 서버 간 통신에는 CORS가 적용되지 않습니다. CORS는 브라우저만 지키는 규칙입니다.</td>
+</tr>
+<tr>
+<td>프론트엔드 코드로 CORS 오류를 고칠 수 있다.</td>
+<td>허락은 서버만 할 수 있습니다. 프론트엔드는 프록시로 출처를 같게 만드는 방법만 선택할 수 있습니다.</td>
+</tr>
+<tr>
+<td><code>localhost</code>와 <code>127.0.0.1</code>은 같으니 하나만 등록하면 된다.</td>
+<td>브라우저는 둘을 다른 출처로 봅니다. 실제로 접속하는 주소를 등록해야 합니다.</td>
+</tr>
+</tbody>
+</table></div>
+<p>이 표를 <a href="../../s15/index.html">S15</a>와 <a href="../../s16/index.html">S16</a>에서 다시 봅니다. Nginx 프록시 구성(<a href="../../s15/index.html">S15</a>)에서는 출처가 하나라 CORS가 필요 없고, S3 정적 웹사이트 구성(<a href="../../s16/index.html">S16</a>)에서는 화면과 API의 출처가 달라 운영 환경에서도 CORS 설정이 필요합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s5-p18-02.html"><span class="dir">이전</span>S5-P18-02 다른 해결 방법: 프록시</a>
+  <a class="next" href="s5-p18-04.html"><span class="dir">다음</span>S5-P18-04 정리: 백엔드 CORS 설정과 프록시</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

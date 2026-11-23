@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P51-02 Nginx 설정 작성 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P51-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. 도커라이징과 운영 빌드</a><span class="sep">/</span><span>S15-P51 Nginx와 리버스 프록시</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p51-01.html" style="flex:10" data-type="주요 개념" title="리버스 프록시와 SPA 대체 응답 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p51-02.html" style="flex:35" data-type="실습" title="Nginx 설정 작성 (35분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">35분</span></a><a href="s15-p51-03.html" style="flex:5" data-type="정리" title="정리: Nginx와 리버스 프록시 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>35분</span><span>S15-P51-02</span></div>
+<h1>Nginx 설정 작성</h1>
+
+<p class="lead"><code>nginx</code> 폴더를 만들고 두 파일을 작성합니다.</p>
+<p><strong>보안 헤더: <code>nginx/security-headers.conf</code></strong></p>
+<p><a href="../../s12/p41/s12-p41-01.html">S12-P41-01</a>에서 정리한 보안 헤더와 CSP입니다.</p>
+<div class="codeblock"><span class="file">nginx/security-headers.conf</span><pre><code># 모든 응답에 붙일 보안 헤더 (교안 &quot;프론트엔드 개발 보안&quot; 단원 참고)
+add_header X-Content-Type-Options &quot;nosniff&quot; always;
+add_header X-Frame-Options &quot;DENY&quot; always;
+add_header Referrer-Policy &quot;strict-origin-when-cross-origin&quot; always;
+add_header Permissions-Policy &quot;camera=(), microphone=(), geolocation=()&quot; always;
+add_header Content-Security-Policy &quot;default-src &#x27;self&#x27;; script-src &#x27;self&#x27;; style-src &#x27;self&#x27;; img-src &#x27;self&#x27; data: blob:; connect-src &#x27;self&#x27;; font-src &#x27;self&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;self&#x27;; form-action &#x27;self&#x27;; frame-ancestors &#x27;none&#x27;&quot; always;</code></pre></div>
+<p><code>always</code>를 붙이면 200뿐 아니라 404, 500 같은 오류 응답에도 헤더가 붙습니다.</p>
+<p><strong>서버 설정: <code>nginx/default.conf</code></strong></p>
+<div class="codeblock"><span class="file">nginx/default.conf</span><pre><code>server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    server_tokens off;  # 응답 헤더에서 Nginx 버전을 숨깁니다.
+
+    # 1) 백엔드 API: /api/books -&gt; http://api:8000/books
+    location /api/ {
+        proxy_pass http://api:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        client_max_body_size 3m;  # 표지 2MB 제한보다 약간 크게 둡니다.
+    }
+
+    # 2) 빌드 결과물: 파일 이름에 해시가 있으므로 오래 캐시합니다.
+    location /assets/ {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control &quot;public, max-age=31536000, immutable&quot;;
+        try_files $uri =404;
+    }
+
+    # 3) 나머지 주소는 모두 index.html을 돌려줘 React Router가 처리하게 합니다.
+    location / {
+        include /etc/nginx/snippets/security-headers.conf;
+        add_header Cache-Control &quot;no-cache&quot;;
+        try_files $uri $uri/ /index.html;
+    }
+}</code></pre></div>
+<p>세 개의 <code>location</code> 블록이 각각 다음 역할을 합니다.</p>
+<p><strong>1) <code>/api/</code> 프록시.</strong> <code>proxy_pass http://api:8000/;</code>의 마지막 <code>/</code>가 중요합니다. 이 슬래시가 있으면 요청 경로에서 <code>location</code>에 맞은 <code>/api/</code> 부분을 잘라 내고 나머지를 붙입니다. 따라서 <code>/api/books?q=1</code>은 백엔드의 <code>/books?q=1</code>로 전달됩니다. 슬래시를 빼면 <code>/api/books</code>가 그대로 전달되어 백엔드에서 404가 납니다. <code>api</code>는 Compose 서비스 이름이며, 같은 Compose 네트워크 안에서 호스트 이름으로 쓸 수 있습니다. <code>X-Forwarded-For</code>, <code>X-Real-IP</code> 헤더로 실제 사용자의 IP를 백엔드에 전달하고, <code>client_max_body_size</code>는 표지 업로드 제한(2MB)보다 약간 크게 잡아 Nginx가 먼저 거절하지 않게 합니다.</p>
+<p><strong>2) <code>/assets/</code> 장기 캐시.</strong> Vite는 빌드 결과물의 파일 이름에 내용의 해시를 넣습니다(<code>index-C5lRxo5C.js</code>). 내용이 바뀌면 이름도 바뀌므로 같은 이름의 파일은 영원히 같은 내용입니다. 그래서 1년 동안 캐시하고(<code>immutable</code>) 다시 확인하지 않게 합니다.</p>
+<p><strong>3) 나머지 경로와 SPA 대체 응답.</strong> <code>try_files $uri $uri/ /index.html;</code>은 요청한 파일이 있으면 그 파일을, 없으면 <code>index.html</code>을 돌려줍니다. 사용자가 <code>http://localhost:8080/books/7</code>을 직접 입력하거나 새로고침하면 Nginx에는 <code>/books/7</code>이라는 파일이 없습니다. 이때 <code>index.html</code>을 돌려줘야 React Router가 주소를 보고 상세 화면을 그립니다. 이 설정이 없으면 첫 화면에서 메뉴로 이동할 때는 잘 되다가 새로고침하면 404가 나는 문제가 생깁니다. <code>index.html</code>에는 <code>no-cache</code>를 지정해, 새 버전을 배포하면 브라우저가 바로 새 <code>index.html</code>과 그 안에 적힌 새 해시 파일을 받게 합니다.</p>
+<p><strong><code>add_header</code> 상속 주의.</strong> Nginx는 한 <code>location</code> 블록 안에 <code>add_header</code>가 하나라도 있으면 바깥(<code>server</code> 블록)에 적은 <code>add_header</code>를 상속하지 않습니다. 캐시 헤더를 추가하는 블록마다 보안 헤더가 사라지는 실수가 흔하므로, 이 설정은 보안 헤더를 별도 파일로 만들어 각 <code>location</code>에서 <code>include</code>합니다.</p>
+<p><code>server_tokens off</code>는 응답 헤더와 오류 페이지에서 Nginx 버전을 숨깁니다. 백엔드 과정 <a href="../../../fastapi-rest-api/s10/p35/s10-p35-01.html">S10-P35</a>에서 다룬 &quot;불필요한 정보 노출 줄이기&quot;와 같은 취지입니다.</p>
+<p>이 설정은 다음 파트에서 이미지로 만들어 실행하며 확인합니다. 설정 파일을 작성하면서 다음을 스스로 점검합니다.</p>
+<ol>
+<li><code>/api/books?skip=10</code>은 백엔드에 어떤 경로로 전달됩니까? <code>proxy_pass</code> 끝의 <code>/</code>를 빼면 어떻게 바뀝니까?</li>
+<li><code>/assets/index-abc.js</code>가 없는 파일이면 무엇을 돌려줍니까? <code>/books/7</code>과 다르게 처리하는 이유는 무엇입니까?</li>
+<li><code>location /assets/</code> 블록에서 <code>include</code> 줄을 지우면 이 경로의 응답에서 어떤 헤더가 사라집니까?</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p51-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s15-p51-01.html"><span class="dir">이전</span>S15-P51-01 리버스 프록시와 SPA 대체 응답</a>
+  <a class="next" href="s15-p51-03.html"><span class="dir">다음</span>S15-P51-03 정리: Nginx와 리버스 프록시</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

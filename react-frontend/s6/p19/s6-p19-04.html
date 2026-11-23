@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P19-04 요청 취소와 시간 제한 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P19-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. Fetch API와 axios로 API 계층 만들기</a><span class="sep">/</span><span>S6-P19 Fetch API와 오류 처리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p19-01.html" style="flex:10" data-type="주요 개념" title="Fetch API 기본 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p19-02.html" style="flex:10" data-type="주요 개념" title="fetch 오류 처리의 함정 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p19-03.html" style="flex:10" data-type="주요 개념" title="본문 형식별 전송 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s6-p19-04.html" style="flex:15" data-type="실습" title="요청 취소와 시간 제한 (15분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s6-p19-05.html" style="flex:5" data-type="정리" title="정리: Fetch API와 오류 처리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S6-P19-04</span></div>
+<h1>요청 취소와 시간 제한</h1>
+
+<p class="lead">사용자가 목록을 보다가 다른 화면으로 이동하면, 이전 화면에서 보낸 요청은 더 이상 필요 없습니다. 응답이 늦게 도착해 사라진 화면의 상태를 바꾸려 하거나, 검색 조건을 빠르게 바꿀 때 먼저 보낸 요청의 응답이 나중에 도착해 최신 결과를 덮어쓰는 문제가 생길 수 있습니다. <code>AbortController</code>로 이런 요청을 취소합니다.</p>
+<div class="codeblock"><pre><code>const controller = new AbortController();
+fetch(&#x27;http://127.0.0.1:8000/books&#x27;, { signal: controller.signal })
+  .then((r) =&gt; r.json())
+  .catch((error) =&gt; {
+    if (error.name === &#x27;AbortError&#x27;) console.log(&#x27;취소되었습니다.&#x27;);
+  });
+controller.abort(); // 요청 취소</code></pre></div>
+<p>React에서는 <code>useEffect</code>의 정리 함수에서 <code>abort()</code>를 호출하는 것이 기본 패턴입니다. S3에서 본 <code>StrictMode</code>의 &quot;실행, 정리, 다시 실행&quot;도 이 패턴으로 자연스럽게 처리됩니다. 첫 요청은 정리 단계에서 취소되고 두 번째 요청만 화면에 반영됩니다.</p>
+<div class="codeblock"><pre><code>useEffect(() =&gt; {
+  const controller = new AbortController();
+  fetch(url, { signal: controller.signal }).then(/* ... */);
+  return () =&gt; controller.abort();
+}, [url]);</code></pre></div>
+<p>응답이 너무 오래 걸릴 때 포기하는 시간 제한은 <code>AbortSignal.timeout(밀리초)</code>로 간단히 만들 수 있습니다.</p>
+<div class="codeblock"><pre><code>await fetch(&#x27;http://127.0.0.1:8000/health&#x27;, { signal: AbortSignal.timeout(3000) });</code></pre></div>
+<p>Console에서 직접 확인합니다. 앞 페이지의 <code>requestJson</code> 함수를 먼저 붙여 넣은 뒤 실행합니다.</p>
+<div class="codeblock"><pre><code>// 1) 404는 catch로 가지 않고 requestJson이 만든 오류로 바뀝니다.
+await requestJson(&#x27;http://127.0.0.1:8000/books/999999&#x27;).catch((e) =&gt; console.log(e.status, e.code, e.message));
+
+// 2) 시간 제한: 1ms 안에 끝날 수 없으므로 취소됩니다.
+await requestJson(&#x27;http://127.0.0.1:8000/books&#x27;, { signal: AbortSignal.timeout(1) }).catch((e) =&gt; console.log(e.name));
+
+// 3) 직접 취소: 요청을 보내자마자 취소합니다. Network 탭에 (canceled)로 표시됩니다.
+const controller = new AbortController();
+const p = requestJson(&#x27;http://127.0.0.1:8000/books&#x27;, { signal: controller.signal });
+controller.abort();
+await p.catch((e) =&gt; console.log(e.name));</code></pre></div>
+<p>2번의 결과는 <code>TimeoutError</code>, 3번은 <code>AbortError</code>입니다. 화면 코드에서는 취소된 요청을 오류로 보여 주지 않도록 이 이름을 구분합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s6-p19-03.html"><span class="dir">이전</span>S6-P19-03 본문 형식별 전송</a>
+  <a class="next" href="s6-p19-05.html"><span class="dir">다음</span>S6-P19-05 정리: Fetch API와 오류 처리</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

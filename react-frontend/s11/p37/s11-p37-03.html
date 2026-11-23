@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P37-03 정리: React Testing Library | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P37-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 프론트엔드 테스트</a><span class="sep">/</span><span>S11-P37 React Testing Library</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p37-01.html" style="flex:15" data-type="주요 개념" title="사용자처럼 테스트하기 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s11-p37-02.html" style="flex:30" data-type="실습" title="페이지 이동과 로그인 화면 테스트 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s11-p37-03.html" style="flex:5" data-type="정리" title="정리: React Testing Library (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S11-P37-03</span></div>
+<h1>정리: React Testing Library</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>역할, 레이블, 글자처럼 사용자가 보는 정보로 요소를 찾고, 구현 세부(클래스, state)에 기대지 않습니다.</li>
+<li>있어야 할 요소는 <code>getBy</code>, 없어야 할 요소는 <code>queryBy</code>, 비동기로 나타날 요소는 <code>findBy</code>로 찾습니다.</li>
+<li>Context나 함수를 가짜로 바꿔 화면 하나만 떼어 테스트합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">요청이 끝난 뒤 나타나는 오류 메시지를 찾을 때 알맞은 함수는 무엇인가요?</p><label><input type="radio" name="s11-p37-03-q1" value="1"> <span>1. getByRole</span></label><label><input type="radio" name="s11-p37-03-q1" value="2"> <span>2. queryByRole</span></label><label><input type="radio" name="s11-p37-03-q1" value="3"> <span>3. findByRole</span></label><label><input type="radio" name="s11-p37-03-q1" value="4"> <span>4. getByTestId</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>findBy는 요소가 나타날 때까지 기다립니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">React Testing Library에서 요소를 찾을 때 가장 먼저 고려할 방법은 무엇인가요?</p><label><input type="radio" name="s11-p37-03-q2" value="1"> <span>1. CSS 클래스</span></label><label><input type="radio" name="s11-p37-03-q2" value="2"> <span>2. 테스트 ID</span></label><label><input type="radio" name="s11-p37-03-q2" value="3"> <span>3. 컴포넌트 내부 state</span></label><label><input type="radio" name="s11-p37-03-q2" value="4"> <span>4. 역할(role)과 이름</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>역할과 이름은 사용자와 보조 기술이 화면을 인식하는 방식과 같습니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s11-p37-02.html"><span class="dir">이전</span>S11-P37-02 페이지 이동과 로그인 화면 테스트</a>
+  <a class="next" href="../p38/s11-p38-01.html"><span class="dir">다음</span>S11-P38-01 어디를 가짜로 바꿀 것인가</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

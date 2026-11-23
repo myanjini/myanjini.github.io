@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P40-04 CSRF와 클릭재킹 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P40-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. 프론트엔드 개발 보안</a><span class="sep">/</span><span>S12-P40 XSS, 토큰 보호, CSRF</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p40-01.html" style="flex:10" data-type="주요 개념" title="프론트엔드 보안의 전제 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p40-02.html" style="flex:15" data-type="주요 개념" title="XSS(크로스 사이트 스크립팅) (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s12-p40-03.html" style="flex:10" data-type="주요 개념" title="토큰 저장 위치 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s12-p40-04.html" style="flex:10" data-type="주요 개념" title="CSRF와 클릭재킹 (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s12-p40-05.html" style="flex:5" data-type="정리" title="정리: XSS, 토큰 보호, CSRF (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S12-P40-04</span></div>
+<h1>CSRF와 클릭재킹</h1>
+
+<p class="lead">**CSRF(사이트 간 요청 위조)**는 사용자가 로그인한 상태에서 악성 사이트를 방문했을 때, 악성 사이트가 사용자 몰래 대상 사이트로 요청을 보내게 만드는 공격입니다. <a href="../../s5/index.html">S5</a>에서 본 것처럼 동일 출처 정책은 응답 읽기만 막고 요청 전송은 막지 않으므로, 쿠키로 인증하는 사이트라면 쿠키가 자동으로 붙은 요청이 서버에서 정상 처리될 수 있습니다.</p>
+<p>이 과정의 구조에서는 토큰을 <code>Authorization</code> 헤더로 보내므로 CSRF가 성립하지 않습니다. 악성 사이트는 사용자의 토큰을 모르기 때문입니다. 만약 쿠키 인증으로 바꾼다면 다음 대책을 함께 적용해야 합니다.</p>
+<ul>
+<li>쿠키에 <code>SameSite=Strict</code> 또는 <code>Lax</code> 속성을 지정해 다른 사이트에서 시작한 요청에는 쿠키가 붙지 않게 합니다.</li>
+<li>상태를 바꾸는 요청에 CSRF 토큰(서버가 발급하고 요청마다 헤더로 돌려받는 값)을 사용합니다.</li>
+<li>백엔드 CORS 설정에 <code>allow_credentials=True</code>를 켤 때는 허용 출처를 와일드카드 없이 정확히 적습니다.</li>
+</ul>
+<p><strong>클릭재킹</strong>은 공격자가 자신의 페이지에 대상 사이트를 투명한 <code>&lt;iframe&gt;</code>으로 겹쳐 놓고, 사용자가 다른 것을 누르는 줄 알고 대상 사이트의 버튼(예: 도서 삭제 확인)을 누르게 하는 공격입니다. 응답 헤더 <code>X-Frame-Options: DENY</code>와 CSP의 <code>frame-ancestors 'none'</code>으로 다른 사이트가 이 앱을 프레임에 넣지 못하게 막습니다. <a href="../../s15/index.html">S15</a>에서 Nginx 설정으로 적용합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s12-p40-03.html"><span class="dir">이전</span>S12-P40-03 토큰 저장 위치</a>
+  <a class="next" href="s12-p40-05.html"><span class="dir">다음</span>S12-P40-05 정리: XSS, 토큰 보호, CSRF</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P33-01 반복 코드와 커스텀 훅 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P33-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 서버 상태 관리</a><span class="sep">/</span><span>S10-P33 커스텀 훅으로 반복 줄이기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p33-01.html" style="flex:15" data-type="주요 개념" title="반복 코드와 커스텀 훅 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s10-p33-02.html" style="flex:30" data-type="실습" title="useAsync 훅 만들고 적용하기 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s10-p33-03.html" style="flex:5" data-type="정리" title="정리: 커스텀 훅으로 반복 줄이기 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S10-P33-01</span></div>
+<h1>반복 코드와 커스텀 훅</h1>
+<div class="goal"><p><strong>파트 목표</strong>반복되는 불러오기 코드를 커스텀 훅으로 추출하고, 그 한계를 설명할 수 있습니다.</p></div>
+
+<p class="lead">지금까지 만든 목록, 상세, 내 대여 화면에는 거의 같은 코드가 반복됩니다.</p>
+<div class="codeblock"><pre><code>const [data, setData] = useState(null);
+const [error, setError] = useState(null);
+const [loading, setLoading] = useState(true);
+useEffect(() =&gt; {
+  const controller = new AbortController();
+  setLoading(true);
+  someApi(params, controller.signal).then(setData).catch(/* 취소 구분 */).finally(/* 로딩 끝 */);
+  return () =&gt; controller.abort();
+}, [params]);</code></pre></div>
+<p>반복은 실수를 부릅니다. 어떤 화면은 취소를 빠뜨리고, 어떤 화면은 오류를 지우는 것을 잊습니다. React에서는 훅을 조합한 함수를 직접 만들어 이런 반복을 한곳에 모을 수 있습니다. 이름이 <code>use</code>로 시작하고 안에서 다른 훅을 부르는 함수를 커스텀 훅이라고 합니다.</p>
+<p>커스텀 훅은 상태 자체를 공유하지 않습니다. 같은 훅을 두 화면에서 부르면 각 화면이 자기만의 state를 따로 갖습니다. 공유되는 것은 &quot;상태를 다루는 방법&quot;입니다. 그래서 목록 화면에서 불러온 도서를 상세 화면이 다시 쓰지는 못합니다. 이 한계는 다음 파트에서 TanStack Query로 해결합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s9/p32/s9-p32-03.html"><span class="dir">이전</span>S9-P32-03 정리: 5일차 통합 실습</a>
+  <a class="next" href="s10-p33-02.html"><span class="dir">다음</span>S10-P33-02 useAsync 훅 만들고 적용하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

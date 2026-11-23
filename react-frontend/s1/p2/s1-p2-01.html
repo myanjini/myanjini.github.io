@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>S1-P2-01 연계할 백엔드 API 한눈에 보기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<title>S1-P2-01 브라우저가 화면을 만드는 방식 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
@@ -12,199 +12,57 @@
 <body data-page="S1-P2-01">
 <header class="topbar">
   <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
-  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. 과정 안내</a><span class="sep">/</span><span>S1-P2 연계 API와 실습 환경</span></nav>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. 웹 프론트엔드와 개발 환경</a><span class="sep">/</span><span>S1-P2 브라우저, DOM, SPA</span></nav>
 </header>
 <nav class="timebar" aria-label="이 파트의 페이지와 시간">
-  <a href="s1-p2-01.html" style="flex:20" data-type="주요 개념" title="연계할 백엔드 API 한눈에 보기 (20분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s1-p2-02.html" style="flex:15" data-type="주요 개념" title="실습 환경 준비 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s1-p2-03.html" style="flex:5" data-type="정리" title="정리: 과정 안내 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+  <a href="s1-p2-01.html" style="flex:15" data-type="주요 개념" title="브라우저가 화면을 만드는 방식 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s1-p2-02.html" style="flex:15" data-type="주요 개념" title="MPA와 SPA (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s1-p2-03.html" style="flex:15" data-type="실습" title="개발자 도구로 화면과 요청 관찰하기 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s1-p2-04.html" style="flex:5" data-type="정리" title="정리: 브라우저, DOM, SPA (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
 </nav>
 <main class="page">
-<div class="page-meta"><span class="type type-concept">주요 개념</span><span>20분</span><span>S1-P2-01</span></div>
-<h1>연계할 백엔드 API 한눈에 보기</h1>
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S1-P2-01</span></div>
+<h1>브라우저가 화면을 만드는 방식</h1>
+<div class="goal"><p><strong>파트 목표</strong>브라우저가 화면을 만드는 과정과 SPA의 동작 방식을 설명하고 개발자 도구로 관찰할 수 있습니다.</p></div>
 
-<p class="lead">이 과정에서 호출하는 백엔드 API를 먼저 정리합니다. 모두 백엔드 과정에서 만든 API이며, 괄호 안은 해당 내용을 다룬 백엔드 강의입니다. 화면을 만들다가 요청 형식이나 상태 코드가 헷갈리면 이 표로 돌아옵니다.</p>
-<p><strong>도서와 저자</strong></p>
+<p class="lead">브라우저는 서버에서 HTML 문서를 받아 해석한 뒤, 문서 구조를 메모리 안의 나무 모양 객체로 만듭니다. 이 객체를 DOM(Document Object Model)이라고 합니다. CSS는 DOM의 각 요소가 어떤 모양으로 그려질지 정하고, JavaScript는 DOM을 읽고 바꾸어 화면을 동적으로 변화시킵니다. 즉 사용자가 보는 화면은 결국 DOM이며, 프론트엔드 개발은 &quot;어떤 데이터가 있을 때 DOM이 어떤 모습이어야 하는가&quot;를 정하는 일이라고 볼 수 있습니다.</p>
+<p>DOM을 직접 고치는 코드는 화면이 복잡해질수록 관리하기 어렵습니다. 목록에 도서 하나가 추가되면 표에 행을 넣고, 전체 권수를 고치고, 빈 목록 안내 문구를 숨기는 일을 모두 손으로 맞춰야 하기 때문입니다. React는 이 문제를 &quot;데이터(상태)를 바꾸면 화면은 React가 알아서 맞춘다&quot;는 방식으로 해결합니다. 개발자는 상태에 따른 화면의 모습만 선언하면 됩니다. 이 개념은 S3에서 자세히 다룹니다.</p>
+<h2>개발자 도구</h2>
+<p>이 과정에서는 브라우저 개발자 도구(F12)를 계속 사용합니다. Chrome 또는 Edge를 기준으로 자주 쓰는 탭은 다음과 같습니다.</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
-<th>메서드와 경로</th>
-<th>설명</th>
-<th>요청</th>
-<th>성공</th>
-<th>주요 실패</th>
+<th>탭</th>
+<th>용도</th>
+<th>주로 쓰는 곳</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>GET /books</code></td>
-<td>도서 목록 (<a href="../../../fastapi-rest-api/s4/p12/s4-p12-01.html">S4-P12</a>)</td>
-<td>쿼리: <code>q</code>(제목 검색, 최대 50자), <code>author</code>(저자 이름 일치), <code>sort</code>(<code>id</code>, <code>price</code>, <code>-price</code>), <code>skip</code>, <code>limit</code></td>
-<td>200, <code>BookPage</code></td>
-<td>422</td>
+<td>Elements</td>
+<td>지금 화면의 DOM과 적용된 CSS 확인</td>
+<td>화면 구조 확인</td>
 </tr>
 <tr>
-<td><code>GET /books/{book_id}</code></td>
-<td>도서 상세</td>
-<td>없음</td>
-<td>200, <code>BookRead</code></td>
-<td>404</td>
+<td>Console</td>
+<td>JavaScript 실행, 오류 메시지 확인</td>
+<td>모든 실습</td>
 </tr>
 <tr>
-<td><code>POST /books</code></td>
-<td>도서 등록 (<a href="../../../fastapi-rest-api/s4/p13/s4-p13-01.html">S4-P13</a>)</td>
-<td>JSON <code>BookCreate</code></td>
-<td>201, <code>BookRead</code></td>
-<td>401, 409 <code>DUPLICATE_ISBN</code>, 422 <code>INVALID_AUTHOR</code></td>
+<td>Network</td>
+<td>오간 요청과 응답의 주소, 상태 코드, 헤더, 본문 확인</td>
+<td>API 연동, CORS, 인증</td>
 </tr>
 <tr>
-<td><code>PATCH /books/{book_id}</code></td>
-<td>도서 일부 수정 (<a href="../../../fastapi-rest-api/s4/p12/s4-p12-01.html">S4-P12</a>)</td>
-<td>JSON, 바꿀 필드만</td>
-<td>200, <code>BookRead</code></td>
-<td>401, 403, 404, 409</td>
-</tr>
-<tr>
-<td><code>DELETE /books/{book_id}</code></td>
-<td>도서 삭제</td>
-<td>없음</td>
-<td>204, 본문 없음</td>
-<td>401, 403, 404, 409 <code>BOOK_HAS_LOANS</code></td>
-</tr>
-<tr>
-<td><code>POST /books/{book_id}/cover</code></td>
-<td>표지 업로드 (<a href="../../../fastapi-rest-api/s6/p20/s6-p20-01.html">S6-P20</a>)</td>
-<td><code>multipart/form-data</code>, 필드 <code>file</code></td>
-<td>200, <code>BookRead</code></td>
-<td>413 <code>FILE_TOO_LARGE</code>, 415 <code>UNSUPPORTED_FILE_TYPE</code>, 422 <code>EMPTY_FILE</code></td>
-</tr>
-<tr>
-<td><code>GET /authors</code></td>
-<td>저자 목록 (<a href="../../../fastapi-rest-api/s4/p13/s4-p13-01.html">S4-P13</a>)</td>
-<td>쿼리: <code>skip</code>, <code>limit</code></td>
-<td>200, <code>AuthorRead</code> 배열</td>
-<td></td>
-</tr>
-<tr>
-<td><code>POST /authors</code></td>
-<td>저자 등록</td>
-<td>JSON <code>{&quot;name&quot;: &quot;...&quot;}</code></td>
-<td>201</td>
-<td>403(일반 사용자), 409 <code>DUPLICATE_AUTHOR</code></td>
+<td>Application</td>
+<td>localStorage, sessionStorage, 쿠키 확인</td>
+<td>토큰 보관 (<a href="../../s8/index.html">S8</a>)</td>
 </tr>
 </tbody>
 </table></div>
-<p><strong>인증 (S5)</strong></p>
-<div class="table-wrap"><table>
-<thead>
-<tr>
-<th>메서드와 경로</th>
-<th>설명</th>
-<th>요청</th>
-<th>성공</th>
-<th>주요 실패</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>POST /auth/signup</code></td>
-<td>회원가입</td>
-<td>JSON <code>{&quot;email&quot;, &quot;password&quot;}</code></td>
-<td>201, <code>UserRead</code></td>
-<td>409 <code>DUPLICATE_EMAIL</code></td>
-</tr>
-<tr>
-<td><code>POST /auth/token</code></td>
-<td>로그인</td>
-<td><strong>폼 형식</strong> <code>username</code>(이메일), <code>password</code></td>
-<td>200, 토큰</td>
-<td>401 <code>INVALID_CREDENTIALS</code>, 429 <code>TOO_MANY_ATTEMPTS</code></td>
-</tr>
-<tr>
-<td><code>POST /auth/refresh</code></td>
-<td>토큰 재발급</td>
-<td>JSON <code>{&quot;refresh_token&quot;: &quot;...&quot;}</code></td>
-<td>200, 토큰</td>
-<td>401</td>
-</tr>
-<tr>
-<td><code>POST /auth/logout</code></td>
-<td>로그아웃</td>
-<td>JSON <code>{&quot;refresh_token&quot;: &quot;...&quot;}</code></td>
-<td>204</td>
-<td></td>
-</tr>
-<tr>
-<td><code>GET /auth/me</code></td>
-<td>내 정보</td>
-<td>헤더 <code>Authorization: Bearer &lt;토큰&gt;</code></td>
-<td>200, <code>{&quot;id&quot;, &quot;email&quot;, &quot;role&quot;}</code></td>
-<td>401</td>
-</tr>
-</tbody>
-</table></div>
-<p><strong>대여 (<a href="../../../fastapi-rest-api/s6/p21/s6-p21-01.html">S6-P21</a>)와 운영 (<a href="../../../fastapi-rest-api/s8/p28/s8-p28-01.html">S8-P28</a>)</strong></p>
-<div class="table-wrap"><table>
-<thead>
-<tr>
-<th>메서드와 경로</th>
-<th>설명</th>
-<th>요청</th>
-<th>성공</th>
-<th>주요 실패</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>POST /loans</code></td>
-<td>대여</td>
-<td>JSON <code>{&quot;book_id&quot;: 7}</code></td>
-<td>201, <code>LoanRead</code></td>
-<td>409 <code>ALREADY_LOANED</code>, <code>LOAN_LIMIT_EXCEEDED</code>, <code>OUT_OF_STOCK</code></td>
-</tr>
-<tr>
-<td><code>POST /loans/{loan_id}/return</code></td>
-<td>반납</td>
-<td>없음</td>
-<td>200, <code>LoanRead</code></td>
-<td>403, 404, 409 <code>ALREADY_RETURNED</code></td>
-</tr>
-<tr>
-<td><code>GET /loans/me</code></td>
-<td>내 대여 목록</td>
-<td>없음</td>
-<td>200, <code>LoanRead</code> 배열</td>
-<td>401</td>
-</tr>
-<tr>
-<td><code>GET /health</code></td>
-<td>헬스 체크</td>
-<td>없음</td>
-<td>200 <code>{&quot;status&quot;: &quot;ok&quot;, &quot;database&quot;: &quot;ok&quot;}</code></td>
-<td>503 <code>{&quot;status&quot;: &quot;error&quot;, &quot;database&quot;: &quot;unreachable&quot;}</code></td>
-</tr>
-</tbody>
-</table></div>
-<p><strong>주요 응답 모델</strong></p>
-<div class="codeblock"><pre><code>// BookPage: GET /books 응답
-{ &quot;items&quot;: [ /* BookRead 배열 */ ], &quot;total&quot;: 23, &quot;skip&quot;: 0, &quot;limit&quot;: 10 }
-
-// BookRead: 저자는 author_id가 아니라 author 객체로 들어옵니다.
-{ &quot;id&quot;: 7, &quot;title&quot;: &quot;파이썬 입문&quot;, &quot;price&quot;: 18000, &quot;isbn&quot;: &quot;9791100000011&quot;,
-  &quot;author&quot;: { &quot;id&quot;: 1, &quot;name&quot;: &quot;홍길동&quot; }, &quot;cover_url&quot;: &quot;/covers/3f2a...e1.png&quot; }
-
-// LoanRead
-{ &quot;id&quot;: 3, &quot;user_id&quot;: 2, &quot;book&quot;: { &quot;id&quot;: 7, &quot;title&quot;: &quot;파이썬 입문&quot; },
-  &quot;loaned_at&quot;: &quot;2026-11-23T06:58:12&quot;, &quot;returned_at&quot;: null }
-
-// 백엔드가 직접 만든 오류 (S2-P6 AppError)
-{ &quot;code&quot;: &quot;DUPLICATE_ISBN&quot;, &quot;message&quot;: &quot;이미 등록된 ISBN입니다.&quot; }</code></pre></div>
-<p>입력 규칙도 미리 기억해 둡니다. <code>BookCreate</code>의 <code>title</code>은 1~100자, <code>author_id</code>는 0보다 큰 정수, <code>price</code>는 0 이상 1,000,000 이하의 정수, <code>isbn</code>은 생략하거나 숫자 13자리입니다. 사용자 역할 <code>role</code>은 <code>&quot;user&quot;</code>와 <code>&quot;admin&quot;</code> 두 가지이며, 도서 수정과 삭제는 그 도서를 등록한 사용자(소유자)나 관리자만 할 수 있습니다. 한 사용자가 동시에 빌릴 수 있는 도서는 3권입니다.</p>
-<div class="callout note"><p class="callout-title">참고</p><p><code>BookRead</code>에 <code>cover_url</code> 외에 재고(<code>stock</code>)나 소유자(<code>owner_id</code>) 필드가 포함되는지는 백엔드 구현에 따라 다릅니다. 이 교안의 화면은 위 표에 나온 필드만 사용하므로 어느 쪽이든 동작합니다. 실제 응답은 백엔드의 <code>/docs</code> 화면에서 확인합니다.</p></div>
 
 
 </main>
 <footer class="pager">
-  <a class="prev" href="../p1/s1-p1-05.html"><span class="dir">이전</span>S1-P1-05 최종 결과물</a>
-  <a class="next" href="s1-p2-02.html"><span class="dir">다음</span>S1-P2-02 실습 환경 준비</a>
+  <a class="prev" href="../p1/s1-p1-05.html"><span class="dir">이전</span>S1-P1-05 정리: 과정 소개와 결과물</a>
+  <a class="next" href="s1-p2-02.html"><span class="dir">다음</span>S1-P2-02 MPA와 SPA</a>
 </footer>
 <script src="../../assets/js/main.js"></script>
 </body>

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P13-02 시간이 걸리는 데이터 불러오기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P13-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 폼, 이펙트, 컴포넌트 설계</a><span class="sep">/</span><span>S4-P13 useEffect와 정리 함수</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p13-01.html" style="flex:20" data-type="주요 개념" title="useEffect (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s4-p13-02.html" style="flex:25" data-type="실습" title="시간이 걸리는 데이터 불러오기 (25분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s4-p13-03.html" style="flex:5" data-type="정리" title="정리: useEffect와 정리 함수 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S4-P13-02</span></div>
+<h1>시간이 걸리는 데이터 불러오기</h1>
+
+<p class="lead">네트워크 요청 대신 시간이 걸리는 작업을 흉내 내는 함수로, 화면을 연 뒤 데이터를 불러오는 흐름을 연습합니다. <a href="../../s6/index.html">S6</a>에서 이 자리에 진짜 API 호출이 들어갑니다.</p>
+<div class="codeblock"><span class="file">src/practice/sampleBooks.js</span><pre><code>// 백엔드 GET /books 응답(BookPage)과 같은 모양의 샘플 데이터
+export const SAMPLE_PAGE = {
+  items: [
+    { id: 1, title: &#x27;파이썬 입문&#x27;, price: 18000, isbn: null, author: { id: 1, name: &#x27;홍길동&#x27; } },
+    { id: 2, title: &#x27;FastAPI 실전&#x27;, price: 32000, isbn: &#x27;9791100000011&#x27;, author: { id: 2, name: &#x27;김철수&#x27; } },
+    { id: 3, title: &#x27;데이터베이스 첫걸음&#x27;, price: 21000, isbn: null, author: { id: 1, name: &#x27;홍길동&#x27; } },
+    { id: 4, title: &#x27;React 시작하기&#x27;, price: 27000, isbn: null, author: { id: 3, name: &#x27;이영희&#x27; } },
+  ],
+  total: 4,
+  skip: 0,
+  limit: 10,
+};
+
+// 네트워크 요청 대신 시간이 걸리는 작업을 흉내 냅니다. (S6에서 실제 API로 바꿉니다.)
+export function loadSampleBooks(delayMs = 800) {
+  return new Promise((resolve) =&gt; setTimeout(() =&gt; resolve(SAMPLE_PAGE.items), delayMs));
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/App.jsx</span><pre><code>import { useEffect, useState } from &#x27;react&#x27;;
+import AddBookForm from &#x27;./practice/AddBookForm&#x27;;
+import BookTable from &#x27;./practice/BookTable&#x27;;
+import SearchBox from &#x27;./practice/SearchBox&#x27;;
+import { loadSampleBooks } from &#x27;./practice/sampleBooks&#x27;;
+
+const SORTERS = {
+  id: (a, b) =&gt; a.id - b.id,
+  price: (a, b) =&gt; a.price - b.price,
+  &#x27;-price&#x27;: (a, b) =&gt; b.price - a.price,
+};
+
+export default function App() {
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // 처음 그린 뒤 한 번 데이터를 불러옵니다.
+  useEffect(() =&gt; {
+    let ignore = false;
+    loadSampleBooks().then((items) =&gt; {
+      if (!ignore) {
+        setBooks(items);
+        setLoading(false);
+      }
+    });
+    // 정리 함수: 화면이 사라지면 늦게 도착한 결과를 무시합니다.
+    return () =&gt; {
+      ignore = true;
+    };
+  }, []);
+
+  // books가 바뀔 때마다 브라우저 탭 제목을 맞춥니다.
+  useEffect(() =&gt; {
+    document.title = `도서 관리 (${books.length}권)`;
+  }, [books.length]);
+  const [keyword, setKeyword] = useState(&#x27;&#x27;);
+  const [sort, setSort] = useState(&#x27;id&#x27;);
+
+  function handleAdd(book) {
+    // 기존 배열을 고치지 않고 새 배열로 바꿔 끼웁니다.
+    const nextId = Math.max(0, ...books.map((b) =&gt; b.id)) + 1;
+    setBooks((prev) =&gt; [...prev, { ...book, id: nextId, isbn: null }]);
+  }
+
+  // filter는 새 배열을 돌려주므로 sort로 정렬해도 원본 데이터가 바뀌지 않습니다.
+  const visible = books
+    .filter((book) =&gt; book.title.includes(keyword.trim()))
+    .sort(SORTERS[sort]);
+
+  return (
+    &lt;main&gt;
+      &lt;h1&gt;도서 목록&lt;/h1&gt;
+      &lt;AddBookForm onAdd={handleAdd} /&gt;
+      &lt;SearchBox keyword={keyword} onChange={setKeyword} /&gt;
+      &lt;select value={sort} onChange={(e) =&gt; setSort(e.target.value)}&gt;
+        &lt;option value=&quot;id&quot;&gt;등록순&lt;/option&gt;
+        &lt;option value=&quot;price&quot;&gt;가격 낮은 순&lt;/option&gt;
+        &lt;option value=&quot;-price&quot;&gt;가격 높은 순&lt;/option&gt;
+      &lt;/select&gt;
+      {loading &amp;&amp; &lt;p&gt;불러오는 중입니다.&lt;/p&gt;}
+      {!loading &amp;&amp; (visible.length === 0 ? &lt;p&gt;조건에 맞는 도서가 없습니다.&lt;/p&gt; : &lt;BookTable books={visible} /&gt;)}
+      &lt;p&gt;
+        전체 {books.length}권 중 {visible.length}권 표시
+      &lt;/p&gt;
+    &lt;/main&gt;
+  );
+}</code></pre></div>
+<p>이펙트가 두 개입니다. 첫 번째는 처음 한 번 데이터를 불러오고(의존성 <code>[]</code>), 두 번째는 도서 수가 바뀔 때마다 브라우저 탭 제목을 맞춥니다(의존성 <code>[books.length]</code>). 첫 번째 이펙트의 정리 함수는 <code>ignore</code> 표시를 세워, 화면이 사라진 뒤 늦게 도착한 결과로 state를 바꾸지 않게 합니다.</p>
+<p>확인할 내용은 다음과 같습니다.</p>
+<ol>
+<li>화면을 열면 0.8초 동안 &quot;불러오는 중입니다.&quot;가 보인 뒤 목록이 나오는지 확인합니다.</li>
+<li>도서를 추가하면 브라우저 탭 제목의 권수가 바뀌는지 확인합니다.</li>
+<li><code>loadSampleBooks</code> 안에 <code>console.log('불러오기 시작')</code>을 넣고 새로고침합니다. 개발 모드에서 두 번 찍히는 이유를 <a href="../../s3/p8/s3-p8-01.html">S3-P8</a>에서 배운 <code>StrictMode</code>로 설명합니다.</li>
+<li>두 번째 이펙트의 의존성 배열을 지우면(배열 자체를 없애면) 언제 실행되는지 <code>console.log</code>로 확인합니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p13-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s4-p13-01.html"><span class="dir">이전</span>S4-P13-01 useEffect</a>
+  <a class="next" href="s4-p13-03.html"><span class="dir">다음</span>S4-P13-03 정리: useEffect와 정리 함수</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

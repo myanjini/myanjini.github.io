@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P42-02 보안 린트 규칙 추가 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P42-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. 프론트엔드 개발 보안</a><span class="sep">/</span><span>S12-P42 공급망 보안과 보안 점검 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p42-01.html" style="flex:10" data-type="주요 개념" title="의존성, 공급망, 요청 제한 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p42-02.html" style="flex:15" data-type="실습" title="보안 린트 규칙 추가 (15분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s12-p42-03.html" style="flex:20" data-type="실습" title="보안 점검하기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s12-p42-04.html" style="flex:5" data-type="정리" title="정리: 공급망 보안과 보안 점검 실습 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S12-P42-02</span></div>
+<h1>보안 린트 규칙 추가</h1>
+
+<p class="lead">위험한 코드를 사람이 매번 찾는 대신 린트 규칙으로 막습니다. Vite 템플릿에 포함된 oxlint 설정(<code>.oxlintrc.json</code>)에 보안 규칙을 추가합니다. <code>error</code> 규칙에 걸리면 <code>npm run lint</code>가 실패하고, <a href="../../s16/index.html">S16</a>의 CI에서 병합을 막습니다.</p>
+<div class="codeblock"><span class="file">.oxlintrc.json</span><pre><code>{
+  &quot;$schema&quot;: &quot;./node_modules/oxlint/configuration_schema.json&quot;,
+  &quot;plugins&quot;: [&quot;react&quot;, &quot;oxc&quot;],
+  &quot;rules&quot;: {
+    &quot;react/rules-of-hooks&quot;: &quot;error&quot;,
+    &quot;react/only-export-components&quot;: [&quot;warn&quot;, { &quot;allowConstantExport&quot;: true }],
+    &quot;react/no-danger&quot;: &quot;error&quot;,
+    &quot;react/jsx-no-script-url&quot;: &quot;error&quot;,
+    &quot;react/jsx-no-target-blank&quot;: &quot;error&quot;,
+    &quot;no-eval&quot;: &quot;error&quot;,
+    &quot;no-new-func&quot;: &quot;error&quot;,
+    &quot;no-implied-eval&quot;: &quot;error&quot;
+  },
+  &quot;ignorePatterns&quot;: [&quot;dist&quot;, &quot;playwright-report&quot;, &quot;test-results&quot;]
+}</code></pre></div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>규칙</th>
+<th>막는 것</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>react/no-danger</code></td>
+<td><code>dangerouslySetInnerHTML</code></td>
+</tr>
+<tr>
+<td><code>react/jsx-no-script-url</code></td>
+<td><code>href=&quot;javascript:...&quot;</code></td>
+</tr>
+<tr>
+<td><code>react/jsx-no-target-blank</code></td>
+<td><code>rel</code> 없는 <code>target=&quot;_blank&quot;</code> (새 창이 원래 창을 조작하는 문제)</td>
+</tr>
+<tr>
+<td><code>no-eval</code>, <code>no-new-func</code>, <code>no-implied-eval</code></td>
+<td>문자열을 코드로 실행하는 함수</td>
+</tr>
+</tbody>
+</table></div>
+<p>규칙이 동작하는지 확인합니다. 아래 내용으로 <code>src/tmp.jsx</code>를 만들고 <code>npm run lint</code>를 실행하면 두 개의 오류가 나와야 합니다. 확인 후 파일을 지웁니다.</p>
+<div class="codeblock"><pre><code>export const X = () =&gt; &lt;div dangerouslySetInnerHTML={{ __html: &#x27;a&#x27; }} /&gt;;
+eval(&#x27;1&#x27;);</code></pre></div>
+<p>린트를 실행하면 <code>BookDetailPage.jsx</code>에 &quot;컴포넌트만 내보내는 파일이어야 한다&quot;는 경고도 보입니다. <a href="../../s10/p35/s10-p35-01.html">S10-P35</a>에서 표지 검사 함수를 컴포넌트 파일에서 내보냈기 때문입니다. 이 함수를 <code>src/utils/cover.js</code>로 옮기고 테스트를 붙입니다. 마지막 테스트는 이 검사가 보안 장치가 아니라는 점을 테스트 이름으로 남깁니다.</p>
+<div class="codeblock"><span class="file">src/utils/cover.js</span><pre><code>const ALLOWED_EXT = [&#x27;.jpg&#x27;, &#x27;.jpeg&#x27;, &#x27;.png&#x27;];
+const MAX_BYTES = 2 * 1024 * 1024;
+
+// 업로드 전에 브라우저에서 미리 확인합니다. 사용자 편의를 위한 검사이며
+// 최종 판단(415, 413, 422)은 백엔드가 합니다.
+export function precheckCover(file) {
+  const name = file.name.toLowerCase();
+  if (!ALLOWED_EXT.some((ext) =&gt; name.endsWith(ext))) return &#x27;jpg, jpeg, png 파일만 올릴 수 있습니다.&#x27;;
+  if (file.size === 0) return &#x27;빈 파일입니다.&#x27;;
+  if (file.size &gt; MAX_BYTES) return &#x27;2MB 이하 파일만 올릴 수 있습니다.&#x27;;
+  return null;
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/utils/cover.test.js</span><pre><code>import { describe, expect, it } from &#x27;vitest&#x27;;
+import { precheckCover } from &#x27;./cover&#x27;;
+
+const file = (name, size) =&gt; ({ name, size });
+
+describe(&#x27;precheckCover&#x27;, () =&gt; {
+  it(&#x27;허용한 확장자와 크기면 통과한다&#x27;, () =&gt; {
+    expect(precheckCover(file(&#x27;cover.PNG&#x27;, 1024))).toBeNull();
+  });
+
+  it(&#x27;확장자, 빈 파일, 크기 제한을 검사한다&#x27;, () =&gt; {
+    expect(precheckCover(file(&#x27;cover.gif&#x27;, 1024))).toContain(&#x27;jpg, jpeg, png&#x27;);
+    expect(precheckCover(file(&#x27;cover.jpg&#x27;, 0))).toBe(&#x27;빈 파일입니다.&#x27;);
+    expect(precheckCover(file(&#x27;cover.jpg&#x27;, 2 * 1024 * 1024 + 1))).toContain(&#x27;2MB&#x27;);
+  });
+
+  it(&#x27;이름만 그럴듯한 파일도 통과하므로 최종 검사는 백엔드가 해야 한다&#x27;, () =&gt; {
+    // 확장자는 이름일 뿐입니다. 실제 내용 검사는 백엔드(S9-P31)의 몫입니다.
+    expect(precheckCover(file(&#x27;malware.exe.png&#x27;, 10))).toBeNull();
+  });
+});</code></pre></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s12-p42-01.html"><span class="dir">이전</span>S12-P42-01 의존성, 공급망, 요청 제한</a>
+  <a class="next" href="s12-p42-03.html"><span class="dir">다음</span>S12-P42-03 보안 점검하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

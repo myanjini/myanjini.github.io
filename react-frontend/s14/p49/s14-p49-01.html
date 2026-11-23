@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S14-P49-01 대시보드 접근성 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S14-P49-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S14. 대시보드 고도화</a><span class="sep">/</span><span>S14-P49 접근성과 장애 관찰 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s14-p49-01.html" style="flex:15" data-type="주요 개념" title="대시보드 접근성 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s14-p49-02.html" style="flex:30" data-type="실습" title="표 보기, 상태 알림, 키보드 점검 (30분)"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s14-p49-03.html" style="flex:5" data-type="정리" title="정리: 접근성과 장애 관찰 실습 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S14-P49-01</span></div>
+<h1>대시보드 접근성</h1>
+<div class="goal"><p><strong>파트 목표</strong>대시보드의 접근성 문제를 찾아 개선하고, 키보드와 보조 기술로 화면을 점검할 수 있습니다.</p></div>
+
+<p class="lead">접근성은 장애가 있는 사용자를 포함해 누구나 화면을 쓸 수 있게 하는 것입니다. 관제 화면은 오랜 시간 여러 사람이 다양한 환경에서 보는 화면이라 접근성이 곧 운영 품질입니다. 웹 접근성의 국제 기준인 WCAG와 국내 기준(한국형 웹 콘텐츠 접근성 지침)에서 대시보드와 관련된 핵심은 다음과 같습니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>원칙</th>
+<th>대시보드에서의 의미</th>
+<th>이 과정의 대책</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>색에만 의존하지 않기</td>
+<td>빨강과 초록을 구분하기 어려운 사용자가 있다</td>
+<td>상태에 모양과 글자 함께 표시 (<a href="../../s13/p46/s13-p46-01.html">S13-P46</a>)</td>
+</tr>
+<tr>
+<td>충분한 명도 대비</td>
+<td>어두운 바탕에 어두운 글자는 읽기 어렵다</td>
+<td>글자는 글자 색 변수로, 계열 색은 선과 막대에만</td>
+</tr>
+<tr>
+<td>대체 텍스트</td>
+<td>화면 낭독기는 SVG 차트의 모양을 읽지 못한다</td>
+<td>차트에 <code>role=&quot;img&quot;</code>와 요약 문장, 같은 데이터의 표 보기</td>
+</tr>
+<tr>
+<td>키보드 사용</td>
+<td>마우스 없이 모든 기능을 쓸 수 있어야 한다</td>
+<td>기본 요소(<code>button</code>, <code>a</code>, <code>input</code>) 사용, 포커스 표시</td>
+</tr>
+<tr>
+<td>변화 알림</td>
+<td>화면을 보지 않는 사용자도 상태 변화를 알아야 한다</td>
+<td><code>aria-live</code> 영역으로 상태가 바뀔 때만 알림</td>
+</tr>
+</tbody>
+</table></div>
+<p><code>aria-live=&quot;polite&quot;</code>는 그 영역의 글자가 바뀌면 화면 낭독기가 하던 말을 마친 뒤 읽어 주게 하는 속성입니다. 10초마다 같은 글자를 다시 쓰면 바뀐 것이 없으므로 읽지 않고, &quot;정상&quot;에서 &quot;장애&quot;로 바뀌었을 때만 읽습니다. 화면에는 보이지 않게 하되 보조 기술은 읽을 수 있도록 <code>sr-only</code> 클래스로 숨깁니다. <code>display: none</code>으로 숨기면 보조 기술도 읽지 못합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p48/s14-p48-03.html"><span class="dir">이전</span>S14-P48-03 정리: 성능: 코드 분할과 렌더링 최적화</a>
+  <a class="next" href="s14-p49-02.html"><span class="dir">다음</span>S14-P49-02 표 보기, 상태 알림, 키보드 점검</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

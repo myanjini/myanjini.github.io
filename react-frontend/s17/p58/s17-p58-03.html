@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S17-P58-03 정리: 구현 1: API 계층과 조회 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S17-P58-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S17. 미니 프로젝트 설계와 구현</a><span class="sep">/</span><span>S17-P58 구현 1: API 계층과 조회</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s17-p58-01.html" style="flex:5" data-type="주요 개념" title="구현 순서 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s17-p58-02.html" style="flex:40" data-type="실습" title="API 함수와 조회 화면 구현 (40분)"><span class="seg-num">02</span><span class="seg-min">40분</span></a><a href="s17-p58-03.html" style="flex:5" data-type="정리" title="정리: 구현 1: API 계층과 조회 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S17-P58-03</span></div>
+<h1>정리: 구현 1: API 계층과 조회</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>API 함수, 쿼리 연결, 화면 상태, 라우트 순서로 바깥에서 안쪽으로 구현합니다.</li>
+<li>쿼리 키는 기존 규칙을 따르고, API 함수는 <code>signal</code>을 받아 취소를 지원합니다.</li>
+<li>단계마다 확인하고 커밋하면 문제가 생겼을 때 범위를 좁히기 쉽습니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">API 함수에 <code>signal</code>을 넘기는 이유는 무엇인가요?</p><label><input type="radio" name="s17-p58-03-q1" value="1"> <span>1. 응답을 캐시하려고</span></label><label><input type="radio" name="s17-p58-03-q1" value="2"> <span>2. 화면을 떠나거나 조건이 바뀌면 진행 중인 요청을 취소할 수 있게 하려고</span></label><label><input type="radio" name="s17-p58-03-q1" value="3"> <span>3. 토큰을 붙이려고</span></label><label><input type="radio" name="s17-p58-03-q1" value="4"> <span>4. 오류를 변환하려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>TanStack Query는 쿼리가 더 필요 없어지면 signal로 요청을 취소합니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">조회 화면에서 구분해 보여 줘야 할 네 가지 상태가 아닌 것은 무엇인가요?</p><label><input type="radio" name="s17-p58-03-q2" value="1"> <span>1. 빈 결과</span></label><label><input type="radio" name="s17-p58-03-q2" value="2"> <span>2. 재시도 횟수</span></label><label><input type="radio" name="s17-p58-03-q2" value="3"> <span>3. 로딩</span></label><label><input type="radio" name="s17-p58-03-q2" value="4"> <span>4. 오류</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>로딩, 오류, 빈 결과, 정상 결과를 구분합니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s17-p58-02.html"><span class="dir">이전</span>S17-P58-02 API 함수와 조회 화면 구현</a>
+  <a class="next" href="../p59/s17-p59-01.html"><span class="dir">다음</span>S17-P59-01 권한과 쓰기 기능 구현</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

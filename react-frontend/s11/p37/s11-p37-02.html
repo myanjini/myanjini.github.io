@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S11-P37-02 페이지 이동과 로그인 화면 테스트 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S11-P37-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S11. 프론트엔드 테스트</a><span class="sep">/</span><span>S11-P37 React Testing Library</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s11-p37-01.html" style="flex:15" data-type="주요 개념" title="사용자처럼 테스트하기 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s11-p37-02.html" style="flex:30" data-type="실습" title="페이지 이동과 로그인 화면 테스트 (30분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s11-p37-03.html" style="flex:5" data-type="정리" title="정리: React Testing Library (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>30분</span><span>S11-P37-02</span></div>
+<h1>페이지 이동과 로그인 화면 테스트</h1>
+
+<p class="lead"><code>Pagination</code>은 props만 받는 단순한 컴포넌트라 그대로 그려 테스트할 수 있습니다.</p>
+<div class="codeblock"><span class="file">src/components/Pagination.test.jsx</span><pre><code>import { render, screen } from &#x27;@testing-library/react&#x27;;
+import userEvent from &#x27;@testing-library/user-event&#x27;;
+import { describe, expect, it, vi } from &#x27;vitest&#x27;;
+import Pagination from &#x27;./Pagination&#x27;;
+
+describe(&#x27;Pagination&#x27;, () =&gt; {
+  it(&#x27;현재 페이지와 전체 권수를 보여 준다&#x27;, () =&gt; {
+    render(&lt;Pagination total={23} skip={10} limit={10} onChange={() =&gt; {}} /&gt;);
+    expect(screen.getByText(&#x27;2 / 3 페이지 (전체 23권)&#x27;)).toBeInTheDocument();
+  });
+
+  it(&#x27;첫 페이지에서는 이전 버튼이 비활성화된다&#x27;, () =&gt; {
+    render(&lt;Pagination total={23} skip={0} limit={10} onChange={() =&gt; {}} /&gt;);
+    expect(screen.getByRole(&#x27;button&#x27;, { name: &#x27;이전&#x27; })).toBeDisabled();
+    expect(screen.getByRole(&#x27;button&#x27;, { name: &#x27;다음&#x27; })).toBeEnabled();
+  });
+
+  it(&#x27;다음 버튼을 누르면 다음 페이지의 skip 값을 알려 준다&#x27;, async () =&gt; {
+    const onChange = vi.fn(); // 호출 여부와 인자를 기록하는 가짜 함수
+    render(&lt;Pagination total={23} skip={10} limit={10} onChange={onChange} /&gt;);
+    await userEvent.click(screen.getByRole(&#x27;button&#x27;, { name: &#x27;다음&#x27; }));
+    expect(onChange).toHaveBeenCalledWith(20);
+  });
+});</code></pre></div>
+<p><code>LoginPage</code>는 <code>useAuth</code>와 라우터를 씁니다. 진짜 <code>AuthProvider</code>를 쓰면 실제 로그인 요청이 나가므로, 원하는 <code>login</code> 함수를 넣은 Context로 감싸서 화면만 시험합니다. <code>vi.fn().mockRejectedValue(...)</code>로 &quot;로그인이 401로 실패했다&quot;는 상황을 만듭니다.</p>
+<div class="codeblock"><span class="file">src/pages/LoginPage.test.jsx</span><pre><code>import { render, screen } from &#x27;@testing-library/react&#x27;;
+import userEvent from &#x27;@testing-library/user-event&#x27;;
+import { MemoryRouter } from &#x27;react-router&#x27;;
+import { describe, expect, it, vi } from &#x27;vitest&#x27;;
+import { ApiError } from &#x27;../api/errors&#x27;;
+import { AuthContext } from &#x27;../auth/useAuth&#x27;;
+import LoginPage from &#x27;./LoginPage&#x27;;
+
+// 실제 AuthProvider 대신 원하는 login 함수를 넣은 Context로 감싸서 화면만 시험합니다.
+function renderLogin(login) {
+  return render(
+    &lt;MemoryRouter&gt;
+      &lt;AuthContext.Provider value={{ login, user: null, isAdmin: false, initializing: false }}&gt;
+        &lt;LoginPage /&gt;
+      &lt;/AuthContext.Provider&gt;
+    &lt;/MemoryRouter&gt;,
+  );
+}
+
+async function submit(email, password) {
+  await userEvent.type(screen.getByLabelText(&#x27;이메일&#x27;), email);
+  await userEvent.type(screen.getByLabelText(&#x27;비밀번호&#x27;), password);
+  await userEvent.click(screen.getByRole(&#x27;button&#x27;, { name: &#x27;로그인&#x27; }));
+}
+
+describe(&#x27;LoginPage&#x27;, () =&gt; {
+  it(&#x27;입력한 이메일과 비밀번호로 login을 호출한다&#x27;, async () =&gt; {
+    const login = vi.fn().mockResolvedValue({ id: 1 });
+    renderLogin(login);
+    await submit(&#x27; reader@example.com &#x27;, &#x27;secret-1234&#x27;);
+    expect(login).toHaveBeenCalledWith(&#x27;reader@example.com&#x27;, &#x27;secret-1234&#x27;);
+  });
+
+  it(&#x27;401이면 어느 칸이 틀렸는지 알려 주지 않는 메시지를 보여 주고 비밀번호를 지운다&#x27;, async () =&gt; {
+    const login = vi.fn().mockRejectedValue(new ApiError({ status: 401, code: &#x27;INVALID_CREDENTIALS&#x27;, message: &#x27;x&#x27; }));
+    renderLogin(login);
+    await submit(&#x27;reader@example.com&#x27;, &#x27;wrong&#x27;);
+    expect(await screen.findByRole(&#x27;alert&#x27;)).toHaveTextContent(&#x27;이메일 또는 비밀번호가 올바르지 않습니다.&#x27;);
+    expect(screen.getByLabelText(&#x27;비밀번호&#x27;)).toHaveValue(&#x27;&#x27;);
+  });
+
+  it(&#x27;429이면 Retry-After로 잠금 시간을 안내한다&#x27;, async () =&gt; {
+    const error = new ApiError({ status: 429, code: &#x27;TOO_MANY_ATTEMPTS&#x27;, message: &#x27;x&#x27;, retryAfter: 600 });
+    renderLogin(vi.fn().mockRejectedValue(error));
+    await submit(&#x27;reader@example.com&#x27;, &#x27;wrong&#x27;);
+    expect(await screen.findByRole(&#x27;alert&#x27;)).toHaveTextContent(&#x27;약 10분 뒤에&#x27;);
+  });
+});</code></pre></div>
+<p>확인할 내용은 다음과 같습니다.</p>
+<ol>
+<li><code>npm test</code>로 실행해 새 테스트 6개가 통과하는지 확인합니다.</li>
+<li><code>LoginPage.jsx</code>의 <code>setPassword('')</code>를 지우면 어느 테스트가 실패하는지 확인하고 되돌립니다. 보안을 위해 넣은 동작이 테스트로 지켜지고 있습니다.</li>
+<li><code>Pagination</code>의 &quot;이전&quot; 버튼 글자를 &quot;앞으로&quot;로 바꾸면 테스트가 실패합니다. 역할과 이름으로 찾는 테스트는 화면 문구 변경에 민감합니다. 이것이 단점인지 장점인지(사용자에게 보이는 것이 바뀐 것이므로) 생각해 봅니다.</li>
+<li>회원가입 화면에서 비밀번호 확인이 다르면 안내 문구가 나오는지 확인하는 테스트를 직접 작성해 봅니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p37-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s11-p37-01.html"><span class="dir">이전</span>S11-P37-01 사용자처럼 테스트하기</a>
+  <a class="next" href="s11-p37-03.html"><span class="dir">다음</span>S11-P37-03 정리: React Testing Library</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>S10. 관제 대시보드와 데이터 시각화 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<title>S10. 서버 상태 관리 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
@@ -12,16 +12,10 @@
 <body data-page="index">
 <header class="topbar">
   <a class="course" href="../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
-  <nav class="crumbs" aria-label="현재 위치"><span>S10. 관제 대시보드와 데이터 시각화</span></nav>
+  <nav class="crumbs" aria-label="현재 위치"><span>S10. 서버 상태 관리</span></nav>
 </header>
 <main class="page">
-<h1>S10. 관제 대시보드와 데이터 시각화</h1><div class="goal"><p><strong>섹션 목표</strong>관제 환경에 맞는 대시보드를 설계하고 Recharts로 상태와 추세를 시각화합니다.</p><ul>
-<li>관제 환경에서 대시보드가 해야 할 일과 설계 원칙을 설명합니다.</li>
-<li>서비스 상태를 나타내는 지표를 고르고, 이 백엔드에서 얻을 수 있는 데이터 소스와 연결합니다.</li>
-<li>데이터의 성격에 맞는 차트 형태와 시각화 도구를 고릅니다.</li>
-<li>주기적 갱신, 요청 기록, 로그 분석을 갖춘 관제 대시보드를 Recharts로 구현합니다.</li>
-</ul>
-</div><div class="toc-part"><h3>S10-P22 관제 대시보드 설계</h3><p>관제 대시보드의 원칙, 지표, 차트 형태, 도구를 고를 수 있습니다.</p><ol class="toc-pages"><li><a href="p22/s10-p22-01.html">관제 대시보드란</a> <span class="min">주요 개념, 5분</span></li><li><a href="p22/s10-p22-02.html">설계 원칙</a> <span class="min">주요 개념, 5분</span></li><li><a href="p22/s10-p22-03.html">무엇을 볼 것인가: 지표와 데이터 소스</a> <span class="min">주요 개념, 10분</span></li><li><a href="p22/s10-p22-04.html">차트 형태 고르기</a> <span class="min">주요 개념, 5분</span></li><li><a href="p22/s10-p22-05.html">시각화 도구 비교</a> <span class="min">주요 개념, 10분</span></li></ol></div><div class="toc-part"><h3>S10-P23 대시보드 구현 1: 데이터 준비</h3><p>폴링, 요청 기록, 지표 계산, 공통 표시 컴포넌트를 만들 수 있습니다.</p><ol class="toc-pages"><li><a href="p23/s10-p23-01.html">실시간 갱신 방식</a> <span class="min">실습, 10분</span></li><li><a href="p23/s10-p23-02.html">Recharts 설치</a> <span class="min">실습, 10분</span></li><li><a href="p23/s10-p23-03.html">브라우저 요청 기록</a> <span class="min">실습, 25분</span></li><li><a href="p23/s10-p23-04.html">지표 계산 함수</a> <span class="min">실습, 20분</span></li><li><a href="p23/s10-p23-05.html">공통 표시 컴포넌트</a> <span class="min">실습, 15분</span></li></ol></div><div class="toc-part"><h3>S10-P24 대시보드 구현 2: 화면 완성</h3><p>차트와 로그 분석 화면을 만들고 장애 상황을 관찰할 수 있습니다.</p><ol class="toc-pages"><li><a href="p24/s10-p24-01.html">헬스 체크 패널과 상태 코드 분포</a> <span class="min">실습, 20분</span></li><li><a href="p24/s10-p24-02.html">백엔드 로그 분석</a> <span class="min">실습, 25분</span></li><li><a href="p24/s10-p24-03.html">대시보드 화면 조립</a> <span class="min">실습, 20분</span></li><li><a href="p24/s10-p24-04.html">라우트 등록과 코드 분할</a> <span class="min">실습, 10분</span></li><li><a href="p24/s10-p24-05.html">관제 대시보드 운영해 보기</a> <span class="min">실습, 10분</span></li><li><a href="p24/s10-p24-06.html">정리: 관제 대시보드와 데이터 시각화</a> <span class="min">정리, 5분</span></li></ol></div>
+<h1>S10. 서버 상태 관리</h1><div class="goal"><p><strong>섹션 목표</strong>반복되는 조회 코드를 커스텀 훅으로 줄이고, TanStack Query로 서버 데이터를 캐시하며 변경 후 화면을 일관되게 갱신합니다.</p><p>5일차 오후, 3시간, 파트마다 50분 학습과 10분 휴식</p></div><div class="toc-part"><h3>S10-P33 커스텀 훅으로 반복 줄이기</h3><p>반복되는 불러오기 코드를 커스텀 훅으로 추출하고, 그 한계를 설명할 수 있습니다.</p><ol class="toc-pages"><li><a href="p33/s10-p33-01.html">반복 코드와 커스텀 훅</a> <span class="min">주요 개념, 15분</span></li><li><a href="p33/s10-p33-02.html">useAsync 훅 만들고 적용하기</a> <span class="min">실습, 30분</span></li><li><a href="p33/s10-p33-03.html">정리: 커스텀 훅으로 반복 줄이기</a> <span class="min">정리, 5분</span></li></ol></div><div class="toc-part"><h3>S10-P34 TanStack Query로 조회 다루기</h3><p>서버 상태와 클라이언트 상태를 구분하고, TanStack Query로 조회 결과를 캐시해 화면 사이에서 공유할 수 있습니다.</p><ol class="toc-pages"><li><a href="p34/s10-p34-01.html">서버 상태와 TanStack Query</a> <span class="min">주요 개념, 15분</span></li><li><a href="p34/s10-p34-02.html">목록과 상세를 useQuery로 바꾸기</a> <span class="min">실습, 30분</span></li><li><a href="p34/s10-p34-03.html">정리: TanStack Query로 조회 다루기</a> <span class="min">정리, 5분</span></li></ol></div><div class="toc-part"><h3>S10-P35 변경 요청과 캐시 무효화</h3><p>useMutation으로 서버 데이터를 바꾸고, 관련 캐시를 무효화해 모든 화면을 일관되게 갱신할 수 있습니다.</p><ol class="toc-pages"><li><a href="p35/s10-p35-01.html">useMutation과 캐시 무효화</a> <span class="min">주요 개념, 10분</span></li><li><a href="p35/s10-p35-02.html">대여, 반납, 삭제, 저장을 useMutation으로</a> <span class="min">실습, 35분</span></li><li><a href="p35/s10-p35-03.html">정리: 변경 요청과 캐시 무효화</a> <span class="min">정리, 5분</span></li></ol></div>
 </main>
 </body>
 </html>

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P50-02 운영 빌드 만들고 확인하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P50-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. 도커라이징과 운영 빌드</a><span class="sep">/</span><span>S15-P50 운영 빌드와 환경 변수</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p50-01.html" style="flex:15" data-type="주요 개념" title="운영 환경의 구조 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s15-p50-02.html" style="flex:30" data-type="실습" title="운영 빌드 만들고 확인하기 (30분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s15-p50-03.html" style="flex:5" data-type="정리" title="정리: 운영 빌드와 환경 변수 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>30분</span><span>S15-P50-02</span></div>
+<h1>운영 빌드 만들고 확인하기</h1>
+
+<p class="lead">운영 빌드에서는 API 주소를 같은 출처의 상대 경로 <code>/api</code>로 지정합니다. 프로젝트 루트에 <code>.env.production</code>을 만듭니다.</p>
+<div class="codeblock"><span class="file">.env.production</span><pre><code># 운영 빌드(npm run build)에서 사용하는 값입니다.
+# Nginx가 /api 경로를 백엔드로 전달하므로 같은 출처의 상대 경로를 씁니다.
+VITE_API_BASE_URL=/api</code></pre></div>
+<p>이 값으로 빌드하면 axios의 <code>baseURL</code>이 <code>/api</code>가 되어 <code>/api/books</code>, <code>/api/auth/token</code>처럼 요청하고, <code>toAssetUrl</code>은 표지 주소를 <code>/api/covers/...</code>로 만듭니다.</p>
+<p>Vite의 환경 변수는 <strong>빌드할 때</strong> 코드에 새겨진다는 점을 다시 강조합니다. 컨테이너를 실행할 때 환경 변수를 바꿔도 이미 만든 JavaScript 파일은 바뀌지 않습니다. 환경마다 다른 값이 필요하면 이미지를 따로 빌드하거나, 이 과정처럼 상대 경로를 써서 환경과 무관한 값으로 만듭니다.</p>
+<p>이제 운영 빌드를 직접 만들어 확인합니다.</p>
+<ol>
+<li><code>npm run build</code>를 실행합니다. 빌드 출력에서 <code>dist/index.html</code>, <code>dist/assets/index-...js</code>, <code>dist/assets/DashboardPage-...js</code>, <code>dist/assets/index-...css</code>가 만들어지는 것을 확인합니다. 파일 이름의 뒷부분은 내용에서 계산한 해시입니다.</li>
+<li><code>dist/index.html</code>을 열어 봅니다. 개발용 <code>src/main.jsx</code> 대신 <code>/assets/index-...js</code>를 불러오도록 바뀌어 있습니다.</li>
+<li>빌드 결과물에 API 주소가 어떻게 새겨졌는지 확인합니다.</li>
+</ol>
+<div class="codeblock term"><pre><code>grep -o &#x27;&quot;/api&quot;&#x27; dist/assets/index-*.js | head -1
+grep -c &quot;127.0.0.1:8000&quot; dist/assets/index-*.js</code></pre></div>
+<p>첫 명령은 <code>&quot;/api&quot;</code>를 찾고, 두 번째 명령은 <code>0</code>을 출력해야 합니다. 개발용 주소가 운영 빌드에 들어가지 않았다는 뜻입니다.</p>
+<ol start="4">
+<li>소스맵이 없는지 확인합니다. <code>ls dist/assets</code>에 <code>.map</code> 파일이 없어야 합니다(<a href="../../s12/p41/s12-p41-02.html">S12-P41-02</a>).</li>
+<li><code>npm run preview</code>로 빌드 결과물을 미리 봅니다. 이 미리보기 서버는 운영용이 아니며 <code>/api</code> 프록시도 없으므로, 화면은 뜨지만 API 요청은 실패합니다. Network 탭에서 요청이 <code>http://localhost:4173/api/books</code>로 나가는 것을 확인합니다. 이 요청을 백엔드로 전달하는 역할을 다음 파트에서 Nginx가 맡습니다.</li>
+<li>같은 코드를 다른 API 주소로 빌드할 수 있는지 확인합니다. 명령에서 지정한 환경 변수는 <code>.env.production</code>보다 우선합니다.</li>
+</ol>
+<div class="codeblock term"><pre><code>VITE_API_BASE_URL=https://api.example.com npm run build
+grep -c &quot;api.example.com&quot; dist/assets/index-*.js
+npm run build   # 다시 /api로 되돌립니다.</code></pre></div>
+<p><a href="../../s16/index.html">S16</a>의 S3 배포에서는 이 방법으로 백엔드의 공개 주소를 넣어 빌드합니다.</p>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p50-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s15-p50-01.html"><span class="dir">이전</span>S15-P50-01 운영 환경의 구조</a>
+  <a class="next" href="s15-p50-03.html"><span class="dir">다음</span>S15-P50-03 정리: 운영 빌드와 환경 변수</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

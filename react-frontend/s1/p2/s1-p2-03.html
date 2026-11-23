@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>S1-P2-03 정리: 과정 안내 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<title>S1-P2-03 개발자 도구로 화면과 요청 관찰하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
@@ -12,30 +12,39 @@
 <body data-page="S1-P2-03">
 <header class="topbar">
   <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
-  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. 과정 안내</a><span class="sep">/</span><span>S1-P2 연계 API와 실습 환경</span></nav>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. 웹 프론트엔드와 개발 환경</a><span class="sep">/</span><span>S1-P2 브라우저, DOM, SPA</span></nav>
 </header>
 <nav class="timebar" aria-label="이 파트의 페이지와 시간">
-  <a href="s1-p2-01.html" style="flex:20" data-type="주요 개념" title="연계할 백엔드 API 한눈에 보기 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s1-p2-02.html" style="flex:15" data-type="주요 개념" title="실습 환경 준비 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s1-p2-03.html" style="flex:5" data-type="정리" title="정리: 과정 안내 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+  <a href="s1-p2-01.html" style="flex:15" data-type="주요 개념" title="브라우저가 화면을 만드는 방식 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s1-p2-02.html" style="flex:15" data-type="주요 개념" title="MPA와 SPA (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s1-p2-03.html" style="flex:15" data-type="실습" title="개발자 도구로 화면과 요청 관찰하기 (15분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s1-p2-04.html" style="flex:5" data-type="정리" title="정리: 브라우저, DOM, SPA (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
 </nav>
 <main class="page">
-<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S1-P2-03</span></div>
-<h1>정리: 과정 안내</h1>
+<div class="page-meta"><span class="type type-practice">실습</span><span>15분</span><span>S1-P2-03</span></div>
+<h1>개발자 도구로 화면과 요청 관찰하기</h1>
 
-<h2>핵심 요약</h2>
+<p class="lead">백엔드 과정의 교안 사이트를 열어 개발자 도구에 익숙해집니다. (백엔드 실행은 다음 파트에서 준비합니다.)</p>
+<ol>
+<li>브라우저로 https://myanjini.github.io/fastapi-rest-api/index.html 을 엽니다.</li>
+<li>F12로 개발자 도구를 열고 Elements 탭에서 목차 링크 하나를 찾습니다. 화면의 링크에 마우스 오른쪽 버튼을 누르고 &quot;검사&quot;를 고르면 바로 그 요소로 이동합니다.</li>
+<li>Elements 탭에서 링크 글자를 두 번 눌러 다른 글자로 바꿔 봅니다. 화면이 바로 바뀌는 것을 확인합니다. 화면은 DOM이며 DOM을 바꾸면 화면이 바뀐다는 것을 직접 본 것입니다. 새로고침하면 원래대로 돌아옵니다.</li>
+<li>Network 탭을 연 상태에서 다른 섹션 링크를 누릅니다. <code>Doc</code> 유형의 요청으로 새 HTML 문서 전체가 내려오는 것을 확인합니다. 이 사이트는 페이지마다 HTML을 받는 MPA 방식입니다.</li>
+<li>Console 탭에서 다음을 입력해 DOM을 코드로 바꿔 봅니다.</li>
+</ol>
+<div class="codeblock"><pre><code>document.querySelector(&#x27;h1&#x27;).textContent = &#x27;DOM을 코드로 바꿨습니다&#x27;;
+document.querySelectorAll(&#x27;a&#x27;).length; // 이 페이지의 링크 개수</code></pre></div>
+<ol start="6">
+<li>다음 질문에 답해 봅니다.
 <ul>
-<li>이 과정은 백엔드 과정의 도서 관리 API를 사용하는 React 프론트엔드와 관제 대시보드를 만들고, 컨테이너로 함께 실행하는 것까지 다룹니다.</li>
-<li><a href="s1-p2-01.html">S1-P2-01</a>의 API 표는 과정 전체에서 참고하는 기준 자료입니다.</li>
-<li>백엔드가 <code>http://127.0.0.1:8000</code>에서 실행 중이고 실습 데이터가 준비되어 있어야 다음 섹션의 실습을 진행할 수 있습니다.</li>
+<li>4번에서 Network 탭의 첫 요청은 어떤 유형이었습니까? SPA라면 페이지 이동 때 어떤 유형의 요청이 보일까요?</li>
+<li>5번에서 바꾼 제목이 새로고침 후 사라지는 이유는 무엇입니까?</li>
 </ul>
+</li>
+</ol>
 
-<h2>확인 퀴즈</h2>
-<div class="quiz" data-answer="2"><p class="q">이 과정의 프론트엔드가 데이터를 얻는 곳은 어디인가요?</p><label><input type="radio" name="s1-p2-03-q1" value="1"> <span>1. 화면 코드 안에 넣어 둔 고정 데이터</span></label><label><input type="radio" name="s1-p2-03-q1" value="2"> <span>2. 백엔드 과정에서 만든 도서 관리 REST API</span></label><label><input type="radio" name="s1-p2-03-q1" value="3"> <span>3. 브라우저의 localStorage</span></label><label><input type="radio" name="s1-p2-03-q1" value="4"> <span>4. Nginx 설정 파일</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>이 과정은 백엔드 과정에서 만든 도서 관리 API를 호출해 화면을 만듭니다.</p></div>
-<h2>다음 섹션</h2>
-<p><a href="../../s2/index.html">S2. 웹 프론트엔드 기초와 JSON</a>로 이어집니다. 브라우저와 HTTP, JSON의 기초를 다지고 이후 코드에 필요한 모던 JavaScript 문법을 익힙니다.</p>
+
 </main>
 <footer class="pager">
-  <a class="prev" href="s1-p2-02.html"><span class="dir">이전</span>S1-P2-02 실습 환경 준비</a>
-  <a class="next" href="../../s2/p3/s2-p3-01.html"><span class="dir">다음</span>S2-P3-01 브라우저가 화면을 만드는 방식</a>
+  <a class="prev" href="s1-p2-02.html"><span class="dir">이전</span>S1-P2-02 MPA와 SPA</a>
+  <a class="next" href="s1-p2-04.html"><span class="dir">다음</span>S1-P2-04 정리: 브라우저, DOM, SPA</a>
 </footer>
 <script src="../../assets/js/main.js"></script>
 </body>

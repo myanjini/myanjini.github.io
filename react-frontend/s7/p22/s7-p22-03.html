@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S7-P22-03 앱 뼈대 만들기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S7-P22-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S7. 라우팅과 조회 화면</a><span class="sep">/</span><span>S7-P22 React Router와 앱 뼈대</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s7-p22-01.html" style="flex:10" data-type="주요 개념" title="클라이언트 측 라우팅 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s7-p22-02.html" style="flex:10" data-type="주요 개념" title="라우터 구성 요소 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s7-p22-03.html" style="flex:25" data-type="실습" title="앱 뼈대 만들기 (25분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">25분</span></a><a href="s7-p22-04.html" style="flex:5" data-type="정리" title="정리: React Router와 앱 뼈대 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>25분</span><span>S7-P22-03</span></div>
+<h1>앱 뼈대 만들기</h1>
+
+<p class="lead">이제 연습용 화면을 정리하고 진짜 앱의 뼈대를 만듭니다. <code>src/practice</code> 폴더를 지웁니다. 여기서 익힌 컴포넌트 나누기와 상태 관리 방식은 그대로 진짜 화면에 옮겨 갑니다.</p>
+<p><strong>시작점: <code>src/main.jsx</code></strong></p>
+<p><code>&lt;App /&gt;</code>을 <code>&lt;BrowserRouter&gt;</code>로 감쌉니다.</p>
+<div class="codeblock"><span class="file">src/main.jsx</span><pre><code>import { StrictMode } from &#x27;react&#x27;;
+import { createRoot } from &#x27;react-dom/client&#x27;;
+import { BrowserRouter } from &#x27;react-router&#x27;;
+import App from &#x27;./App.jsx&#x27;;
+import &#x27;./index.css&#x27;;
+
+createRoot(document.getElementById(&#x27;root&#x27;)).render(
+  &lt;StrictMode&gt;
+    &lt;BrowserRouter&gt;
+      &lt;App /&gt;
+    &lt;/BrowserRouter&gt;
+  &lt;/StrictMode&gt;,
+);</code></pre></div>
+<p><strong>공통 레이아웃: <code>src/components/Layout.jsx</code></strong></p>
+<p>모든 화면의 위쪽에 메뉴를 두고, 가운데 <code>&lt;Outlet /&gt;</code> 자리에 각 화면을 그립니다. <a href="../../s8/index.html">S8</a>에서 로그인 정보와 메뉴를 추가합니다.</p>
+<div class="codeblock"><span class="file">src/components/Layout.jsx</span><pre><code>import { NavLink, Outlet } from &#x27;react-router&#x27;;
+
+export default function Layout() {
+  return (
+    &lt;div className=&quot;app&quot;&gt;
+      &lt;header className=&quot;topbar&quot;&gt;
+        &lt;strong&gt;도서 관리&lt;/strong&gt;
+        &lt;nav&gt;
+          &lt;NavLink to=&quot;/&quot; end&gt;도서 목록&lt;/NavLink&gt;
+        &lt;/nav&gt;
+      &lt;/header&gt;
+      &lt;main className=&quot;content&quot;&gt;
+        &lt;Outlet /&gt;
+      &lt;/main&gt;
+    &lt;/div&gt;
+  );
+}</code></pre></div>
+<p><strong>첫 목록 화면: <code>src/pages/BookListPage.jsx</code></strong></p>
+<p><a href="../../s6/p21/s6-p21-03.html">S6-P21-03</a>의 기본 패턴대로 첫 페이지 10권을 불러와 보여 주는 첫 버전입니다. 검색과 페이지 이동은 다음 파트에서 추가합니다.</p>
+<div class="codeblock"><span class="file">src/pages/BookListPage.jsx</span><pre><code>import { useEffect, useState } from &#x27;react&#x27;;
+import { Link } from &#x27;react-router&#x27;;
+import { listBooks } from &#x27;../api/books&#x27;;
+import ErrorMessage from &#x27;../components/ErrorMessage&#x27;;
+
+// P22 첫 버전: 첫 페이지 10권만 보여 줍니다. 검색과 페이지 이동은 P23에서 추가합니다.
+export default function BookListPage() {
+  const [page, setPage] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() =&gt; {
+    const controller = new AbortController();
+    listBooks({ limit: 10 }, controller.signal)
+      .then(setPage)
+      .catch((err) =&gt; {
+        if (err.name !== &#x27;CanceledError&#x27;) setError(err);
+      });
+    return () =&gt; controller.abort();
+  }, []);
+
+  if (error) return &lt;ErrorMessage error={error} /&gt;;
+  if (!page) return &lt;p className=&quot;muted&quot;&gt;불러오는 중입니다.&lt;/p&gt;;
+
+  return (
+    &lt;section&gt;
+      &lt;h1&gt;도서 목록&lt;/h1&gt;
+      &lt;table className=&quot;table&quot;&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;
+            &lt;th&gt;번호&lt;/th&gt;
+            &lt;th&gt;제목&lt;/th&gt;
+            &lt;th&gt;저자&lt;/th&gt;
+            &lt;th className=&quot;num&quot;&gt;가격&lt;/th&gt;
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+          {page.items.map((book) =&gt; (
+            &lt;tr key={book.id}&gt;
+              &lt;td&gt;{book.id}&lt;/td&gt;
+              &lt;td&gt;
+                &lt;Link to={`/books/${book.id}`}&gt;{book.title}&lt;/Link&gt;
+              &lt;/td&gt;
+              &lt;td&gt;{book.author?.name}&lt;/td&gt;
+              &lt;td className=&quot;num&quot;&gt;{book.price.toLocaleString(&#x27;ko-KR&#x27;)}원&lt;/td&gt;
+            &lt;/tr&gt;
+          ))}
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+      &lt;p className=&quot;muted&quot;&gt;전체 {page.total}권&lt;/p&gt;
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p><strong>라우트 정의: <code>src/App.jsx</code></strong></p>
+<div class="codeblock"><span class="file">src/App.jsx</span><pre><code>import { Route, Routes } from &#x27;react-router&#x27;;
+import Layout from &#x27;./components/Layout&#x27;;
+import BookListPage from &#x27;./pages/BookListPage&#x27;;
+import NotFoundPage from &#x27;./pages/NotFoundPage&#x27;;
+
+export default function App() {
+  return (
+    &lt;Routes&gt;
+      &lt;Route element={&lt;Layout /&gt;}&gt;
+        &lt;Route index element={&lt;BookListPage /&gt;} /&gt;
+        &lt;Route path=&quot;*&quot; element={&lt;NotFoundPage /&gt;} /&gt;
+      &lt;/Route&gt;
+    &lt;/Routes&gt;
+  );
+}</code></pre></div>
+<p><strong>공통 컴포넌트와 404 화면</strong></p>
+<p>오류 표시는 여러 화면에서 반복되므로 컴포넌트로 만듭니다. <code>role=&quot;alert&quot;</code>는 화면 낭독기가 오류를 즉시 읽도록 하는 접근성 속성입니다. 오류 코드는 응답을 받은 경우(<code>status &gt; 0</code>)에만 괄호로 덧붙여, 운영자가 백엔드 로그와 대조할 수 있게 합니다.</p>
+<div class="codeblock"><span class="file">src/components/ErrorMessage.jsx</span><pre><code>export default function ErrorMessage({ error }) {
+  if (!error) return null;
+  return (
+    &lt;div className=&quot;error&quot; role=&quot;alert&quot;&gt;
+      {error.message}
+      {error.code &amp;&amp; error.status &gt; 0 &amp;&amp; &lt;span className=&quot;muted&quot;&gt; ({error.code})&lt;/span&gt;}
+    &lt;/div&gt;
+  );
+}</code></pre></div>
+<div class="codeblock"><span class="file">src/pages/NotFoundPage.jsx</span><pre><code>import { Link } from &#x27;react-router&#x27;;
+
+export default function NotFoundPage() {
+  return (
+    &lt;section&gt;
+      &lt;h1&gt;페이지를 찾을 수 없습니다&lt;/h1&gt;
+      &lt;Link to=&quot;/&quot;&gt;도서 목록으로 돌아가기&lt;/Link&gt;
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p><strong>스타일: <code>src/index.css</code></strong></p>
+<p>이 과정의 화면은 관제 환경을 고려해 어두운 바탕을 사용합니다. 색은 <code>--status-good</code>처럼 역할 이름의 CSS 변수로 정의하고, 코드에서는 변수 이름만 씁니다. 색의 선택 기준은 <a href="../../s13/index.html">S13</a>에서 설명합니다. 대시보드용 스타일까지 포함한 전체 파일을 지금 작성해 둡니다.</p>
+<div class="codeblock"><span class="file">src/index.css</span><pre><code>/* 관제 화면에 맞춘 어두운 바탕. 색은 역할 이름(변수)으로만 씁니다. */
+:root {
+  color-scheme: dark;
+  --surface-0: #121211;
+  --surface-1: #1a1a19;
+  --surface-2: #242422;
+  --border: #33332f;
+  --grid: #2c2c29;
+  --hover: rgba(255, 255, 255, 0.06);
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --text-muted: #8f8e86;
+  --series-1: #3987e5;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  font: 15px/1.5 system-ui, &#x27;Segoe UI&#x27;, &#x27;Apple SD Gothic Neo&#x27;, &#x27;Malgun Gothic&#x27;, sans-serif;
+  background: var(--surface-0);
+  color: var(--text-primary);
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+a { color: var(--series-1); }
+h1 { font-size: 1.5rem; margin: 0 0 1rem; }
+h2 { font-size: 1.05rem; margin: 0 0 0.75rem; }
+h3 { font-size: 0.85rem; margin: 0.75rem 0 0.5rem; color: var(--text-secondary); font-weight: 600; }
+button, .button {
+  display: inline-block; padding: 0.45rem 0.9rem; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--surface-2); color: var(--text-primary);
+  font: inherit; text-decoration: none;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.danger { border-color: var(--status-critical); color: #f3b3b3; }
+input, select {
+  padding: 0.45rem 0.6rem; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface-1); color: var(--text-primary); font: inherit;
+}
+.topbar {
+  display: flex; gap: 1.5rem; align-items: center; padding: 0.75rem 1.5rem;
+  background: var(--surface-1); border-bottom: 1px solid var(--border);
+}
+.topbar nav { display: flex; gap: 1rem; flex: 1; }
+.topbar nav a, .account a { color: var(--text-secondary); text-decoration: none; }
+.topbar nav a.active { color: var(--text-primary); font-weight: 600; }
+.account { display: flex; gap: 0.75rem; align-items: center; color: var(--text-secondary); }
+.content { padding: 1.5rem; max-width: 1280px; margin: 0 auto; }
+.narrow { max-width: 420px; }
+.muted { color: var(--text-muted); }
+.error { color: #f3a0a0; }
+.notice { color: #9fe09f; }
+.toolbar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+.table { width: 100%; border-collapse: collapse; }
+.table th, .table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--border); text-align: left; }
+.table th { color: var(--text-muted); font-weight: 600; font-size: 0.85rem; }
+.table tbody tr:hover { background: var(--hover); }
+.num { text-align: right !important; font-variant-numeric: tabular-nums; }
+.pagination { display: flex; gap: 1rem; align-items: center; margin-top: 1rem; }
+.form { display: grid; gap: 1rem; max-width: 480px; }
+.form label { display: grid; gap: 0.3rem; }
+.detail { display: grid; grid-template-columns: 220px 1fr; gap: 2rem; }
+.cover img, .cover-empty { width: 220px; aspect-ratio: 3 / 4; object-fit: cover; border-radius: 8px; }
+.cover-empty { display: grid; place-items: center; background: var(--surface-2); color: var(--text-muted); }
+.meta { display: grid; grid-template-columns: 80px 1fr; gap: 0.4rem; }
+.meta dt { color: var(--text-muted); }
+.meta dd { margin: 0; }
+.actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+
+/* 대시보드 */
+.dashboard-header { display: flex; justify-content: space-between; align-items: baseline; }
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.kpi, .panel { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 1rem; }
+.kpi h3 { margin: 0 0 0.5rem; }
+.kpi-value { font-size: 1.75rem; font-weight: 600; margin: 0; font-variant-numeric: tabular-nums; }
+.kpi-value small { font-size: 0.9rem; color: var(--text-muted); }
+.kpi-hint { margin: 0.25rem 0 0; color: var(--text-muted); font-size: 0.8rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+.status { font-weight: 600; }
+.status-good { color: var(--status-good); }
+.status-warning { color: var(--status-warning); }
+.status-critical { color: var(--status-critical); }
+.status-unknown { color: var(--text-muted); }
+.strip { display: flex; gap: 2px; margin-bottom: 0.5rem; }
+.strip-cell { flex: 1; height: 28px; border-radius: 3px; }
+.status-bg-good { background: var(--status-good); }
+.status-bg-warning { background: var(--status-warning); }
+.status-bg-critical { background: var(--status-critical); }
+.status-bg-unknown { background: var(--surface-2); }
+.legend { display: flex; gap: 1rem; font-size: 0.8rem; flex-wrap: wrap; }
+.chart-tooltip { background: var(--surface-2); border: 1px solid var(--border); padding: 0.4rem 0.6rem; border-radius: 6px; }
+.log-analyzer { margin-top: 1.5rem; }
+.log-analyzer &gt; input { margin-bottom: 1rem; }</code></pre></div>
+<p><code>http://localhost:5173</code>에서 상단 메뉴와 목록 10권이 보이는지, 주소창에 <code>/abc</code>를 입력하면 404 화면이 나오는지 확인합니다. 메뉴의 &quot;도서 목록&quot;에는 <code>active</code> 클래스가 붙어 굵게 표시됩니다.</p>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p22-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s7-p22-02.html"><span class="dir">이전</span>S7-P22-02 라우터 구성 요소</a>
+  <a class="next" href="s7-p22-04.html"><span class="dir">다음</span>S7-P22-04 정리: React Router와 앱 뼈대</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S13-P43-01 관제 대시보드란 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S13-P43-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S13. 관제 대시보드</a><span class="sep">/</span><span>S13-P43 설계 원칙과 지표</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s13-p43-01.html" style="flex:15" data-type="주요 개념" title="관제 대시보드란 (15분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s13-p43-02.html" style="flex:20" data-type="주요 개념" title="설계 원칙 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s13-p43-03.html" style="flex:10" data-type="주요 개념" title="무엇을 볼 것인가: 지표와 데이터 소스 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s13-p43-04.html" style="flex:5" data-type="정리" title="정리: 설계 원칙과 지표 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S13-P43-01</span></div>
+<h1>관제 대시보드란</h1>
+<div class="goal"><p><strong>파트 목표</strong>관제 대시보드가 해야 할 일과 설계 원칙을 설명하고, 지표와 데이터 소스를 고를 수 있습니다.</p></div>
+
+<p class="lead">관제(monitoring)는 시스템이 정상적으로 동작하는지 계속 지켜보고, 이상이 생기면 빨리 알아차려 대응하는 일입니다. 네트워크 운영 센터(NOC)나 보안 관제 센터(SOC)에서는 여러 대의 큰 화면에 대시보드를 띄워 두고 운영자가 수시로 바라봅니다. 따라서 관제 대시보드는 일반적인 보고서 화면과 요구 사항이 다릅니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>구분</th>
+<th>보고서형 대시보드</th>
+<th>관제 대시보드</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>보는 방식</td>
+<td>자리에 앉아 자세히 읽음</td>
+<td>멀리서 짧게 훑어봄</td>
+</tr>
+<tr>
+<td>핵심 질문</td>
+<td>지난달 성과는 어땠나</td>
+<td>지금 문제가 있는가, 어디인가</td>
+</tr>
+<tr>
+<td>갱신</td>
+<td>필요할 때</td>
+<td>수 초에서 수 분 간격으로 자동</td>
+</tr>
+<tr>
+<td>강조 대상</td>
+<td>추세와 비교</td>
+<td>이상 상태와 변화</td>
+</tr>
+</tbody>
+</table></div>
+<p>좋은 관제 대시보드는 화면을 본 지 몇 초 안에 &quot;정상인가, 아닌가&quot;에 답할 수 있어야 하고, 아니라면 &quot;어디를 더 봐야 하는가&quot;까지 안내해야 합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s12/p42/s12-p42-04.html"><span class="dir">이전</span>S12-P42-04 정리: 공급망 보안과 보안 점검 실습</a>
+  <a class="next" href="s13-p43-02.html"><span class="dir">다음</span>S13-P43-02 설계 원칙</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

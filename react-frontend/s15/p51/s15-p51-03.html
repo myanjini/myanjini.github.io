@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S15-P51-03 정리: Nginx와 리버스 프록시 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S15-P51-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S15. 도커라이징과 운영 빌드</a><span class="sep">/</span><span>S15-P51 Nginx와 리버스 프록시</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s15-p51-01.html" style="flex:10" data-type="주요 개념" title="리버스 프록시와 SPA 대체 응답 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s15-p51-02.html" style="flex:35" data-type="실습" title="Nginx 설정 작성 (35분)"><span class="seg-num">02</span><span class="seg-min">35분</span></a><a href="s15-p51-03.html" style="flex:5" data-type="정리" title="정리: Nginx와 리버스 프록시 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S15-P51-03</span></div>
+<h1>정리: Nginx와 리버스 프록시</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>Nginx가 정적 파일 제공과 <code>/api/</code> 리버스 프록시를 함께 맡으면 화면과 API가 같은 출처가 되어 CORS가 필요 없습니다.</li>
+<li>SPA는 <code>try_files</code>로 없는 경로에 <code>index.html</code>을 돌려줘야 새로고침과 직접 접속이 동작합니다.</li>
+<li>해시가 붙은 파일은 오래 캐시하고 <code>index.html</code>은 매번 확인하게 하며, 보안 헤더는 <code>location</code>마다 <code>include</code>합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q"><code>location / { try_files $uri $uri/ /index.html; }</code>의 역할은 무엇인가요?</p><label><input type="radio" name="s15-p51-03-q1" value="1"> <span>1. 404 페이지를 보여 준다.</span></label><label><input type="radio" name="s15-p51-03-q1" value="2"> <span>2. 모든 요청을 백엔드로 보낸다.</span></label><label><input type="radio" name="s15-p51-03-q1" value="3"> <span>3. 요청한 파일이 없으면 index.html을 돌려줘 React Router가 화면을 그리게 한다.</span></label><label><input type="radio" name="s15-p51-03-q1" value="4"> <span>4. index.html을 캐시한다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>새로고침이나 직접 접속한 /books/7 같은 주소도 화면이 정상으로 그려집니다.</p></div>
+<div class="quiz" data-answer="4"><p class="q">캐시 헤더를 추가한 location 블록에서 보안 헤더가 사라지는 이유는 무엇인가요?</p><label><input type="radio" name="s15-p51-03-q2" value="1"> <span>1. Nginx 버전이 낮아서</span></label><label><input type="radio" name="s15-p51-03-q2" value="2"> <span>2. always를 붙이지 않아서</span></label><label><input type="radio" name="s15-p51-03-q2" value="3"> <span>3. 캐시 헤더와 보안 헤더는 함께 쓸 수 없어서</span></label><label><input type="radio" name="s15-p51-03-q2" value="4"> <span>4. 블록 안에 add_header가 있으면 바깥의 add_header를 상속하지 않아서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>그래서 보안 헤더를 별도 파일로 만들어 각 location에서 include합니다.</p></div>
+</main>
+<footer class="pager">
+  <a class="prev" href="s15-p51-02.html"><span class="dir">이전</span>S15-P51-02 Nginx 설정 작성</a>
+  <a class="next" href="../p52/s15-p52-01.html"><span class="dir">다음</span>S15-P52-01 Dockerfile 작성</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P7-02 async/await와 Promise.all | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P7-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 모던 JavaScript</a><span class="sep">/</span><span>S2-P7 Promise와 async/await</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p7-01.html" style="flex:15" data-type="주요 개념" title="비동기와 Promise (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s2-p7-02.html" style="flex:10" data-type="주요 개념" title="async/await와 Promise.all (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s2-p7-03.html" style="flex:20" data-type="실습" title="백엔드 요청을 순서대로, 동시에 보내기 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s2-p7-04.html" style="flex:5" data-type="정리" title="정리: Promise와 async/await (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S2-P7-02</span></div>
+<h1>async/await와 Promise.all</h1>
+
+<p class="lead"><code>async</code> 함수 안에서 <code>await</code>를 쓰면 Promise의 결과가 나올 때까지 기다렸다가 다음 줄을 실행합니다. 비동기 코드를 위에서 아래로 읽히게 쓸 수 있고, 실패는 <code>try...catch</code>로 잡습니다.</p>
+<div class="codeblock"><pre><code>async function loadTotal() {
+  try {
+    const res = await fetch(&#x27;/books?limit=1&#x27;);
+    const page = await res.json();
+    return page.total;
+  } catch (err) {
+    console.error(&#x27;실패:&#x27;, err.message);
+    return null;
+  } finally {
+    console.log(&#x27;성공과 실패에 관계없이 실행&#x27;);
+  }
+}</code></pre></div>
+<p><code>async</code> 함수는 항상 Promise를 돌려줍니다. 그래서 <code>loadTotal()</code>의 결과를 쓰려면 다시 <code>await</code>하거나 <code>then</code>을 붙여야 합니다.</p>
+<p>서로 기다릴 필요가 없는 요청 여러 개는 <code>Promise.all</code>로 동시에 보냅니다. 하나씩 <code>await</code>하면 시간이 더해지지만, 동시에 보내면 가장 느린 요청만큼만 걸립니다. 하나라도 실패하면 전체가 실패합니다.</p>
+<div class="codeblock"><pre><code>const [booksRes, authorsRes] = await Promise.all([fetch(&#x27;/books?limit=5&#x27;), fetch(&#x27;/authors&#x27;)]);
+const [page, authors] = await Promise.all([booksRes.json(), authorsRes.json()]);</code></pre></div>
+<p><a href="../../s9/p29/s9-p29-01.html">S9-P29</a>의 도서 수정 화면에서 저자 목록과 도서 정보를 이렇게 함께 불러옵니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s2-p7-01.html"><span class="dir">이전</span>S2-P7-01 비동기와 Promise</a>
+  <a class="next" href="s2-p7-03.html"><span class="dir">다음</span>S2-P7-03 백엔드 요청을 순서대로, 동시에 보내기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

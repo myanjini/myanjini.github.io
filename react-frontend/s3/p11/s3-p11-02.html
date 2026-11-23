@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P11-02 정렬과 빈 결과 처리 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P11-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. React 기초</a><span class="sep">/</span><span>S3-P11 조건부 렌더링과 리스트</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p11-01.html" style="flex:15" data-type="주요 개념" title="조건부 렌더링과 리스트 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s3-p11-02.html" style="flex:30" data-type="실습" title="정렬과 빈 결과 처리 (30분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s3-p11-03.html" style="flex:5" data-type="정리" title="정리: 조건부 렌더링과 리스트 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>30분</span><span>S3-P11-02</span></div>
+<h1>정렬과 빈 결과 처리</h1>
+
+<p class="lead">정렬 선택 상자를 추가하고, 검색 결과가 없을 때 안내 문구를 보여 줍니다.</p>
+<div class="codeblock"><span class="file">src/App.jsx</span><pre><code>import { useState } from &#x27;react&#x27;;
+import BookTable from &#x27;./practice/BookTable&#x27;;
+import SearchBox from &#x27;./practice/SearchBox&#x27;;
+import { SAMPLE_PAGE } from &#x27;./practice/sampleBooks&#x27;;
+
+const SORTERS = {
+  id: (a, b) =&gt; a.id - b.id,
+  price: (a, b) =&gt; a.price - b.price,
+  &#x27;-price&#x27;: (a, b) =&gt; b.price - a.price,
+};
+
+export default function App() {
+  const [keyword, setKeyword] = useState(&#x27;&#x27;);
+  const [sort, setSort] = useState(&#x27;id&#x27;);
+
+  // filter는 새 배열을 돌려주므로 sort로 정렬해도 원본 데이터가 바뀌지 않습니다.
+  const visible = SAMPLE_PAGE.items
+    .filter((book) =&gt; book.title.includes(keyword.trim()))
+    .sort(SORTERS[sort]);
+
+  return (
+    &lt;main&gt;
+      &lt;h1&gt;도서 목록&lt;/h1&gt;
+      &lt;SearchBox keyword={keyword} onChange={setKeyword} /&gt;
+      &lt;select value={sort} onChange={(e) =&gt; setSort(e.target.value)}&gt;
+        &lt;option value=&quot;id&quot;&gt;등록순&lt;/option&gt;
+        &lt;option value=&quot;price&quot;&gt;가격 낮은 순&lt;/option&gt;
+        &lt;option value=&quot;-price&quot;&gt;가격 높은 순&lt;/option&gt;
+      &lt;/select&gt;
+      {visible.length === 0 ? &lt;p&gt;조건에 맞는 도서가 없습니다.&lt;/p&gt; : &lt;BookTable books={visible} /&gt;}
+      &lt;p&gt;
+        전체 {SAMPLE_PAGE.total}권 중 {visible.length}권 표시
+      &lt;/p&gt;
+    &lt;/main&gt;
+  );
+}</code></pre></div>
+<p><code>SORTERS</code>는 정렬 기준 이름과 비교 함수를 짝지은 객체입니다. 선택 상자의 값(<code>id</code>, <code>price</code>, <code>-price</code>)은 백엔드 <code>GET /books</code>의 <code>sort</code> 값과 같게 맞췄습니다. <a href="../../s7/index.html">S7</a>에서 정렬을 백엔드에 맡길 때 이 값을 그대로 쓰게 됩니다.</p>
+<p>확인할 내용은 다음과 같습니다.</p>
+<ol>
+<li>&quot;가격 높은 순&quot;을 고르면 순서가 바뀌는지, 다시 &quot;등록순&quot;으로 돌아오는지 확인합니다.</li>
+<li><code>filter</code>가 새 배열을 돌려주기 때문에 <code>sort</code>를 바로 이어 써도 <code>SAMPLE_PAGE.items</code>가 바뀌지 않습니다. <code>filter</code>를 지우고 <code>SAMPLE_PAGE.items.sort(...)</code>로 바꾸면 &quot;등록순&quot;으로 돌아올 수 없게 되는 이유를 설명해 봅니다.</li>
+<li><code>BookTable</code>의 <code>key={book.id}</code>를 지우고 Console의 경고를 확인한 뒤 되돌립니다.</li>
+<li><code>key={index}</code>를 쓰면 지금은 문제가 드러나지 않습니다. 행마다 입력 칸(예: 메모)이 있다면 정렬을 바꿀 때 어떤 문제가 생길지 생각해 봅니다.</li>
+<li>존재하지 않는 제목을 검색해 &quot;조건에 맞는 도서가 없습니다.&quot;가 나오는지 확인합니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p11-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s3-p11-01.html"><span class="dir">이전</span>S3-P11-01 조건부 렌더링과 리스트</a>
+  <a class="next" href="s3-p11-03.html"><span class="dir">다음</span>S3-P11-03 정리: 조건부 렌더링과 리스트</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

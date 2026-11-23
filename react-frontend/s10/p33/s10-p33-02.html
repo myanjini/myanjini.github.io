@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P33-02 useAsync 훅 만들고 적용하기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P33-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 서버 상태 관리</a><span class="sep">/</span><span>S10-P33 커스텀 훅으로 반복 줄이기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p33-01.html" style="flex:15" data-type="주요 개념" title="반복 코드와 커스텀 훅 (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s10-p33-02.html" style="flex:30" data-type="실습" title="useAsync 훅 만들고 적용하기 (30분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s10-p33-03.html" style="flex:5" data-type="정리" title="정리: 커스텀 훅으로 반복 줄이기 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>30분</span><span>S10-P33-02</span></div>
+<h1>useAsync 훅 만들고 적용하기</h1>
+
+<p class="lead">비동기 함수와 의존성 배열을 받아 <code>data</code>, <code>error</code>, <code>loading</code>, <code>reload</code>를 돌려주는 <code>useAsync</code> 훅을 만듭니다.</p>
+<div class="codeblock"><span class="file">src/hooks/useAsync.js</span><pre><code>import { useCallback, useEffect, useState } from &#x27;react&#x27;;
+
+// 비동기 함수 fn(signal)을 실행하고 data, error, loading 상태를 돌려줍니다.
+// deps가 바뀌면 다시 실행하고, 이전 요청은 취소합니다. reload()로 다시 불러올 수 있습니다.
+export function useAsync(fn, deps) {
+  const [state, setState] = useState({ data: undefined, error: null, loading: true });
+  const [version, setVersion] = useState(0);
+
+  useEffect(() =&gt; {
+    const controller = new AbortController();
+    setState((prev) =&gt; ({ ...prev, loading: true, error: null }));
+    fn(controller.signal)
+      .then((data) =&gt; {
+        if (!controller.signal.aborted) setState({ data, error: null, loading: false });
+      })
+      .catch((error) =&gt; {
+        if (!controller.signal.aborted &amp;&amp; error.name !== &#x27;CanceledError&#x27;) {
+          setState((prev) =&gt; ({ ...prev, error, loading: false }));
+        }
+      });
+    return () =&gt; controller.abort();
+    // fn은 렌더링마다 새로 만들어지므로 의존성에서 뺍니다. 다시 실행할 조건은 deps로 정합니다.
+  }, [...deps, version]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const reload = useCallback(() =&gt; setVersion((v) =&gt; v + 1), []);
+  return { ...state, reload };
+}</code></pre></div>
+<p>훅의 동작은 <a href="../../s6/p21/s6-p21-03.html">S6-P21-03</a>의 기본 패턴과 같습니다. 달라진 점은 두 가지입니다. 실행할 함수 <code>fn</code>을 밖에서 받고, <code>reload()</code>를 부르면 <code>version</code>이 바뀌어 같은 조건으로 다시 실행됩니다. 의존성 배열에서 <code>fn</code>을 뺀 이유는 주석에 적었습니다. 화면에서 <code>(signal) =&gt; listBooks(...)</code>처럼 매번 새 함수를 만들어 넘기므로, <code>fn</code>을 넣으면 그릴 때마다 다시 요청하는 무한 반복이 생깁니다.</p>
+<p>목록 화면에 적용합니다. 두 개의 이펙트와 세 개의 state가 두 줄의 훅 호출로 바뀝니다.</p>
+<div class="codeblock"><span class="file">src/pages/BookListPage.jsx</span><pre><code>import { useState } from &#x27;react&#x27;;
+import { useAsync } from &#x27;../hooks/useAsync&#x27;;
+import { Link, useSearchParams } from &#x27;react-router&#x27;;
+import { listAuthors } from &#x27;../api/authors&#x27;;
+import { listBooks } from &#x27;../api/books&#x27;;
+import ErrorMessage from &#x27;../components/ErrorMessage&#x27;;
+import Pagination from &#x27;../components/Pagination&#x27;;
+
+const PAGE_SIZE = 10;
+const SORT_OPTIONS = [
+  { value: &#x27;id&#x27;, label: &#x27;등록순&#x27; },
+  { value: &#x27;price&#x27;, label: &#x27;가격 낮은 순&#x27; },
+  { value: &#x27;-price&#x27;, label: &#x27;가격 높은 순&#x27; },
+];
+
+export default function BookListPage() {
+  // 검색 조건을 URL에 두면 새로고침, 뒤로 가기, 주소 공유에도 화면이 유지됩니다.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sort = searchParams.get(&#x27;sort&#x27;) ?? &#x27;id&#x27;;
+  const skip = Number(searchParams.get(&#x27;skip&#x27;) ?? 0);
+  const author = searchParams.get(&#x27;author&#x27;) ?? &#x27;&#x27;;
+
+  const q = searchParams.get(&#x27;q&#x27;) ?? &#x27;&#x27;;
+  const [keyword, setKeyword] = useState(q);
+
+  // 반복되던 &quot;불러오기, 로딩, 오류, 취소&quot; 코드를 useAsync 훅 하나로 줄였습니다.
+  const { data: authors = [] } = useAsync((signal) =&gt; listAuthors({}, signal), []);
+  const {
+    data: page,
+    error,
+    loading,
+  } = useAsync((signal) =&gt; listBooks({ q, author, sort, skip, limit: PAGE_SIZE }, signal), [q, author, sort, skip]);
+
+  function updateParams(changes) {
+    const next = new URLSearchParams(searchParams);
+    for (const [key, value] of Object.entries(changes)) {
+      if (value === &#x27;&#x27; || value === null || value === undefined) next.delete(key);
+      else next.set(key, String(value));
+    }
+    setSearchParams(next);
+  }
+
+  // 검색 버튼(또는 Enter)을 누르면 URL에 반영하고 첫 페이지부터 다시 봅니다.
+  function handleSearch(event) {
+    event.preventDefault();
+    updateParams({ q: keyword.trim(), skip: &#x27;&#x27; });
+  }
+
+  return (
+    &lt;section&gt;
+      &lt;h1&gt;도서 목록&lt;/h1&gt;
+      &lt;form className=&quot;toolbar&quot; onSubmit={handleSearch}&gt;
+        &lt;input
+          type=&quot;search&quot;
+          placeholder=&quot;제목으로 검색&quot;
+          maxLength={50}
+          value={keyword}
+          onChange={(e) =&gt; setKeyword(e.target.value)}
+        /&gt;
+        &lt;button type=&quot;submit&quot;&gt;검색&lt;/button&gt;
+        &lt;select value={author} onChange={(e) =&gt; updateParams({ author: e.target.value, skip: &#x27;&#x27; })}&gt;
+          &lt;option value=&quot;&quot;&gt;모든 저자&lt;/option&gt;
+          {authors.map((a) =&gt; (
+            &lt;option key={a.id} value={a.name}&gt;
+              {a.name}
+            &lt;/option&gt;
+          ))}
+        &lt;/select&gt;
+        &lt;select value={sort} onChange={(e) =&gt; updateParams({ sort: e.target.value, skip: &#x27;&#x27; })}&gt;
+          {SORT_OPTIONS.map((option) =&gt; (
+            &lt;option key={option.value} value={option.value}&gt;
+              {option.label}
+            &lt;/option&gt;
+          ))}
+        &lt;/select&gt;
+      &lt;/form&gt;
+
+      &lt;ErrorMessage error={error} /&gt;
+      {loading &amp;&amp; &lt;p className=&quot;muted&quot;&gt;불러오는 중입니다.&lt;/p&gt;}
+
+      {page &amp;&amp; !loading &amp;&amp; page.items.length === 0 &amp;&amp; &lt;p&gt;조건에 맞는 도서가 없습니다.&lt;/p&gt;}
+      {page &amp;&amp; page.items.length &gt; 0 &amp;&amp; (
+        &lt;table className=&quot;table&quot;&gt;
+          &lt;thead&gt;
+            &lt;tr&gt;
+              &lt;th&gt;번호&lt;/th&gt;
+              &lt;th&gt;제목&lt;/th&gt;
+              &lt;th&gt;저자&lt;/th&gt;
+              &lt;th className=&quot;num&quot;&gt;가격&lt;/th&gt;
+            &lt;/tr&gt;
+          &lt;/thead&gt;
+          &lt;tbody&gt;
+            {page.items.map((book) =&gt; (
+              &lt;tr key={book.id}&gt;
+                &lt;td&gt;{book.id}&lt;/td&gt;
+                &lt;td&gt;
+                  &lt;Link to={`/books/${book.id}`}&gt;{book.title}&lt;/Link&gt;
+                &lt;/td&gt;
+                &lt;td&gt;{book.author?.name}&lt;/td&gt;
+                &lt;td className=&quot;num&quot;&gt;{book.price.toLocaleString(&#x27;ko-KR&#x27;)}원&lt;/td&gt;
+              &lt;/tr&gt;
+            ))}
+          &lt;/tbody&gt;
+        &lt;/table&gt;
+      )}
+      {page &amp;&amp; (
+        &lt;Pagination
+          total={page.total}
+          skip={page.skip}
+          limit={page.limit}
+          onChange={(nextSkip) =&gt; updateParams({ skip: nextSkip })}
+        /&gt;
+      )}
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p>상세 화면과 내 대여 화면도 같은 방식으로 바꿉니다. 표지 업로드나 반납처럼 서버 데이터를 바꾼 뒤에는 <code>reload()</code>로 최신 데이터를 다시 불러옵니다.</p>
+<div class="codeblock"><span class="file">src/pages/MyLoansPage.jsx</span><pre><code>import { useState } from &#x27;react&#x27;;
+import { useAsync } from &#x27;../hooks/useAsync&#x27;;
+import { Link } from &#x27;react-router&#x27;;
+import { listMyLoans, returnLoan } from &#x27;../api/loans&#x27;;
+import ErrorMessage from &#x27;../components/ErrorMessage&#x27;;
+
+// 백엔드는 UTC로 저장합니다. 화면에서는 사용자의 시간대로 보여 줍니다.
+// 시간대 표시(Z 또는 +09:00)가 없는 문자열은 브라우저가 현지 시각으로 해석하므로
+// UTC임을 나타내는 Z를 붙여 줍니다.
+const dateFormat = new Intl.DateTimeFormat(&#x27;ko-KR&#x27;, { dateStyle: &#x27;medium&#x27;, timeStyle: &#x27;short&#x27; });
+function formatDate(iso) {
+  if (!iso) return &#x27;-&#x27;;
+  const hasZone = /(Z|[+-]\d{2}:\d{2})$/.test(iso);
+  return dateFormat.format(new Date(hasZone ? iso : `${iso}Z`));
+}
+
+export default function MyLoansPage() {
+  const { data: loans = [], error: loadError, reload } = useAsync((signal) =&gt; listMyLoans(signal), []);
+  const [error, setError] = useState(null);
+
+  async function handleReturn(loanId) {
+    setError(null);
+    try {
+      await returnLoan(loanId);
+      reload();
+    } catch (err) {
+      setError(err);
+    }
+  }
+
+  const active = loans.filter((loan) =&gt; !loan.returned_at);
+
+  return (
+    &lt;section&gt;
+      &lt;h1&gt;내 대여&lt;/h1&gt;
+      &lt;p className=&quot;muted&quot;&gt;현재 대여 중 {active.length}권 / 최대 3권&lt;/p&gt;
+      &lt;ErrorMessage error={loadError ?? error} /&gt;
+      &lt;table className=&quot;table&quot;&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;
+            &lt;th&gt;도서&lt;/th&gt;
+            &lt;th&gt;대여 시각&lt;/th&gt;
+            &lt;th&gt;반납 시각&lt;/th&gt;
+            &lt;th&gt;&lt;/th&gt;
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+          {loans.map((loan) =&gt; (
+            &lt;tr key={loan.id}&gt;
+              &lt;td&gt;
+                &lt;Link to={`/books/${loan.book.id}`}&gt;{loan.book.title}&lt;/Link&gt;
+              &lt;/td&gt;
+              &lt;td&gt;{formatDate(loan.loaned_at)}&lt;/td&gt;
+              &lt;td&gt;{formatDate(loan.returned_at)}&lt;/td&gt;
+              &lt;td&gt;{!loan.returned_at &amp;&amp; &lt;button onClick={() =&gt; handleReturn(loan.id)}&gt;반납&lt;/button&gt;}&lt;/td&gt;
+            &lt;/tr&gt;
+          ))}
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+    &lt;/section&gt;
+  );
+}</code></pre></div>
+<p>상세 화면(<code>BookDetailPage.jsx</code>)에서 바뀌는 곳은 다음과 같습니다. 전체 코드는 <code>p33-done</code> 브랜치에서 확인합니다.</p>
+<div class="codeblock"><pre><code>const { data: book, error: loadError, reload } = useAsync((signal) =&gt; getBook(bookId, signal), [bookId]);
+// ...
+run(async () =&gt; {
+  await uploadCover(book.id, file);
+  reload(); // 서버의 최신 정보로 다시 불러옵니다.
+}, &#x27;표지를 바꿨습니다.&#x27;);</code></pre></div>
+<p>확인할 내용은 다음과 같습니다.</p>
+<ol>
+<li>목록, 상세, 내 대여 화면이 이전과 똑같이 동작합니다. 리팩터링은 동작을 바꾸지 않는 것이 원칙입니다.</li>
+<li>목록에서 상세로 갔다가 뒤로 오면 목록을 다시 요청합니다(Network 탭). 방금 받은 데이터인데도 다시 받는 것이 이 방식의 한계입니다.</li>
+<li>반납 후 내 대여 화면은 갱신되지만, 같은 도서의 상세 화면이나 목록 화면은 반납 사실을 모릅니다. 서버 데이터를 화면마다 따로 들고 있기 때문입니다.</li>
+</ol>
+<div class="callout note"><p class="callout-title">완성 코드</p><p>막히면 예제 저장소의 <code>p33-done</code> 브랜치와 내 코드를 비교합니다. 통째로 복사하지 말고 다른 곳만 찾아 고칩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s10-p33-01.html"><span class="dir">이전</span>S10-P33-01 반복 코드와 커스텀 훅</a>
+  <a class="next" href="s10-p33-03.html"><span class="dir">다음</span>S10-P33-03 정리: 커스텀 훅으로 반복 줄이기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

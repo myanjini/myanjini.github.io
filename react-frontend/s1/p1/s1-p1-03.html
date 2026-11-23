@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>S1-P1-03 학습 대상과 사전 지식 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<title>S1-P1-03 최종 결과물 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
@@ -12,49 +12,94 @@
 <body data-page="S1-P1-03">
 <header class="topbar">
   <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
-  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. 과정 안내</a><span class="sep">/</span><span>S1-P1 과정 소개와 결과물</span></nav>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S1. 웹 프론트엔드와 개발 환경</a><span class="sep">/</span><span>S1-P1 과정 소개와 결과물</span></nav>
 </header>
 <nav class="timebar" aria-label="이 파트의 페이지와 시간">
-  <a href="s1-p1-01.html" style="flex:5" data-type="주요 개념" title="과정 소개 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s1-p1-02.html" style="flex:5" data-type="주요 개념" title="학습 목표 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s1-p1-03.html" style="flex:5" data-type="주요 개념" title="학습 대상과 사전 지식 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s1-p1-04.html" style="flex:10" data-type="주요 개념" title="과정 구성과 권장 일정 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s1-p1-05.html" style="flex:15" data-type="주요 개념" title="최종 결과물 (15분)"><span class="seg-num">05</span><span class="seg-min">15분</span></a>
+  <a href="s1-p1-01.html" style="flex:10" data-type="주요 개념" title="과정 소개와 로드맵 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s1-p1-02.html" style="flex:10" data-type="주요 개념" title="학습 목표와 사전 지식 (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s1-p1-03.html" style="flex:15" data-type="주요 개념" title="최종 결과물 (15분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s1-p1-04.html" style="flex:10" data-type="주요 개념" title="예제 저장소와 단계별 브랜치 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s1-p1-05.html" style="flex:5" data-type="정리" title="정리: 과정 소개와 결과물 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
 </nav>
 <main class="page">
-<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S1-P1-03</span></div>
-<h1>학습 대상과 사전 지식</h1>
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S1-P1-03</span></div>
+<h1>최종 결과물</h1>
 
-<p class="lead">이 과정은 백엔드 과정을 마쳤거나, 최소한 백엔드 과정의 결과물(도서 관리 API)을 실행할 수 있는 학습자를 대상으로 합니다. 다음 지식이 있으면 학습이 수월합니다.</p>
+<p class="lead">과정을 마치면 다음 화면을 갖춘 웹 애플리케이션이 완성됩니다.</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
-<th>구분</th>
-<th>필요한 수준</th>
+<th>화면</th>
+<th>주소</th>
+<th>접근 권한</th>
+<th>주요 기능</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>HTML, CSS</td>
-<td>태그와 속성, 선택자의 기본 의미를 압니다.</td>
+<td>도서 목록</td>
+<td><code>/</code></td>
+<td>누구나</td>
+<td>제목 검색, 저자별 보기, 정렬, 페이지 이동</td>
 </tr>
 <tr>
-<td>JavaScript</td>
-<td>변수, 함수, 배열, 객체를 다뤄 본 경험이 있습니다. 모던 문법은 <a href="../../s2/index.html">S2</a>에서 정리합니다.</td>
+<td>도서 상세</td>
+<td><code>/books/:bookId</code></td>
+<td>누구나 (동작은 로그인 필요)</td>
+<td>표지 보기, 대여, 수정, 삭제, 표지 업로드</td>
 </tr>
 <tr>
-<td>HTTP, REST</td>
-<td>메서드, 상태 코드, 헤더의 의미를 압니다. 백엔드 과정 S1에서 다룬 수준이면 충분합니다.</td>
+<td>도서 등록, 수정</td>
+<td><code>/books/new</code>, <code>/books/:bookId/edit</code></td>
+<td>로그인 사용자 (수정은 소유자 또는 관리자만 성공)</td>
+<td>입력 검증, 바뀐 필드만 전송, 관리자 저자 추가</td>
 </tr>
 <tr>
-<td>Docker</td>
-<td>이미지, 컨테이너, Compose의 개념을 압니다. 백엔드 과정 S8에서 다룬 수준이면 충분합니다.</td>
+<td>내 대여</td>
+<td><code>/loans</code></td>
+<td>로그인 사용자</td>
+<td>대여 목록, 반납</td>
+</tr>
+<tr>
+<td>로그인, 회원가입</td>
+<td><code>/login</code>, <code>/signup</code></td>
+<td>누구나</td>
+<td>토큰 발급, 계정 생성</td>
+</tr>
+<tr>
+<td>관제 대시보드</td>
+<td><code>/dashboard</code></td>
+<td>관리자</td>
+<td>헬스 체크, KPI, 응답 시간, 상태 코드 분포, 로그 분석</td>
 </tr>
 </tbody>
 </table></div>
-<p>React를 처음 접하는 학습자도 따라올 수 있도록 <a href="../../s3/index.html">S3</a>에서 React의 핵심 개념을 처음부터 설명합니다.</p>
+<p>완성된 프로젝트의 폴더 구조는 다음과 같습니다. 괄호 안은 그 파일을 처음 만드는 파트입니다.</p>
+<div class="codeblock"><pre><code>react-frontend/
+├── .github/workflows/        # CI와 S3 배포 워크플로 (S16)
+├── deploy/                   # S3 버킷 정책, OIDC 신뢰 정책 (S16)
+├── e2e/                      # Playwright E2E 테스트 (S11-P39)
+├── nginx/                    # Nginx 설정과 보안 헤더 (S15-P51)
+├── .env.development          # 개발용 API 주소 (S6-P20)
+├── .env.production           # 운영 빌드 API 주소 (S15-P50)
+├── .env.test                 # 테스트용 가짜 API 주소 (S11-P36)
+├── Dockerfile                # 멀티 스테이지 이미지 (S15-P52)
+├── playwright.config.js
+├── vite.config.js            # Vite와 Vitest 설정
+└── src/
+    ├── main.jsx              # 앱 시작점
+    ├── App.jsx               # 라우트 정의
+    ├── queryClient.js        # 서버 상태 캐시 설정 (S10-P34)
+    ├── api/                  # 백엔드 호출 계층 (S6)
+    ├── auth/                 # 토큰과 로그인 상태 (S8)
+    ├── components/           # 공통 컴포넌트 (S7)
+    ├── pages/                # 화면 (S7, S8, S9)
+    ├── dashboard/            # 관제 대시보드 (S13, S14)
+    ├── utils/                # 날짜, 파일 검사 같은 도우미 (S11, S12)
+    └── test/                 # 테스트 공통 설정과 가짜 API (S11)</code></pre></div>
+<p>배포는 두 가지 형태를 모두 다룹니다. <a href="../../s15/index.html">S15</a>에서는 Nginx 컨테이너로 화면과 API를 같은 출처로 묶어 백엔드와 함께 실행하고, <a href="../../s16/index.html">S16</a>에서는 빌드 결과물을 S3 정적 웹사이트로 배포해 백엔드와 다른 출처에서 동작하게 합니다. 두 구성의 차이는 <a href="../../s5/index.html">S5</a>에서 배우는 CORS와 직접 이어집니다.</p>
 
 
 </main>
 <footer class="pager">
-  <a class="prev" href="s1-p1-02.html"><span class="dir">이전</span>S1-P1-02 학습 목표</a>
-  <a class="next" href="s1-p1-04.html"><span class="dir">다음</span>S1-P1-04 과정 구성과 권장 일정</a>
+  <a class="prev" href="s1-p1-02.html"><span class="dir">이전</span>S1-P1-02 학습 목표와 사전 지식</a>
+  <a class="next" href="s1-p1-04.html"><span class="dir">다음</span>S1-P1-04 예제 저장소와 단계별 브랜치</a>
 </footer>
 <script src="../../assets/js/main.js"></script>
 </body>

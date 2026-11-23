@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S6-P19-02 fetch 오류 처리의 함정 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S6-P19-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S6. Fetch API와 axios로 API 계층 만들기</a><span class="sep">/</span><span>S6-P19 Fetch API와 오류 처리</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s6-p19-01.html" style="flex:10" data-type="주요 개념" title="Fetch API 기본 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s6-p19-02.html" style="flex:10" data-type="주요 개념" title="fetch 오류 처리의 함정 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s6-p19-03.html" style="flex:10" data-type="주요 개념" title="본문 형식별 전송 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s6-p19-04.html" style="flex:15" data-type="실습" title="요청 취소와 시간 제한 (15분)"><span class="seg-num">04</span><span class="seg-min">15분</span></a><a href="s6-p19-05.html" style="flex:5" data-type="정리" title="정리: Fetch API와 오류 처리 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S6-P19-02</span></div>
+<h1>fetch 오류 처리의 함정</h1>
+
+<p class="lead"><code>fetch</code>를 처음 쓸 때 가장 많이 하는 실수는 &quot;404나 500이 오면 <code>catch</code>로 간다&quot;고 생각하는 것입니다. <code>fetch</code>는 <strong>응답을 받기만 하면 상태 코드와 관계없이 성공으로 처리</strong>합니다. <code>catch</code>로 가는 경우는 네트워크 연결 실패, CORS 차단, 요청 취소처럼 응답 자체를 받지 못했을 때뿐입니다.</p>
+<div class="codeblock"><pre><code>try {
+  const response = await fetch(&#x27;http://127.0.0.1:8000/books/999999&#x27;);
+  console.log(&#x27;여기에 도달합니다. status =&#x27;, response.status); // 404
+} catch (error) {
+  console.log(&#x27;네트워크 오류나 CORS 차단일 때만 여기로 옵니다.&#x27;);
+}</code></pre></div>
+<p>따라서 <code>fetch</code>를 쓸 때는 <code>response.ok</code>를 직접 확인하는 함수를 만들어 두는 것이 좋습니다.</p>
+<div class="codeblock"><pre><code>async function requestJson(url, options = {}) {
+  let response;
+  try {
+    response = await fetch(url, options);
+  } catch (error) {
+    if (error.name === &#x27;AbortError&#x27;) throw error; // 취소는 그대로 전달
+    throw new Error(&#x27;서버에 연결할 수 없습니다.&#x27;);
+  }
+  if (response.status === 204) return null;        // 본문 없는 성공
+  const body = await response.json().catch(() =&gt; null);
+  if (!response.ok) {
+    const error = new Error(body?.message ?? `요청 실패 (${response.status})`);
+    error.status = response.status;
+    error.code = body?.code;
+    throw error;
+  }
+  return body;
+}</code></pre></div>
+<p>이 함수가 하는 일은 세 가지입니다. 연결 실패와 HTTP 오류를 구분하고, 204처럼 본문이 없는 응답을 처리하며, 백엔드의 <code>{&quot;code&quot;, &quot;message&quot;}</code> 오류 본문을 오류 객체에 담습니다. <a href="../p20/s6-p20-02.html">S6-P20-02</a>에서는 같은 일을 axios 인터셉터로 한 곳에서 처리합니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s6-p19-01.html"><span class="dir">이전</span>S6-P19-01 Fetch API 기본</a>
+  <a class="next" href="s6-p19-03.html"><span class="dir">다음</span>S6-P19-03 본문 형식별 전송</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

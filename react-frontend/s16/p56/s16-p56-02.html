@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S16-P56-02 배포 역할 준비와 배포 워크플로 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S16-P56-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S16. GitHub Actions와 S3 배포</a><span class="sep">/</span><span>S16-P56 CD: OIDC, 자동 배포, 롤백</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s16-p56-01.html" style="flex:10" data-type="주요 개념" title="OIDC로 AWS에 인증하기 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s16-p56-02.html" style="flex:30" data-type="실습" title="배포 역할 준비와 배포 워크플로 (30분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">30분</span></a><a href="s16-p56-03.html" style="flex:5" data-type="실습" title="롤백 (5분)"><span class="seg-num">03</span><span class="seg-min">5분</span></a><a href="s16-p56-04.html" style="flex:5" data-type="정리" title="정리: CD: OIDC, 자동 배포, 롤백 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>30분</span><span>S16-P56-02</span></div>
+<h1>배포 역할 준비와 배포 워크플로</h1>
+
+<p class="lead"><strong>1) OIDC 공급자 등록 (계정에 한 번)</strong></p>
+<div class="codeblock term"><pre><code>aws iam create-open-id-connect-provider \
+  --url https://token.actions.githubusercontent.com \
+  --client-id-list sts.amazonaws.com</code></pre></div>
+<p>이미 등록되어 있다는 오류가 나면 그대로 다음 단계로 넘어갑니다.</p>
+<p><strong>2) 배포 역할 만들기</strong></p>
+<p>신뢰 정책의 <code>ACCOUNT_ID</code>와 <code>GITHUB_OWNER</code>를 내 AWS 계정 번호와 GitHub 계정으로 바꿉니다. <code>sub</code> 조건이 저장소와 환경을 함께 제한합니다.</p>
+<div class="codeblock"><span class="file">deploy/github-oidc-trust-policy.json</span><pre><code>{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Principal&quot;: {
+        &quot;Federated&quot;: &quot;arn:aws:iam::ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com&quot;
+      },
+      &quot;Action&quot;: &quot;sts:AssumeRoleWithWebIdentity&quot;,
+      &quot;Condition&quot;: {
+        &quot;StringEquals&quot;: {
+          &quot;token.actions.githubusercontent.com:aud&quot;: &quot;sts.amazonaws.com&quot;
+        },
+        &quot;StringLike&quot;: {
+          &quot;token.actions.githubusercontent.com:sub&quot;: &quot;repo:GITHUB_OWNER/react-frontend:environment:production&quot;
+        }
+      }
+    }
+  ]
+}</code></pre></div>
+<p>권한 정책의 <code>BUCKET_NAME</code>을 내 버킷 이름으로 바꿉니다.</p>
+<div class="codeblock"><span class="file">deploy/deploy-role-policy.json</span><pre><code>{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+    {
+      &quot;Sid&quot;: &quot;ListBucket&quot;,
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: &quot;s3:ListBucket&quot;,
+      &quot;Resource&quot;: &quot;arn:aws:s3:::BUCKET_NAME&quot;
+    },
+    {
+      &quot;Sid&quot;: &quot;WriteObjects&quot;,
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [&quot;s3:PutObject&quot;, &quot;s3:DeleteObject&quot;],
+      &quot;Resource&quot;: &quot;arn:aws:s3:::BUCKET_NAME/*&quot;
+    }
+  ]
+}</code></pre></div>
+<div class="codeblock term"><pre><code>ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+sed -e &quot;s/ACCOUNT_ID/$ACCOUNT_ID/&quot; -e &quot;s/GITHUB_OWNER/&lt;GitHub 계정&gt;/&quot; \
+  deploy/github-oidc-trust-policy.json &gt; /tmp/trust.json
+sed &quot;s/BUCKET_NAME/$BUCKET/&quot; deploy/deploy-role-policy.json &gt; /tmp/role-policy.json
+
+aws iam create-role --role-name react-frontend-deploy \
+  --assume-role-policy-document file:///tmp/trust.json
+aws iam put-role-policy --role-name react-frontend-deploy \
+  --policy-name s3-deploy --policy-document file:///tmp/role-policy.json
+aws iam get-role --role-name react-frontend-deploy --query Role.Arn --output text</code></pre></div>
+<p>마지막 명령이 출력한 역할 ARN을 적어 둡니다.</p>
+<p><strong>3) GitHub 환경과 변수 등록</strong></p>
+<p>저장소의 Settings &gt; Environments에서 <code>production</code> 환경을 만들고, 다음 변수를 Environment variables에 등록합니다. 모두 비밀 값이 아니므로 시크릿이 아니라 변수로 둡니다. 저장할 비밀이 없다는 것이 OIDC의 장점입니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>변수</th>
+<th>값의 예</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>AWS_ROLE_ARN</code></td>
+<td><code>arn:aws:iam::123456789012:role/react-frontend-deploy</code></td>
+</tr>
+<tr>
+<td><code>AWS_REGION</code></td>
+<td><code>ap-northeast-2</code></td>
+</tr>
+<tr>
+<td><code>S3_BUCKET</code></td>
+<td><code>react-frontend-hong-1234</code></td>
+</tr>
+<tr>
+<td><code>VITE_API_BASE_URL</code></td>
+<td>백엔드의 공개 주소</td>
+</tr>
+</tbody>
+</table></div>
+<p>&quot;Required reviewers&quot;에 나를 추가하면 배포 직전에 승인을 기다리게 할 수 있습니다. 실습에서는 선택입니다.</p>
+<p><strong>4) 배포 워크플로 작성</strong></p>
+<div class="codeblock"><span class="file">.github/workflows/deploy.yml</span><pre><code># CD: main에 코드가 들어오면 테스트를 통과한 경우에만 빌드해 S3 정적 웹사이트에 배포합니다.
+# 수동 실행(workflow_dispatch)에 이전 커밋을 지정하면 그 시점으로 롤백 배포합니다.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: &#x27;배포할 커밋 SHA 또는 태그 (롤백할 때 지정, 비우면 main 최신)&#x27;
+        required: false
+        default: &#x27;&#x27;
+
+# 같은 환경에 배포가 겹치지 않게 하나씩 실행합니다.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    # 평소 배포(push)는 CI를 먼저 통과해야 합니다. 롤백은 이미 검증된 커밋이므로 건너뜁니다.
+    if: github.event_name == &#x27;push&#x27;
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    needs: ci
+    if: ${{ !failure() &amp;&amp; !cancelled() }}
+    runs-on: ubuntu-latest
+    environment: production # 저장소 Settings &gt; Environments에서 승인자와 변수를 관리합니다.
+    permissions:
+      contents: read
+      id-token: write # OIDC 토큰을 받아 AWS 역할을 맡기 위해 필요합니다.
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 운영 빌드
+        run: npm run build
+        env:
+          # S3에서는 Nginx 프록시를 쓸 수 없으므로 백엔드의 공개 주소를 빌드에 새깁니다.
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+
+      - name: AWS 인증 (OIDC, 장기 액세스 키 없음)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: S3에 업로드
+        env:
+          BUCKET: ${{ vars.S3_BUCKET }}
+        run: |
+          # 1) 해시가 붙은 파일은 오래 캐시합니다.
+          aws s3 sync dist/assets &quot;s3://$BUCKET/assets&quot; --delete \
+            --cache-control &quot;public, max-age=31536000, immutable&quot;
+          # 2) index.html 등 나머지는 매번 새로 확인하게 합니다. assets는 1)에서 처리했으므로 제외합니다.
+          aws s3 sync dist &quot;s3://$BUCKET&quot; --delete --exclude &quot;assets/*&quot; \
+            --cache-control &quot;no-cache&quot;
+
+      - name: 배포 결과
+        env:
+          BUCKET: ${{ vars.S3_BUCKET }}
+          REGION: ${{ vars.AWS_REGION }}
+        run: |
+          echo &quot;배포한 커밋: $(git rev-parse --short HEAD)&quot; &gt;&gt; &quot;$GITHUB_STEP_SUMMARY&quot;
+          echo &quot;사이트 주소: http://$BUCKET.s3-website.$REGION.amazonaws.com&quot; &gt;&gt; &quot;$GITHUB_STEP_SUMMARY&quot;</code></pre></div>
+<p>워크플로에서 볼 부분은 다음과 같습니다.</p>
+<ul>
+<li><code>ci</code> 잡이 <a href="../p54/s16-p54-01.html">S16-P54</a>의 CI 워크플로를 불러 실행하고, <code>deploy</code> 잡은 <code>needs: ci</code>로 그 뒤에 실행됩니다. 테스트에 실패한 코드는 배포되지 않습니다.</li>
+<li><code>id-token: write</code> 권한이 있어야 OIDC 토큰을 받을 수 있습니다. 이 권한은 <code>deploy</code> 잡에만 줍니다.</li>
+<li><code>environment: production</code>이 신뢰 정책의 <code>sub</code> 조건과 맞아야 역할을 맡을 수 있습니다.</li>
+<li><code>concurrency</code>로 배포가 겹치지 않게 하나씩 실행합니다.</li>
+<li>배포 결과 요약(<code>GITHUB_STEP_SUMMARY</code>)에 배포한 커밋과 사이트 주소를 남깁니다.</li>
+</ul>
+<p><strong>5) 배포 확인</strong></p>
+<ol>
+<li>기능 브랜치에서 목록 화면 제목을 바꾸고 풀 리퀘스트를 열어 CI 통과 후 병합합니다.</li>
+<li>Actions 탭에서 Deploy 워크플로가 <code>ci</code>, <code>deploy</code> 순서로 실행되는 것을 확인합니다. 요약에 나온 사이트 주소로 접속해 바뀐 제목이 보이는지 확인합니다.</li>
+<li>신뢰 정책의 조건을 시험합니다. <code>deploy.yml</code>의 <code>environment</code> 줄을 지운 브랜치에서 수동 실행하면 AWS 인증 스텝이 &quot;Not authorized to perform sts:AssumeRoleWithWebIdentity&quot;로 실패해야 합니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s16-p56-01.html"><span class="dir">이전</span>S16-P56-01 OIDC로 AWS에 인증하기</a>
+  <a class="next" href="s16-p56-03.html"><span class="dir">다음</span>S16-P56-03 롤백</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>
