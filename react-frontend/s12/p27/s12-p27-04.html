@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P27-04 확장 과제 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P27-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. 종합 점검과 확장 과제</a><span class="sep">/</span><span>S12-P27 종합 점검과 확장</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p27-01.html" style="flex:10" data-type="주요 개념" title="종합 시나리오 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p27-02.html" style="flex:20" data-type="주요 개념" title="점검표 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s12-p27-03.html" style="flex:10" data-type="주요 개념" title="문제 해결 가이드 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s12-p27-04.html" style="flex:5" data-type="주요 개념" title="확장 과제 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p27-05.html" style="flex:5" data-type="주요 개념" title="과정을 마치며 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S12-P27-04</span></div>
+<h1>확장 과제</h1>
+
+<p class="lead">학습한 내용을 응용해 다음 과제에 도전합니다. 난이도 순서로 배치했습니다.</p>
+<ol>
+<li><strong>저자 관리 화면.</strong> 관리자 전용으로 저자 목록과 등록 화면을 만듭니다. <code>POST /authors</code>의 409 <code>DUPLICATE_AUTHOR</code>, 일반 사용자의 403을 처리합니다. 저자 삭제(<code>DELETE /authors/{author_id}</code>)에서 도서가 남아 있으면 409 <code>AUTHOR_HAS_BOOKS</code>를 안내합니다.</li>
+<li><strong>저자별 도서 목록.</strong> 도서 상세의 저자 이름을 누르면 <code>GET /authors/{author_id}/books</code> 결과를 보여 주는 화면으로 이동합니다.</li>
+<li><strong>표지 미리보기.</strong> 업로드 전에 <code>URL.createObjectURL(file)</code>로 고른 이미지를 미리 보여 주고, 화면을 떠날 때 <code>URL.revokeObjectURL</code>로 정리합니다.</li>
+<li><strong>대시보드 기간 필터.</strong> 로그 분석에 시작, 끝 시각 필터를 추가하고, 선택한 구간의 지표만 다시 계산합니다. 필터는 차트 위 한 줄에 배치합니다.</li>
+<li><strong>대시보드 경보.</strong> 오류율이나 p95 응답 시간이 기준값을 넘으면 KPI 카드를 주의 상태로 표시하고, 기준값을 화면에서 바꿀 수 있게 합니다. 일시적인 튐에 경보가 울리지 않도록 &quot;연속 3회 초과&quot; 같은 조건을 설계합니다.</li>
+<li><strong>서버 상태 관리 라이브러리.</strong> TanStack Query를 도입해 <a href="../../s5/p12/s5-p12-05.html">S5-P12-05</a>의 반복 코드(로딩, 오류, 취소)를 대체하고, 대여 후 목록을 자동으로 다시 불러오도록 캐시 무효화를 적용합니다.</li>
+<li><strong>HttpOnly 쿠키 기반 리프레시 토큰.</strong> 백엔드가 리프레시 토큰을 <code>HttpOnly; Secure; SameSite=Strict</code> 쿠키로 발급하고, <code>/auth/refresh</code>가 쿠키에서 토큰을 읽도록 바꿉니다. 프론트엔드는 <code>withCredentials</code>를 설정하고 <code>sessionStorage</code> 저장을 제거합니다. 백엔드 CORS의 <code>allow_credentials</code> 설정과 CSRF 대책을 함께 설계합니다(<a href="../../s9/index.html">S9</a>).</li>
+<li><strong>통계 API와 Grafana.</strong> 백엔드에 도서, 대여 현황 통계 API를 추가해 대시보드에 업무 지표를 늘리고, 같은 데이터를 Grafana의 PostgreSQL 데이터 소스로 연결해 직접 만든 대시보드와 비교합니다.</li>
+</ol>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s12-p27-03.html"><span class="dir">이전</span>S12-P27-03 문제 해결 가이드</a>
+  <a class="next" href="s12-p27-05.html"><span class="dir">다음</span>S12-P27-05 과정을 마치며</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

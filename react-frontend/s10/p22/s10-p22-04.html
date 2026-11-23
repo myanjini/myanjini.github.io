@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P22-04 차트 형태 고르기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P22-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 관제 대시보드와 데이터 시각화</a><span class="sep">/</span><span>S10-P22 관제 대시보드 설계</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p22-01.html" style="flex:5" data-type="주요 개념" title="관제 대시보드란 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s10-p22-02.html" style="flex:5" data-type="주요 개념" title="설계 원칙 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s10-p22-03.html" style="flex:10" data-type="주요 개념" title="무엇을 볼 것인가: 지표와 데이터 소스 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s10-p22-04.html" style="flex:5" data-type="주요 개념" title="차트 형태 고르기 (5분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s10-p22-05.html" style="flex:10" data-type="주요 개념" title="시각화 도구 비교 (10분)"><span class="seg-num">05</span><span class="seg-min">10분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S10-P22-04</span></div>
+<h1>차트 형태 고르기</h1>
+
+<p class="lead">차트를 고를 때는 &quot;이 데이터가 하는 일&quot;을 먼저 정합니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>데이터가 하는 일</th>
+<th>알맞은 형태</th>
+<th>이 대시보드의 예</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>하나의 핵심 수치</td>
+<td>숫자 타일(KPI 카드)</td>
+<td>등록 도서 수, 평균 응답 시간, 오류율</td>
+</tr>
+<tr>
+<td>현재 상태</td>
+<td>상태 배지(모양, 글자, 색)</td>
+<td>API 상태, DB 상태</td>
+</tr>
+<tr>
+<td>시간에 따른 상태 이력</td>
+<td>상태 띠(칸마다 한 번의 점검)</td>
+<td>헬스 체크 이력</td>
+</tr>
+<tr>
+<td>시간에 따른 수치 변화</td>
+<td>선 차트</td>
+<td>응답 시간 추이, 분당 요청 수</td>
+</tr>
+<tr>
+<td>범주별 크기 비교</td>
+<td>막대 차트</td>
+<td>상태 코드 묶음별 건수</td>
+</tr>
+<tr>
+<td>여러 속성을 정확히 비교</td>
+<td>표</td>
+<td>느린 API 상위 10개</td>
+</tr>
+</tbody>
+</table></div>
+<p>관제 화면에서 자주 보이는 원형 게이지나 3D 차트는 화면을 많이 차지하는 데 비해 전달하는 정보가 적고 값 비교가 어렵습니다. 같은 정보는 숫자 타일이나 막대로 더 정확히 전달할 수 있습니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s10-p22-03.html"><span class="dir">이전</span>S10-P22-03 무엇을 볼 것인가: 지표와 데이터 소스</a>
+  <a class="next" href="s10-p22-05.html"><span class="dir">다음</span>S10-P22-05 시각화 도구 비교</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

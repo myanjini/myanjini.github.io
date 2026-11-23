@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S10-P24-06 정리: 관제 대시보드와 데이터 시각화 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S10-P24-06">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S10. 관제 대시보드와 데이터 시각화</a><span class="sep">/</span><span>S10-P24 대시보드 구현 2: 화면 완성</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s10-p24-01.html" style="flex:20" data-type="실습" title="헬스 체크 패널과 상태 코드 분포 (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s10-p24-02.html" style="flex:25" data-type="실습" title="백엔드 로그 분석 (25분)"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s10-p24-03.html" style="flex:20" data-type="실습" title="대시보드 화면 조립 (20분)"><span class="seg-num">03</span><span class="seg-min">20분</span></a><a href="s10-p24-04.html" style="flex:10" data-type="실습" title="라우트 등록과 코드 분할 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s10-p24-05.html" style="flex:10" data-type="실습" title="관제 대시보드 운영해 보기 (10분)"><span class="seg-num">05</span><span class="seg-min">10분</span></a><a href="s10-p24-06.html" style="flex:5" data-type="정리" title="정리: 관제 대시보드와 데이터 시각화 (5분)" aria-current="page"><span class="seg-num">06</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S10-P24-06</span></div>
+<h1>정리: 관제 대시보드와 데이터 시각화</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>관제 대시보드는 몇 초 안에 &quot;정상인가, 어디가 문제인가&quot;에 답할 수 있도록 상태, KPI, 추세, 상세 순서로 구성합니다.</li>
+<li>상태 색은 예약해 두고, 항상 모양과 글자를 함께 표시합니다.</li>
+<li>지연, 트래픽, 오류, 포화의 네 가지 신호를 기준으로 지표를 고르고, 데이터 소스의 한계를 이해합니다.</li>
+<li>데이터가 하는 일에 따라 숫자 타일, 상태 띠, 선, 막대, 표를 고르고 이중 축은 쓰지 않습니다.</li>
+<li>폴링은 앞 요청이 끝난 뒤 예약하고, 탭이 보이지 않으면 쉬며, 화면을 떠나면 멈춥니다.</li>
+<li>큰 라이브러리를 쓰는 화면은 <code>lazy</code>로 코드를 분할합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q">관제 대시보드 설계 원칙으로 알맞지 않은 것은 무엇인가요?</p><label><input type="radio" name="s10-p24-06-q1" value="1"> <span>1. 상태는 색과 함께 모양과 글자로 표시한다.</span></label><label><input type="radio" name="s10-p24-06-q1" value="2"> <span>2. 마지막 갱신 시각을 표시한다.</span></label><label><input type="radio" name="s10-p24-06-q1" value="3"> <span>3. 단위가 다른 두 값을 좌우 이중 축 한 차트에 겹친다.</span></label><label><input type="radio" name="s10-p24-06-q1" value="4"> <span>4. 상태 색을 일반 데이터 계열에 쓰지 않는다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>이중 축은 축 범위에 따라 해석이 달라지므로 단위가 다르면 차트를 나눕니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">폴링을 <code>setInterval</code> 대신 <code>setTimeout</code>을 이어 붙여 구현하는 이유는 무엇인가요?</p><label><input type="radio" name="s10-p24-06-q2" value="1"> <span>1. 코드가 짧아서</span></label><label><input type="radio" name="s10-p24-06-q2" value="2"> <span>2. 앞 요청이 끝난 뒤 다음 요청을 예약해 느린 응답이 쌓이지 않게 하려고</span></label><label><input type="radio" name="s10-p24-06-q2" value="3"> <span>3. 브라우저 호환성 때문에</span></label><label><input type="radio" name="s10-p24-06-q2" value="4"> <span>4. 탭이 보이지 않을 때도 계속 실행하려고</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>setInterval은 응답이 늦어도 정해진 간격마다 요청을 쌓습니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">p95 응답 시간을 평균과 함께 보는 이유는 무엇인가요?</p><label><input type="radio" name="s10-p24-06-q3" value="1"> <span>1. 계산이 더 쉬워서</span></label><label><input type="radio" name="s10-p24-06-q3" value="2"> <span>2. 일부 매우 느린 요청을 평균이 가리기 쉬워서</span></label><label><input type="radio" name="s10-p24-06-q3" value="3"> <span>3. 평균은 부정확해서</span></label><label><input type="radio" name="s10-p24-06-q3" value="4"> <span>4. 로그에 평균이 없어서</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>대부분 빠르고 일부가 매우 느린 상황은 평균만으로는 드러나지 않습니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s11/index.html">S11. 도커라이징과 통합 실행</a>로 이어집니다. Nginx와 멀티 스테이지 Dockerfile로 프론트엔드를 컨테이너화하고 백엔드와 함께 실행합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s10-p24-05.html"><span class="dir">이전</span>S10-P24-05 관제 대시보드 운영해 보기</a>
+  <a class="next" href="../../s11/p25/s11-p25-01.html"><span class="dir">다음</span>S11-P25-01 운영 환경의 구조</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

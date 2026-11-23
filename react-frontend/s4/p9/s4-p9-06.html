@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S4-P9-06 정리: 백엔드 연결 준비: Origin, SOP, CORS | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S4-P9-06">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S4. 백엔드 연결 준비: Origin, SOP, CORS</a><span class="sep">/</span><span>S4-P9 CORS와 해결 방법</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s4-p9-01.html" style="flex:20" data-type="주요 개념" title="CORS (20분)"><span class="seg-num">01</span><span class="seg-min">20분</span></a><a href="s4-p9-02.html" style="flex:20" data-type="주요 개념" title="백엔드 CORS 설정 고치기 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s4-p9-03.html" style="flex:10" data-type="주요 개념" title="다른 해결 방법: 프록시 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s4-p9-04.html" style="flex:5" data-type="주요 개념" title="CORS에 대한 흔한 오해 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s4-p9-05.html" style="flex:10" data-type="실습" title="출처를 바꿔 가며 관찰하기 (10분)"><span class="seg-num">05</span><span class="seg-min">10분</span></a><a href="s4-p9-06.html" style="flex:5" data-type="정리" title="정리: 백엔드 연결 준비: Origin, SOP, CORS (5분)" aria-current="page"><span class="seg-num">06</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S4-P9-06</span></div>
+<h1>정리: 백엔드 연결 준비: Origin, SOP, CORS</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>출처는 스킴, 호스트, 포트의 조합이며, 하나라도 다르면 다른 출처입니다.</li>
+<li>동일 출처 정책은 다른 출처의 응답을 스크립트가 읽는 것을 막지만, 요청을 보내는 것 자체를 모두 막지는 않습니다.</li>
+<li>CORS는 서버가 응답 헤더로 특정 출처의 읽기를 허락하는 방법이며, 단순 요청이 아니면 사전 요청이 먼저 오갑니다.</li>
+<li>개발 환경은 백엔드의 <code>CORS_ORIGINS</code>에 <code>http://localhost:5173</code>을 등록해 해결하고, 운영 환경은 프록시로 출처를 하나로 만듭니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="3"><p class="q"><code>http://localhost:5173</code>과 같은 출처인 주소는 무엇인가요?</p><label><input type="radio" name="s4-p9-06-q1" value="1"> <span>1. <code>http://127.0.0.1:5173</code></span></label><label><input type="radio" name="s4-p9-06-q1" value="2"> <span>2. <code>https://localhost:5173</code></span></label><label><input type="radio" name="s4-p9-06-q1" value="3"> <span>3. <code>http://localhost:5173/books/7</code></span></label><label><input type="radio" name="s4-p9-06-q1" value="4"> <span>4. <code>http://localhost:8000</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>출처는 스킴, 호스트, 포트의 조합이며 경로는 포함되지 않습니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">다음 중 사전 요청(preflight)이 일어나는 요청은 무엇인가요?</p><label><input type="radio" name="s4-p9-06-q2" value="1"> <span>1. 헤더 없는 <code>GET /books</code></span></label><label><input type="radio" name="s4-p9-06-q2" value="2"> <span>2. 폼 형식의 <code>POST /auth/token</code></span></label><label><input type="radio" name="s4-p9-06-q2" value="3"> <span>3. <code>Authorization</code> 헤더가 있는 <code>GET /auth/me</code></span></label><label><input type="radio" name="s4-p9-06-q2" value="4"> <span>4. <code>&lt;img&gt;</code>로 표지 불러오기</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>Authorization 헤더는 안전 목록 헤더가 아니므로 사전 요청이 먼저 일어납니다.</p></div>
+<div class="quiz" data-answer="3"><p class="q">CORS에 대한 설명으로 옳은 것은 무엇인가요?</p><label><input type="radio" name="s4-p9-06-q3" value="1"> <span>1. 서버를 공격으로부터 보호하는 인증 장치다.</span></label><label><input type="radio" name="s4-p9-06-q3" value="2"> <span>2. curl 요청도 막는다.</span></label><label><input type="radio" name="s4-p9-06-q3" value="3"> <span>3. 서버가 특정 출처의 응답 읽기를 허락하는 방법이다.</span></label><label><input type="radio" name="s4-p9-06-q3" value="4"> <span>4. 프론트엔드 코드만으로 해결할 수 있다.</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>CORS는 동일 출처 정책을 완화하는 장치이며 허락은 서버만 할 수 있습니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s5/index.html">S5. Fetch API와 axios로 API 계층 만들기</a>로 이어집니다. Fetch API와 axios로 요청을 보내고, 오류 처리가 통일된 API 계층을 만듭니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s4-p9-05.html"><span class="dir">이전</span>S4-P9-05 출처를 바꿔 가며 관찰하기</a>
+  <a class="next" href="../../s5/p10/s5-p10-01.html"><span class="dir">다음</span>S5-P10-01 Fetch API 기본</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

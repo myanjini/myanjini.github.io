@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S2-P3-03 프론트엔드 관점에서 본 HTTP | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S2-P3-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S2. 웹 프론트엔드 기초와 JSON</a><span class="sep">/</span><span>S2-P3 웹 프론트엔드와 HTTP</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s2-p3-01.html" style="flex:5" data-type="주요 개념" title="브라우저가 화면을 만드는 방식 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s2-p3-02.html" style="flex:5" data-type="주요 개념" title="MPA와 SPA (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s2-p3-03.html" style="flex:10" data-type="주요 개념" title="프론트엔드 관점에서 본 HTTP (10분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">10분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S2-P3-03</span></div>
+<h1>프론트엔드 관점에서 본 HTTP</h1>
+
+<p class="lead">백엔드 과정에서 HTTP를 서버 입장에서 배웠다면, 이번에는 요청을 보내고 응답을 해석하는 입장에서 정리합니다.</p>
+<p><strong>요청의 구성</strong></p>
+<ul>
+<li>메서드: <code>GET</code>(조회), <code>POST</code>(생성, 동작 실행), <code>PATCH</code>(일부 수정), <code>DELETE</code>(삭제)</li>
+<li>주소: 경로(<code>/books/7</code>)와 쿼리 문자열(<code>?q=파이썬&amp;sort=price</code>)</li>
+<li>헤더: 요청에 대한 부가 정보. 이 과정에서는 <code>Content-Type</code>(본문 형식)과 <code>Authorization</code>(인증 토큰)을 주로 씁니다.</li>
+<li>본문: <code>POST</code>, <code>PATCH</code> 요청에 담는 데이터</li>
+</ul>
+<p><strong>본문 형식 세 가지</strong></p>
+<p>이 과정에서 백엔드에 보내는 본문은 세 가지 형식이 있습니다. 어떤 API가 어떤 형식을 요구하는지 정확히 맞춰야 하며, 형식이 틀리면 백엔드는 422 오류를 돌려줍니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>형식 (<code>Content-Type</code>)</th>
+<th>모양</th>
+<th>사용하는 API</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>application/json</code></td>
+<td><code>{&quot;book_id&quot;: 7}</code></td>
+<td>도서 등록과 수정, 회원가입, 대여, 재발급, 로그아웃</td>
+</tr>
+<tr>
+<td><code>application/x-www-form-urlencoded</code></td>
+<td><code>username=a%40b.com&amp;password=1234</code></td>
+<td>로그인(<code>POST /auth/token</code>)</td>
+</tr>
+<tr>
+<td><code>multipart/form-data</code></td>
+<td>여러 부분으로 나뉜 본문, 파일 포함 가능</td>
+<td>표지 업로드</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>응답의 구성</strong></p>
+<p>응답은 상태 코드, 헤더, 본문으로 이루어집니다. 프론트엔드는 상태 코드의 범위로 성공과 실패를 먼저 나누고, 본문으로 세부 내용을 읽습니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>범위</th>
+<th>의미</th>
+<th>화면에서의 처리 예</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2xx</td>
+<td>성공</td>
+<td>결과를 보여 주거나 다음 화면으로 이동</td>
+</tr>
+<tr>
+<td>4xx</td>
+<td>요청 쪽 문제</td>
+<td>401이면 로그인 안내, 403이면 권한 안내, 409와 422면 입력 수정 안내</td>
+</tr>
+<tr>
+<td>5xx</td>
+<td>서버 쪽 문제</td>
+<td>잠시 후 다시 시도하라는 안내, 관제 화면에서는 장애로 표시</td>
+</tr>
+</tbody>
+</table></div>
+<p>204 응답처럼 본문이 없는 성공도 있다는 점에 주의합니다. 도서 삭제와 로그아웃이 204를 돌려주므로, 이때 본문을 JSON으로 해석하려 하면 오류가 납니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s2-p3-02.html"><span class="dir">이전</span>S2-P3-02 MPA와 SPA</a>
+  <a class="next" href="../p4/s2-p4-01.html"><span class="dir">다음</span>S2-P4-01 JSON</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

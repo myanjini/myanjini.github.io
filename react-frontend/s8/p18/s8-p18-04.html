@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P18-04 라우트 등록: src/App.jsx | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P18-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 쓰기 기능: 등록, 수정, 삭제, 표지 업로드, 대여와 반납</a><span class="sep">/</span><span>S8-P18 상세 동작과 대여, 반납</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p18-01.html" style="flex:10" data-type="실습" title="대여와 반납 API: src/api/loans.js (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p18-02.html" style="flex:25" data-type="실습" title="도서 상세 화면 완성: src/pages/BookDetailPage.jsx (25분)"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s8-p18-03.html" style="flex:15" data-type="실습" title="내 대여 화면: src/pages/MyLoansPage.jsx (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s8-p18-04.html" style="flex:10" data-type="실습" title="라우트 등록: src/App.jsx (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s8-p18-05.html" style="flex:10" data-type="실습" title="쓰기 기능 확인하기 (10분)"><span class="seg-num">05</span><span class="seg-min">10분</span></a><a href="s8-p18-06.html" style="flex:5" data-type="정리" title="정리: 쓰기 기능: 등록, 수정, 삭제, 표지 업로드, 대여와 반납 (5분)"><span class="seg-num">06</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S8-P18-04</span></div>
+<h1>라우트 등록: <code>src/App.jsx</code></h1>
+
+<p class="lead">등록, 수정, 내 대여 화면을 <code>RequireAuth</code>로 감싸 등록합니다. <code>books/new</code>와 <code>books/:bookId</code>는 둘 다 <code>books/</code> 다음에 한 단어가 오는 모양이지만, React Router는 고정된 경로(<code>new</code>)를 변수 경로보다 먼저 고르므로 순서와 관계없이 올바르게 동작합니다.</p>
+<div class="codeblock"><span class="file">src/App.jsx</span><pre><code>import { Route, Routes } from &#x27;react-router&#x27;;
+import RequireAuth from &#x27;./auth/RequireAuth&#x27;;
+import Layout from &#x27;./components/Layout&#x27;;
+import BookDetailPage from &#x27;./pages/BookDetailPage&#x27;;
+import BookFormPage from &#x27;./pages/BookFormPage&#x27;;
+import BookListPage from &#x27;./pages/BookListPage&#x27;;
+import LoginPage from &#x27;./pages/LoginPage&#x27;;
+import MyLoansPage from &#x27;./pages/MyLoansPage&#x27;;
+import NotFoundPage from &#x27;./pages/NotFoundPage&#x27;;
+import SignupPage from &#x27;./pages/SignupPage&#x27;;
+
+export default function App() {
+  return (
+    &lt;Routes&gt;
+      &lt;Route element={&lt;Layout /&gt;}&gt;
+        &lt;Route index element={&lt;BookListPage /&gt;} /&gt;
+        &lt;Route path=&quot;books/:bookId&quot; element={&lt;BookDetailPage /&gt;} /&gt;
+        &lt;Route path=&quot;books/new&quot; element={&lt;RequireAuth&gt;&lt;BookFormPage /&gt;&lt;/RequireAuth&gt;} /&gt;
+        &lt;Route path=&quot;books/:bookId/edit&quot; element={&lt;RequireAuth&gt;&lt;BookFormPage /&gt;&lt;/RequireAuth&gt;} /&gt;
+        &lt;Route path=&quot;loans&quot; element={&lt;RequireAuth&gt;&lt;MyLoansPage /&gt;&lt;/RequireAuth&gt;} /&gt;
+        &lt;Route path=&quot;login&quot; element={&lt;LoginPage /&gt;} /&gt;
+        &lt;Route path=&quot;signup&quot; element={&lt;SignupPage /&gt;} /&gt;
+        &lt;Route path=&quot;*&quot; element={&lt;NotFoundPage /&gt;} /&gt;
+      &lt;/Route&gt;
+    &lt;/Routes&gt;
+  );
+}</code></pre></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s8-p18-03.html"><span class="dir">이전</span>S8-P18-03 내 대여 화면: <code>src/pages/MyLoansPage.jsx</code></a>
+  <a class="next" href="s8-p18-05.html"><span class="dir">다음</span>S8-P18-05 쓰기 기능 확인하기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

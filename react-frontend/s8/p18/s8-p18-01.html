@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S8-P18-01 대여와 반납 API: src/api/loans.js | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S8-P18-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S8. 쓰기 기능: 등록, 수정, 삭제, 표지 업로드, 대여와 반납</a><span class="sep">/</span><span>S8-P18 상세 동작과 대여, 반납</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s8-p18-01.html" style="flex:10" data-type="실습" title="대여와 반납 API: src/api/loans.js (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s8-p18-02.html" style="flex:25" data-type="실습" title="도서 상세 화면 완성: src/pages/BookDetailPage.jsx (25분)"><span class="seg-num">02</span><span class="seg-min">25분</span></a><a href="s8-p18-03.html" style="flex:15" data-type="실습" title="내 대여 화면: src/pages/MyLoansPage.jsx (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s8-p18-04.html" style="flex:10" data-type="실습" title="라우트 등록: src/App.jsx (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s8-p18-05.html" style="flex:10" data-type="실습" title="쓰기 기능 확인하기 (10분)"><span class="seg-num">05</span><span class="seg-min">10분</span></a><a href="s8-p18-06.html" style="flex:5" data-type="정리" title="정리: 쓰기 기능: 등록, 수정, 삭제, 표지 업로드, 대여와 반납 (5분)"><span class="seg-num">06</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S8-P18-01</span></div>
+<h1>대여와 반납 API: <code>src/api/loans.js</code></h1>
+
+<div class="codeblock"><span class="file">src/api/loans.js</span><pre><code>import { api } from &#x27;./client&#x27;;
+
+export async function borrowBook(bookId) {
+  const { data } = await api.post(&#x27;/loans&#x27;, { book_id: bookId });
+  return data;
+}
+
+export async function returnLoan(loanId) {
+  const { data } = await api.post(`/loans/${loanId}/return`);
+  return data;
+}
+
+export async function listMyLoans(signal) {
+  const { data } = await api.get(&#x27;/loans/me&#x27;, { signal });
+  return data;
+}</code></pre></div>
+<p>대여 요청 본문에는 <code>book_id</code>만 있습니다. 빌리는 사람은 백엔드가 토큰에서 알아냅니다. 백엔드 과정 S6-P21의 &quot;흔한 실수&quot; 가운데 하나가 본문으로 <code>user_id</code>를 받는 것이었는데, 프론트엔드도 같은 원칙을 따릅니다. 사용자를 식별하는 값을 요청 본문으로 보내지 않습니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../p17/s8-p17-02.html"><span class="dir">이전</span>S8-P17-02 도서 등록과 수정: <code>src/pages/BookFormPage.jsx</code></a>
+  <a class="next" href="s8-p18-02.html"><span class="dir">다음</span>S8-P18-02 도서 상세 화면 완성: <code>src/pages/BookDetailPage.jsx</code></a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

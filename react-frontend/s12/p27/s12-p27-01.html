@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S12-P27-01 종합 시나리오 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S12-P27-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S12. 종합 점검과 확장 과제</a><span class="sep">/</span><span>S12-P27 종합 점검과 확장</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s12-p27-01.html" style="flex:10" data-type="주요 개념" title="종합 시나리오 (10분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s12-p27-02.html" style="flex:20" data-type="주요 개념" title="점검표 (20분)"><span class="seg-num">02</span><span class="seg-min">20분</span></a><a href="s12-p27-03.html" style="flex:10" data-type="주요 개념" title="문제 해결 가이드 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s12-p27-04.html" style="flex:5" data-type="주요 개념" title="확장 과제 (5분)"><span class="seg-num">04</span><span class="seg-min">5분</span></a><a href="s12-p27-05.html" style="flex:5" data-type="주요 개념" title="과정을 마치며 (5분)"><span class="seg-num">05</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S12-P27-01</span></div>
+<h1>종합 시나리오</h1>
+
+<p class="lead"><a href="../../s11/index.html">S11</a>의 통합 환경(<code>http://localhost:8080</code>)에서 다음 시나리오를 처음부터 끝까지 수행합니다. 각 단계에서 기대 결과와 다르면 해당 장으로 돌아가 원인을 찾습니다.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>단계</th>
+<th>역할</th>
+<th>동작</th>
+<th>관련 섹션</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>방문자</td>
+<td>로그인 없이 도서를 검색하고, 가격 높은 순으로 정렬한 뒤 2쪽으로 이동</td>
+<td><a href="../../s6/index.html">S6</a></td>
+</tr>
+<tr>
+<td>2</td>
+<td>방문자</td>
+<td>2쪽 주소를 복사해 새 탭에서 열기 (같은 결과)</td>
+<td><a href="../../s6/index.html">S6</a>, <a href="../../s11/index.html">S11</a></td>
+</tr>
+<tr>
+<td>3</td>
+<td>방문자</td>
+<td>도서 상세에서 &quot;로그인 후 사용&quot; 안내 확인, 주소창에 <code>/books/new</code> 입력</td>
+<td><a href="../../s7/index.html">S7</a></td>
+</tr>
+<tr>
+<td>4</td>
+<td>사용자</td>
+<td>로그인 화면으로 이동된 상태에서 회원가입, 로그인 후 원래 가려던 <code>/books/new</code>로 돌아옴</td>
+<td><a href="../../s7/index.html">S7</a></td>
+</tr>
+<tr>
+<td>5</td>
+<td>사용자</td>
+<td>도서 등록, 표지 업로드, 가격 수정</td>
+<td><a href="../../s8/index.html">S8</a></td>
+</tr>
+<tr>
+<td>6</td>
+<td>사용자</td>
+<td>도서 3권 대여, 4번째 대여 시도(거절), 1권 반납</td>
+<td><a href="../../s8/index.html">S8</a></td>
+</tr>
+<tr>
+<td>7</td>
+<td>사용자</td>
+<td>새로고침 후에도 로그인 유지, 로그아웃</td>
+<td><a href="../../s7/index.html">S7</a></td>
+</tr>
+<tr>
+<td>8</td>
+<td>관리자</td>
+<td>로그인 후 대시보드 확인, 사용자가 등록한 도서 수정(성공)</td>
+<td><a href="../../s7/index.html">S7</a>, <a href="../../s10/index.html">S10</a></td>
+</tr>
+<tr>
+<td>9</td>
+<td>운영자</td>
+<td>DB 중지와 재시작으로 장애 표시 확인, 로그 파일 분석</td>
+<td><a href="../../s10/index.html">S10</a></td>
+</tr>
+<tr>
+<td>10</td>
+<td>점검자</td>
+<td>응답 헤더, CSP 차단, 의존성 점검 결과 확인</td>
+<td><a href="../../s9/index.html">S9</a>, <a href="../../s11/index.html">S11</a></td>
+</tr>
+</tbody>
+</table></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s11/p26/s11-p26-05.html"><span class="dir">이전</span>S11-P26-05 정리: 도커라이징과 통합 실행</a>
+  <a class="next" href="s12-p27-02.html"><span class="dir">다음</span>S12-P27-02 점검표</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

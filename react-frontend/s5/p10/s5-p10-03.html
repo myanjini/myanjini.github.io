@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P10-03 본문 형식별 전송 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P10-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. Fetch API와 axios로 API 계층 만들기</a><span class="sep">/</span><span>S5-P10 Fetch API</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p10-01.html" style="flex:10" data-type="주요 개념" title="Fetch API 기본 (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s5-p10-02.html" style="flex:15" data-type="주요 개념" title="fetch 오류 처리의 함정 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s5-p10-03.html" style="flex:15" data-type="주요 개념" title="본문 형식별 전송 (15분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s5-p10-04.html" style="flex:10" data-type="주요 개념" title="요청 취소와 시간 제한 (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>15분</span><span>S5-P10-03</span></div>
+<h1>본문 형식별 전송</h1>
+
+<p class="lead"><a href="../../s2/index.html">S2</a>에서 정리한 세 가지 본문 형식을 <code>fetch</code>로 보내는 방법입니다. 핵심은 <code>Content-Type</code>과 본문의 모양을 맞추는 것입니다.</p>
+<div class="codeblock"><pre><code>const BASE = &#x27;http://127.0.0.1:8000&#x27;;
+
+// 1) JSON: 직접 문자열로 바꾸고 Content-Type을 지정합니다.
+await fetch(`${BASE}/auth/signup`, {
+  method: &#x27;POST&#x27;,
+  headers: { &#x27;Content-Type&#x27;: &#x27;application/json&#x27; },
+  body: JSON.stringify({ email: &#x27;reader@example.com&#x27;, password: &#x27;secret-1234&#x27; }),
+});
+
+// 2) 폼 형식: URLSearchParams를 본문으로 넘기면 Content-Type이 자동으로 지정됩니다.
+const form = new URLSearchParams();
+form.append(&#x27;username&#x27;, &#x27;reader@example.com&#x27;); // 이 백엔드의 username 칸에는 이메일을 넣습니다.
+form.append(&#x27;password&#x27;, &#x27;secret-1234&#x27;);
+const tokenResponse = await fetch(`${BASE}/auth/token`, { method: &#x27;POST&#x27;, body: form });
+
+// 3) 멀티파트: FormData를 넘깁니다. Content-Type을 직접 지정하면 안 됩니다.
+const fileInput = document.querySelector(&#x27;input[type=file]&#x27;);
+const data = new FormData();
+data.append(&#x27;file&#x27;, fileInput.files[0]); // 백엔드가 기대하는 필드 이름 file
+await fetch(`${BASE}/books/7/cover`, {
+  method: &#x27;POST&#x27;,
+  headers: { Authorization: &#x27;Bearer &lt;액세스 토큰&gt;&#x27; },
+  body: data,
+});</code></pre></div>
+<p>멀티파트 요청에서 <code>Content-Type</code>을 직접 쓰지 않는 이유가 있습니다. 멀티파트 본문은 여러 부분을 구분하는 경계 문자열(boundary)이 필요하고, 그 값은 <code>Content-Type: multipart/form-data; boundary=...</code>에 함께 적혀야 합니다. <code>FormData</code>를 넘기면 브라우저가 경계 문자열을 만들어 헤더까지 정확히 채워 줍니다. 직접 <code>multipart/form-data</code>라고만 적으면 경계 정보가 빠져 백엔드가 본문을 해석하지 못하고 422를 돌려줍니다.</p>
+<p>로그인을 JSON으로 보내는 실수도 흔합니다. 백엔드 과정 S5-P16에서 확인했듯이 <code>/auth/token</code>은 OAuth2 표준을 따르므로 폼 형식만 받습니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s5-p10-02.html"><span class="dir">이전</span>S5-P10-02 fetch 오류 처리의 함정</a>
+  <a class="next" href="s5-p10-04.html"><span class="dir">다음</span>S5-P10-04 요청 취소와 시간 제한</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P7-03 정리: Vite와 React 기초 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P7-03">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. Vite와 React 기초</a><span class="sep">/</span><span>S3-P7 이펙트와 첫 화면 실습</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p7-01.html" style="flex:10" data-type="주요 개념" title="useEffect (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s3-p7-02.html" style="flex:15" data-type="실습" title="정적 데이터로 도서 목록 만들기 (15분)"><span class="seg-num">02</span><span class="seg-min">15분</span></a><a href="s3-p7-03.html" style="flex:5" data-type="정리" title="정리: Vite와 React 기초 (5분)" aria-current="page"><span class="seg-num">03</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-summary">정리</span><span>5분</span><span>S3-P7-03</span></div>
+<h1>정리: Vite와 React 기초</h1>
+
+<h2>핵심 요약</h2>
+<ul>
+<li>Vite는 개발 서버와 운영 빌드 두 역할을 하며, React 앱의 시작점은 <code>index.html</code>과 <code>main.jsx</code>입니다.</li>
+<li>컴포넌트는 props를 받아 화면을 반환하는 함수이고, state가 바뀌면 다시 그려집니다.</li>
+<li>state는 직접 고치지 않고 새 값으로 교체하며, 리스트에는 변하지 않는 <code>key</code>를 줍니다.</li>
+<li>네트워크 요청과 타이머는 <code>useEffect</code>에서 하고, 정리 함수로 뒷정리를 합니다.</li>
+</ul>
+
+<h2>확인 퀴즈</h2>
+<div class="quiz" data-answer="2"><p class="q">React의 state를 올바르게 바꾸는 방법은 무엇인가요?</p><label><input type="radio" name="s3-p7-03-q1" value="1"> <span>1. <code>form.price = 2000</code></span></label><label><input type="radio" name="s3-p7-03-q1" value="2"> <span>2. <code>setForm({ ...form, price: '2000' })</code></span></label><label><input type="radio" name="s3-p7-03-q1" value="3"> <span>3. <code>form.push(price)</code></span></label><label><input type="radio" name="s3-p7-03-q1" value="4"> <span>4. <code>delete form.price</code></span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>state는 직접 고치지 않고, 전개 문법으로 만든 새 객체를 설정 함수에 넘깁니다.</p></div>
+<div class="quiz" data-answer="2"><p class="q">개발 모드에서 같은 요청이 두 번 보이는 가장 흔한 이유는 무엇인가요?</p><label><input type="radio" name="s3-p7-03-q2" value="1"> <span>1. 백엔드 버그</span></label><label><input type="radio" name="s3-p7-03-q2" value="2"> <span>2. StrictMode가 이펙트를 실행, 정리, 다시 실행하기 때문</span></label><label><input type="radio" name="s3-p7-03-q2" value="3"> <span>3. 브라우저 캐시</span></label><label><input type="radio" name="s3-p7-03-q2" value="4"> <span>4. Vite 빌드 오류</span></label><button type="button">정답 확인</button><p class="result" hidden></p><p class="explain" hidden>StrictMode는 정리 함수를 점검하려고 개발 중에만 이펙트를 한 번 더 실행합니다.</p></div>
+<h2>다음 섹션</h2>
+<p><a href="../../s4/index.html">S4. 백엔드 연결 준비: Origin, SOP, CORS</a>로 이어집니다. 백엔드와 처음 연결하며 Origin, 동일 출처 정책, CORS를 이해하고 CORS 오류를 해결합니다.</p>
+</main>
+<footer class="pager">
+  <a class="prev" href="s3-p7-02.html"><span class="dir">이전</span>S3-P7-02 정적 데이터로 도서 목록 만들기</a>
+  <a class="next" href="../../s4/p8/s4-p8-01.html"><span class="dir">다음</span>S4-P8-01 첫 요청 보내기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

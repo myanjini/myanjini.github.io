@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P12-04 헬스 체크: src/api/health.js | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P12-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. Fetch API와 axios로 API 계층 만들기</a><span class="sep">/</span><span>S5-P12 API 계층 만들기</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p12-01.html" style="flex:15" data-type="실습" title="오류 모양 통일: src/api/errors.js (15분)"><span class="seg-num">01</span><span class="seg-min">15분</span></a><a href="s5-p12-02.html" style="flex:10" data-type="실습" title="axios 인스턴스: src/api/client.js (10분)"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p12-03.html" style="flex:10" data-type="실습" title="도서와 저자 API: src/api/books.js, src/api/authors.js (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a><a href="s5-p12-04.html" style="flex:10" data-type="실습" title="헬스 체크: src/api/health.js (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a><a href="s5-p12-05.html" style="flex:10" data-type="주요 개념" title="컴포넌트에서 API 함수를 쓰는 기본 패턴 (10분)"><span class="seg-num">05</span><span class="seg-min">10분</span></a><a href="s5-p12-06.html" style="flex:10" data-type="실습" title="API 계층 만들고 확인하기 (10분)"><span class="seg-num">06</span><span class="seg-min">10분</span></a><a href="s5-p12-07.html" style="flex:5" data-type="정리" title="정리: Fetch API와 axios로 API 계층 만들기 (5분)"><span class="seg-num">07</span><span class="seg-min">5분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-practice">실습</span><span>10분</span><span>S5-P12-04</span></div>
+<h1>헬스 체크: <code>src/api/health.js</code></h1>
+
+<p class="lead">헬스 체크는 Fetch API로 작성합니다. 데이터베이스 장애 시 백엔드는 503과 함께 <code>{&quot;status&quot;: &quot;error&quot;, &quot;database&quot;: &quot;unreachable&quot;}</code>를 보내는데, 관제 화면에는 이 본문 자체가 중요한 정보입니다. <a href="../p10/s5-p10-02.html">S5-P10-02</a>에서 배운 대로 <code>fetch</code>는 503도 정상 응답으로 돌려주므로 본문을 그대로 읽을 수 있습니다. 응답을 받지 못한 경우(서버 중단, 네트워크 단절)는 <code>catch</code>에서 <code>unreachable</code>로 기록합니다. 응답 시간도 함께 재어 <a href="../../s10/index.html">S10</a>의 대시보드에서 사용합니다.</p>
+<div class="codeblock"><span class="file">src/api/health.js</span><pre><code>import { API_BASE_URL } from &#x27;./client&#x27;;
+
+// 헬스 체크는 Fetch API로 직접 호출합니다.
+// 503도 의미 있는 응답이므로 상태 코드와 본문을 함께 돌려줍니다.
+export async function checkHealth(signal) {
+  const startedAt = performance.now();
+  try {
+    const response = await fetch(`${API_BASE_URL}/health`, { signal, cache: &#x27;no-store&#x27; });
+    const body = await response.json().catch(() =&gt; null);
+    return {
+      reachable: true,
+      httpStatus: response.status,
+      status: body?.status ?? &#x27;unknown&#x27;,
+      database: body?.database ?? &#x27;unknown&#x27;,
+      durationMs: Math.round(performance.now() - startedAt),
+      checkedAt: Date.now(),
+    };
+  } catch (error) {
+    if (error.name === &#x27;AbortError&#x27;) throw error;
+    return {
+      reachable: false,
+      httpStatus: 0,
+      status: &#x27;unreachable&#x27;,
+      database: &#x27;unknown&#x27;,
+      durationMs: null,
+      checkedAt: Date.now(),
+    };
+  }
+}</code></pre></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s5-p12-03.html"><span class="dir">이전</span>S5-P12-03 도서와 저자 API: <code>src/api/books.js</code>, <code>src/api/authors.js</code></a>
+  <a class="next" href="s5-p12-05.html"><span class="dir">다음</span>S5-P12-05 컴포넌트에서 API 함수를 쓰는 기본 패턴</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

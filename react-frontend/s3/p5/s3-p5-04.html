@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P5-04 JSX | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P5-04">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. Vite와 React 기초</a><span class="sep">/</span><span>S3-P5 Vite 프로젝트 시작</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p5-01.html" style="flex:5" data-type="주요 개념" title="Vite란 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s3-p5-02.html" style="flex:5" data-type="주요 개념" title="프로젝트 만들기 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s3-p5-03.html" style="flex:15" data-type="주요 개념" title="프로젝트 구조와 실행 흐름 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s3-p5-04.html" style="flex:10" data-type="주요 개념" title="JSX (10분)" aria-current="page"><span class="seg-num">04</span><span class="seg-min">10분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S3-P5-04</span></div>
+<h1>JSX</h1>
+
+<p class="lead">JSX는 JavaScript 안에 HTML과 비슷한 모양으로 화면 구조를 적는 문법입니다. Vite가 JSX를 일반 JavaScript 함수 호출로 바꿔 줍니다.</p>
+<div class="codeblock"><pre><code>export default function App() {
+  const title = &#x27;도서 관리&#x27;;
+  const count = 3;
+  return (
+    &lt;main className=&quot;content&quot;&gt;
+      &lt;h1&gt;{title}&lt;/h1&gt;
+      &lt;p&gt;등록된 도서는 {count}권입니다.&lt;/p&gt;
+      &lt;p&gt;{count &gt; 0 ? &#x27;목록을 확인하세요.&#x27; : &#x27;도서가 없습니다.&#x27;}&lt;/p&gt;
+    &lt;/main&gt;
+  );
+}</code></pre></div>
+<p>HTML과 다른 규칙 몇 가지를 기억합니다.</p>
+<ul>
+<li>중괄호 <code>{}</code> 안에는 JavaScript 표현식(값이 되는 식)을 넣습니다. <code>if</code>나 <code>for</code> 같은 문장은 넣을 수 없으므로 삼항 연산자, <code>&amp;&amp;</code>, <code>map</code>을 사용합니다.</li>
+<li><code>class</code> 대신 <code>className</code>, <code>for</code> 대신 <code>htmlFor</code>를 씁니다.</li>
+<li>반환하는 최상위 요소는 하나여야 합니다. 여러 요소를 묶기만 할 때는 <code>&lt;&gt;...&lt;/&gt;</code>(Fragment)를 씁니다.</li>
+<li>모든 태그는 닫아야 합니다. <code>&lt;input&gt;</code>은 <code>&lt;input /&gt;</code>으로 씁니다.</li>
+<li>중괄호에 넣은 문자열은 자동으로 이스케이프되어 HTML이 아닌 글자로 표시됩니다. 이 성질은 <a href="../../s9/index.html">S9</a>의 XSS 방어와 직결됩니다.</li>
+</ul>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s3-p5-03.html"><span class="dir">이전</span>S3-P5-03 프로젝트 구조와 실행 흐름</a>
+  <a class="next" href="../p6/s3-p6-01.html"><span class="dir">다음</span>S3-P6-01 컴포넌트와 props</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

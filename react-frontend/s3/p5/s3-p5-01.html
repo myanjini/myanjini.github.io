@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P5-01 Vite란 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P5-01">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. Vite와 React 기초</a><span class="sep">/</span><span>S3-P5 Vite 프로젝트 시작</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p5-01.html" style="flex:5" data-type="주요 개념" title="Vite란 (5분)" aria-current="page"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s3-p5-02.html" style="flex:5" data-type="주요 개념" title="프로젝트 만들기 (5분)"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s3-p5-03.html" style="flex:15" data-type="주요 개념" title="프로젝트 구조와 실행 흐름 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s3-p5-04.html" style="flex:10" data-type="주요 개념" title="JSX (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S3-P5-01</span></div>
+<h1>Vite란</h1>
+
+<p class="lead">React 코드는 JSX 같은 브라우저가 바로 이해하지 못하는 문법을 쓰고, 수십 개의 파일과 외부 패키지로 나뉘어 있습니다. 이를 브라우저가 실행할 수 있는 형태로 바꾸고 묶는 도구가 필요합니다. Vite는 이 역할을 하는 빌드 도구로, 두 가지 모드로 동작합니다.</p>
+<ul>
+<li>개발 서버(<code>npm run dev</code>): 파일을 미리 묶지 않고 브라우저가 요청하는 파일만 즉시 변환해 보냅니다. 파일을 저장하면 바뀐 부분만 화면에 바로 반영되는 HMR(Hot Module Replacement)을 지원합니다.</li>
+<li>운영 빌드(<code>npm run build</code>): 모든 코드를 최적화해 <code>dist</code> 폴더에 정적 파일(HTML, JS, CSS)로 만듭니다. 이 파일들은 Nginx 같은 웹 서버로 제공합니다(<a href="../../s11/index.html">S11</a>).</li>
+</ul>
+<p>현재 Vite는 8 버전이며, Rust로 만든 번들러 Rolldown을 사용해 빌드 속도가 크게 빨라졌습니다. 이 교안의 코드는 Vite 8, React 19, React Router 8, axios 1, Recharts 3에서 확인했습니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="../../s2/p4/s2-p4-05.html"><span class="dir">이전</span>S2-P4-05 정리: 웹 프론트엔드 기초와 JSON</a>
+  <a class="next" href="s3-p5-02.html"><span class="dir">다음</span>S3-P5-02 프로젝트 만들기</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

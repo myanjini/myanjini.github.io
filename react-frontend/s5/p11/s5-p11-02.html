@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S5-P11-02 axios 인스턴스와 인터셉터 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S5-P11-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S5. Fetch API와 axios로 API 계층 만들기</a><span class="sep">/</span><span>S5-P11 axios와 환경 변수</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s5-p11-01.html" style="flex:10" data-type="주요 개념" title="axios (10분)"><span class="seg-num">01</span><span class="seg-min">10분</span></a><a href="s5-p11-02.html" style="flex:10" data-type="주요 개념" title="axios 인스턴스와 인터셉터 (10분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">10분</span></a><a href="s5-p11-03.html" style="flex:10" data-type="실습" title="환경 변수 (10분)"><span class="seg-num">03</span><span class="seg-min">10분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>10분</span><span>S5-P11-02</span></div>
+<h1>axios 인스턴스와 인터셉터</h1>
+
+<p class="lead">인스턴스는 기본 설정을 미리 정해 둔 axios 복사본입니다. 인터셉터는 모든 요청이 나가기 직전과 모든 응답이 도착한 직후에 끼어들어 실행되는 함수입니다.</p>
+<div class="codeblock"><pre><code>import axios from &#x27;axios&#x27;;
+
+const api = axios.create({ baseURL: &#x27;http://127.0.0.1:8000&#x27;, timeout: 10000 });
+
+api.interceptors.request.use((config) =&gt; {
+  // 모든 요청이 나가기 전에 실행됩니다. 예: 인증 헤더 붙이기 (S7)
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) =&gt; response,  // 2xx 응답
+  (error) =&gt; {             // 그 밖의 응답, 네트워크 오류, 취소
+    return Promise.reject(error);
+  },
+);
+
+const { data } = await api.get(&#x27;/books&#x27;, { params: { q: &#x27;파이썬&#x27;, limit: 5 } });</code></pre></div>
+<p>axios 응답 객체의 본문은 <code>data</code> 속성에 들어 있습니다. 쿼리 문자열은 <code>params</code> 옵션에 객체로 넘기면 자동으로 인코딩됩니다. 오류가 나면 <code>error.response</code>에 상태 코드(<code>status</code>), 본문(<code>data</code>), 헤더(<code>headers</code>)가 있고, 응답을 받지 못했으면 <code>error.response</code>가 없습니다. 요청을 취소하면 <code>name</code>이 <code>CanceledError</code>인 오류가 발생하며 <code>axios.isCancel(error)</code>로 확인할 수 있습니다.</p>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s5-p11-01.html"><span class="dir">이전</span>S5-P11-01 axios</a>
+  <a class="next" href="s5-p11-03.html"><span class="dir">다음</span>S5-P11-03 환경 변수</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>

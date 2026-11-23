@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>S3-P5-02 프로젝트 만들기 | React로 만드는 도서 관리 프론트엔드와 관제 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="../../assets/css/style.css">
+</head>
+<body data-page="S3-P5-02">
+<header class="topbar">
+  <a class="course" href="../../index.html">React로 만드는 도서 관리 프론트엔드와 관제 대시보드</a>
+  <nav class="crumbs" aria-label="현재 위치"><a href="../index.html">S3. Vite와 React 기초</a><span class="sep">/</span><span>S3-P5 Vite 프로젝트 시작</span></nav>
+</header>
+<nav class="timebar" aria-label="이 파트의 페이지와 시간">
+  <a href="s3-p5-01.html" style="flex:5" data-type="주요 개념" title="Vite란 (5분)"><span class="seg-num">01</span><span class="seg-min">5분</span></a><a href="s3-p5-02.html" style="flex:5" data-type="주요 개념" title="프로젝트 만들기 (5분)" aria-current="page"><span class="seg-num">02</span><span class="seg-min">5분</span></a><a href="s3-p5-03.html" style="flex:15" data-type="주요 개념" title="프로젝트 구조와 실행 흐름 (15분)"><span class="seg-num">03</span><span class="seg-min">15분</span></a><a href="s3-p5-04.html" style="flex:10" data-type="주요 개념" title="JSX (10분)"><span class="seg-num">04</span><span class="seg-min">10분</span></a>
+</nav>
+<main class="page">
+<div class="page-meta"><span class="type type-concept">주요 개념</span><span>5분</span><span>S3-P5-02</span></div>
+<h1>프로젝트 만들기</h1>
+
+<p class="lead"><code>workspace</code> 폴더에서 다음 명령을 실행합니다. <code>--template react</code>는 TypeScript가 아닌 JavaScript 기반 React 템플릿을 뜻합니다.</p>
+<div class="codeblock term"><pre><code>cd workspace
+npm create vite@latest book-admin-web -- --template react
+cd book-admin-web
+npm install
+npm run dev</code></pre></div>
+<p>터미널에 <code>Local: http://localhost:5173/</code>이 나오면 브라우저로 접속합니다. Vite와 React 로고가 있는 기본 화면이 보이면 성공입니다. 개발 서버는 <code>Ctrl + C</code>로 종료합니다.</p>
+<div class="callout note"><p class="callout-title">참고</p><p>주소 표기에 주의합니다. 이 과정에서는 프론트엔드를 항상 <code>http://localhost:5173</code>으로 엽니다. 백엔드는 <code>http://127.0.0.1:8000</code>으로 부릅니다. 두 주소의 차이가 <a href="../../s4/index.html">S4</a>의 핵심 주제와 연결됩니다.</p></div>
+
+
+</main>
+<footer class="pager">
+  <a class="prev" href="s3-p5-01.html"><span class="dir">이전</span>S3-P5-01 Vite란</a>
+  <a class="next" href="s3-p5-03.html"><span class="dir">다음</span>S3-P5-03 프로젝트 구조와 실행 흐름</a>
+</footer>
+<script src="../../assets/js/main.js"></script>
+</body>
+</html>
