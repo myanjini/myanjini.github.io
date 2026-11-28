@@ -24,11 +24,11 @@
 <p class="lead"><a href="../../s1/p3/s1-p3-03.html">S1-P3-03</a>의 API 표를 그대로 함수로 옮깁니다. 목록 조회 함수는 <code>signal</code>을 받아 화면이 요청을 취소할 수 있게 합니다. 등록, 수정, 삭제, 표지 업로드 함수는 <a href="../../s9/index.html">S9</a>에서 사용하지만 도서 API를 한 파일에 모아 두기 위해 지금 함께 작성합니다.</p>
 <div class="codeblock"><span class="file">src/api/books.js</span><pre><code>import { api } from &#x27;./client&#x27;;
 
-// GET /books?q=&amp;author=&amp;sort=&amp;skip=&amp;limit=  -&gt;  { items, total, skip, limit }
-export async function listBooks({ q, author, sort = &#x27;id&#x27;, skip = 0, limit = 10 } = {}, signal) {
+// GET /books?q=&amp;author_id=&amp;sort=&amp;skip=&amp;limit=  -&gt;  { items, total, skip, limit }
+export async function listBooks({ q, authorId, sort = &#x27;id&#x27;, skip = 0, limit = 10 } = {}, signal) {
   const params = { sort, skip, limit };
   if (q) params.q = q;
-  if (author) params.author = author;
+  if (authorId) params.author_id = authorId;
   const { data } = await api.get(&#x27;/books&#x27;, { params, signal });
   return data;
 }

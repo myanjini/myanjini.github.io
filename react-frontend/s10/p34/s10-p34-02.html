@@ -78,7 +78,7 @@ export default function BookListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const sort = searchParams.get(&#x27;sort&#x27;) ?? &#x27;id&#x27;;
   const skip = Number(searchParams.get(&#x27;skip&#x27;) ?? 0);
-  const author = searchParams.get(&#x27;author&#x27;) ?? &#x27;&#x27;;
+  const authorId = searchParams.get(&#x27;author_id&#x27;) ?? &#x27;&#x27;;
 
   const q = searchParams.get(&#x27;q&#x27;) ?? &#x27;&#x27;;
   const [keyword, setKeyword] = useState(q);
@@ -93,8 +93,8 @@ export default function BookListPage() {
     error,
     isPending: loading,
   } = useQuery({
-    queryKey: [&#x27;books&#x27;, &#x27;list&#x27;, { q, author, sort, skip }],
-    queryFn: ({ signal }) =&gt; listBooks({ q, author, sort, skip, limit: PAGE_SIZE }, signal),
+    queryKey: [&#x27;books&#x27;, &#x27;list&#x27;, { q, authorId, sort, skip }],
+    queryFn: ({ signal }) =&gt; listBooks({ q, authorId, sort, skip, limit: PAGE_SIZE }, signal),
     placeholderData: keepPreviousData, // 다음 페이지를 불러오는 동안 이전 목록을 그대로 보여 줍니다.
   });
 
@@ -125,10 +125,10 @@ export default function BookListPage() {
           onChange={(e) =&gt; setKeyword(e.target.value)}
         /&gt;
         &lt;button type=&quot;submit&quot;&gt;검색&lt;/button&gt;
-        &lt;select value={author} onChange={(e) =&gt; updateParams({ author: e.target.value, skip: &#x27;&#x27; })}&gt;
+        &lt;select value={authorId} onChange={(e) =&gt; updateParams({ author_id: e.target.value, skip: &#x27;&#x27; })}&gt;
           &lt;option value=&quot;&quot;&gt;모든 저자&lt;/option&gt;
           {authors.map((a) =&gt; (
-            &lt;option key={a.id} value={a.name}&gt;
+            &lt;option key={a.id} value={a.id}&gt;
               {a.name}
             &lt;/option&gt;
           ))}

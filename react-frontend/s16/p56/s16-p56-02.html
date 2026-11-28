@@ -28,6 +28,7 @@
 <p>이미 등록되어 있다는 오류가 나면 그대로 다음 단계로 넘어갑니다.</p>
 <p><strong>2) 배포 역할 만들기</strong></p>
 <p>신뢰 정책의 <code>ACCOUNT_ID</code>와 <code>GITHUB_OWNER</code>를 내 AWS 계정 번호와 GitHub 계정으로 바꿉니다. <code>sub</code> 조건이 저장소와 환경을 함께 제한합니다.</p>
+<p><code>OWNER_ID</code>와 <code>REPO_ID</code>는 GitHub 계정과 저장소의 바뀌지 않는 번호입니다. 2026-07-15 이후에 만든 저장소는 <code>sub</code>에 이 번호가 함께 들어가므로, 빠뜨리면 AWS 인증 스텝이 &quot;Not authorized to perform sts:AssumeRoleWithWebIdentity&quot;로 실패합니다. 브라우저에서 <code>https://api.github.com/repos/GITHUB_OWNER/react-frontend</code>를 열면 맨 위의 <code>&quot;id&quot;</code>가 <code>REPO_ID</code>, <code>&quot;owner&quot;</code> 안의 <code>&quot;id&quot;</code>가 <code>OWNER_ID</code>입니다. 비공개 저장소라면 <code>gh api repos/GITHUB_OWNER/react-frontend --jq &quot;.id, .owner.id&quot;</code>로 확인합니다. 그 전에 만든 저장소는 번호 없는 예전 형식(<code>repo:GITHUB_OWNER/react-frontend:environment:production</code>)을 씁니다.</p>
 <div class="codeblock"><span class="file">deploy/github-oidc-trust-policy.json</span><pre><code>{
   &quot;Version&quot;: &quot;2012-10-17&quot;,
   &quot;Statement&quot;: [
@@ -42,7 +43,7 @@
           &quot;token.actions.githubusercontent.com:aud&quot;: &quot;sts.amazonaws.com&quot;
         },
         &quot;StringLike&quot;: {
-          &quot;token.actions.githubusercontent.com:sub&quot;: &quot;repo:GITHUB_OWNER/react-frontend:environment:production&quot;
+          &quot;token.actions.githubusercontent.com:sub&quot;: &quot;repo:GITHUB_OWNER@OWNER_ID/react-frontend@REPO_ID:environment:production&quot;
         }
       }
     }

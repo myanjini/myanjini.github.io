@@ -92,10 +92,10 @@ DETAIL:  User does not have CONNECT privilege.</code></pre></div>
   ]
 }</code></pre></div>
 </li><li><h3>배포 역할 넓히기(콘솔)</h3>
-<p><code>book-api-github-deploy</code> 역할의 <strong>신뢰 관계</strong>에서 <code>sub</code> 조건을 목록으로 바꿉니다. 목록의 값 가운데 하나와 같으면 허용됩니다. 권한 정책에서는 ECR 푸시 문장의 <code>Resource</code>에 새 저장소를 더합니다. 배포 명령을 보낼 수 있는 서버(<code>ssm:SendCommand</code>의 인스턴스)는 같으므로 바꾸지 않습니다.</p>
+<p><code>book-api-github-deploy</code> 역할의 <strong>신뢰 관계</strong>에서 <code>sub</code> 조건을 목록으로 바꿉니다. 목록의 값 가운데 하나와 같으면 허용됩니다. 새 저장소 <code>study-api</code>의 번호는 <a href="../../s15/p53/s15-p53-01.html">S15-P53-01</a>에서처럼 <code>https://api.github.com/repos/내아이디/study-api</code>에서 확인합니다. 권한 정책에서는 ECR 푸시 문장의 <code>Resource</code>에 새 저장소를 더합니다. 배포 명령을 보낼 수 있는 서버(<code>ssm:SendCommand</code>의 인스턴스)는 같으므로 바꾸지 않습니다.</p>
 <div class="codeblock"><span class="file">신뢰 정책의 Condition 일부</span><pre><code>"token.actions.githubusercontent.com:sub": [
-  "repo:내아이디/book-api:ref:refs/heads/main",
-  "repo:내아이디/study-api:ref:refs/heads/main"
+  "repo:내아이디@아이디번호/book-api@book-api저장소번호:ref:refs/heads/main",
+  "repo:내아이디@아이디번호/study-api@study-api저장소번호:ref:refs/heads/main"
 ]</code></pre></div>
 <div class="codeblock"><span class="file">권한 정책의 ECR 문장</span><pre><code>{
   "Sid": "EcrPushAppImages",
@@ -136,7 +136,7 @@ BASE=$ALB bash tools/demo.sh
 <p><code>tools/demo.sh</code>는 예시 프로젝트에 들어 있는 시연 스크립트입니다. 내 프로젝트에 맞게 고쳐 쓰면 발표 시연에도 그대로 씁니다(S18-P62). CloudWatch Logs의 <code>/project-api/app</code>에 요청 로그가 들어오는지도 확인합니다.</p></li></ol>
 
 <h2>배포가 실패할 때</h2>
-<div class="table-wrap"><table><thead><tr><th>어디서</th><th>메시지</th><th>원인과 해결</th></tr></thead><tbody><tr><td>자격 증명 단계</td><td><code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code></td><td>배포 역할 신뢰 정책의 <code>sub</code>에 새 저장소가 없거나 이름이 다릅니다(대소문자 포함).</td></tr><tr><td>이미지 푸시</td><td><code>not authorized to perform: ecr:InitiateLayerUpload</code></td><td>배포 역할의 ECR 문장에 <code>project-api</code>가 없습니다.</td></tr><tr><td>이미지 푸시</td><td><code>repository with name 'project-api' does not exist</code></td><td>ECR 저장소를 만들지 않았거나 다른 리전에 만들었습니다.</td></tr><tr><td>Run Command</td><td><code>Parameter Store에 없는 파라미터</code> 또는 <code>AccessDeniedException</code></td><td>파라미터 이름의 경로가 다르거나, EC2 역할의 파라미터 정책에 <code>/project-api/*</code>가 없습니다.</td></tr><tr><td>Run Command</td><td><code>password authentication failed for user "projectapp"</code></td><td><code>\password</code>로 넣은 값과 DATABASE_URL의 암호가 다릅니다. 다시 <code>\password</code>로 맞춥니다.</td></tr><tr><td>Run Command</td><td><code>failed to create task for container: ... awslogs ... AccessDenied</code></td><td>EC2 역할의 로그 정책에 <code>/project-api/app</code>이 없거나 로그 그룹을 만들지 않았습니다.</td></tr><tr><td>ALB 확인</td><td>502가 계속됨</td><td>서버에서 <code>docker compose -f compose.prod.yaml ps</code>와 <code>logs</code>로 컨테이너 상태를 봅니다(S16-P55).</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>어디서</th><th>메시지</th><th>원인과 해결</th></tr></thead><tbody><tr><td>자격 증명 단계</td><td><code>Not authorized to perform sts:AssumeRoleWithWebIdentity</code></td><td>배포 역할 신뢰 정책의 <code>sub</code>에 새 저장소가 없거나, 이름(대소문자 포함)이나 저장소 번호가 다릅니다.</td></tr><tr><td>이미지 푸시</td><td><code>not authorized to perform: ecr:InitiateLayerUpload</code></td><td>배포 역할의 ECR 문장에 <code>project-api</code>가 없습니다.</td></tr><tr><td>이미지 푸시</td><td><code>repository with name 'project-api' does not exist</code></td><td>ECR 저장소를 만들지 않았거나 다른 리전에 만들었습니다.</td></tr><tr><td>Run Command</td><td><code>Parameter Store에 없는 파라미터</code> 또는 <code>AccessDeniedException</code></td><td>파라미터 이름의 경로가 다르거나, EC2 역할의 파라미터 정책에 <code>/project-api/*</code>가 없습니다.</td></tr><tr><td>Run Command</td><td><code>password authentication failed for user "projectapp"</code></td><td><code>\password</code>로 넣은 값과 DATABASE_URL의 암호가 다릅니다. 다시 <code>\password</code>로 맞춥니다.</td></tr><tr><td>Run Command</td><td><code>failed to create task for container: ... awslogs ... AccessDenied</code></td><td>EC2 역할의 로그 정책에 <code>/project-api/app</code>이 없거나 로그 그룹을 만들지 않았습니다.</td></tr><tr><td>ALB 확인</td><td>502가 계속됨</td><td>서버에서 <code>docker compose -f compose.prod.yaml ps</code>와 <code>logs</code>로 컨테이너 상태를 봅니다(S16-P55).</td></tr></tbody></table></div>
 <div class="table-wrap"><table><thead><tr><th>배포 결과</th><th>내 값</th></tr></thead><tbody><tr><td>ALB의 /health 결과</td><td><input data-save="p61_health" aria-label="내 결과"></td></tr><tr><td>배포된 이미지 태그</td><td><input data-save="p61_tag" aria-label="내 결과"></td></tr></tbody></table></div>
 
 </main>
